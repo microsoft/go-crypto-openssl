@@ -1,6 +1,6 @@
 # go-crypto-openssl
 
-The `openssl` package implements Go crypto primitives using OpenSSL shared libraries and CGO. When configured correctly, OpenSSL can be executed in FIPS mode and therefore make the `openssl` package be FIPS compliant.
+The `openssl` package implements Go crypto primitives using OpenSSL shared libraries and cgo. When configured correctly, OpenSSL can be executed in FIPS mode, making the `openssl` package FIPS compliant.
 
 The `openssl` package is designed to be used as a drop-in replacement for the [boring](https://pkg.go.dev/crypto/internal/boring) package in order to facilitate integrating `openssl` inside a forked Go toolchain.
 
@@ -14,13 +14,13 @@ The Go `crypto` package is not FIPS certified, and the Go team has stated that i
 
 > The status of FIPS 140 for Go itself remains "no plans, basically zero chance".
 
-On the other hand, Google maintains a branch that uses CGO and BoringSSL to implement various crypto primitives: https://github.com/golang/go/blob/dev.boringcrypto/README.boringcrypto.md. As BoringSSL is FIPS 140-2 certified, an application using that branch is more likely to be FIPS 140-2 compliant, yet Google does not provide any liability about the suitability of this code in relation to the FIPS 140-2 standard.
+On the other hand, Google maintains a branch that uses cgo and BoringSSL to implement various crypto primitives: https://github.com/golang/go/blob/dev.boringcrypto/README.boringcrypto.md. As BoringSSL is FIPS 140-2 certified, an application using that branch is more likely to be FIPS 140-2 compliant, yet Google does not provide any liability about the suitability of this code in relation to the FIPS 140-2 standard.
 
 ## Features
 
 ### Multiple OpenSSL versions supported
 
-OpenSSL does not maintain ABI compatibility between different releases, even if only the patch version is increased. The `openssl` package has support for multiple OpenSSL versions, yet each version has a different amount of automated validation:
+OpenSSL does not maintain ABI compatibility between different releases, even if only the last digit is increased. The `openssl` package has support for multiple OpenSSL versions, yet each version has a different amount of automated validation:
 
 - OpenSSL 1.1.1: the Microsoft CI builds official releases and runs automated tests with this version.
 - OpenSSL 1.0.1: the Microsoft CI builds official releases, but doesn't run tests, so it may not produce working applications.
@@ -28,13 +28,13 @@ OpenSSL does not maintain ABI compatibility between different releases, even if 
 
 Versions not listed above are not supported at all.
 
-### Dynamic OpenSSL linking
+### Dynamic OpenSSL loading
 
-The OpenSSL shared library `libcrypto` is load at runtime using [dlopen](https://man7.org/linux/man-pages/man3/dlopen.3.html) when calling `openssl.Init`. Therefore, dlopen's shared library search conventions also apply here.
+The OpenSSL shared library `libcrypto` is loaded at runtime using [dlopen](https://man7.org/linux/man-pages/man3/dlopen.3.html) when calling `openssl.Init`. Therefore, dlopen's shared library search conventions also apply here.
 
-The `libcrypto` shared library file name varies among different platforms, so a best-effort is done to find and load the right file:
+The `libcrypto` shared library file name varies among different platforms, so a best effort is done to find and load the right file:
 
-- The base name is always `libcrypto.so.`
+- The base name is always `libcrypto.so`.
 - Well-known version strings are appended to the base name, until the file is found, in the following order: `3` -> `1.1` -> `11` -> `111` -> `1.0.2` -> `1.0.0`.
 
 This algorithm can be overridden by setting the environment variable `GO_OPENSSL_VERSION_OVERRIDE` to the desired version string. For example, `GO_OPENSSL_VERSION_OVERRIDE="1.1.1k-fips"` makes the runtime look for the shared library `libcrypto.so.1.1.1k-fips` before running the checks for well-known versions.
