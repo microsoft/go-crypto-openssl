@@ -78,18 +78,18 @@ type fail string
 
 func (e fail) Error() string { return "boringcrypto: " + string(e) + " failed" }
 
-func bigToBN(x *big.Int) *C.GO_BIGNUM {
+func bigToBN(x *big.Int) *C.BIGNUM {
 	raw := x.Bytes()
 	return C._goboringcrypto_BN_bin2bn(base(raw), C.size_t(len(raw)), nil)
 }
 
-func bnToBig(bn *C.GO_BIGNUM) *big.Int {
+func bnToBig(bn *C.BIGNUM) *big.Int {
 	raw := make([]byte, (C._goboringcrypto_BN_num_bits(bn)+7)/8)
 	n := C._goboringcrypto_BN_bn2bin(bn, base(raw))
 	return new(big.Int).SetBytes(raw[:n])
 }
 
-func bigToBn(bnp **C.GO_BIGNUM, b *big.Int) bool {
+func bigToBn(bnp **C.BIGNUM, b *big.Int) bool {
 	if *bnp != nil {
 		C._goboringcrypto_BN_free(*bnp)
 		*bnp = nil

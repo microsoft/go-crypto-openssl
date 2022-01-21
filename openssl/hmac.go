@@ -16,8 +16,8 @@ import (
 )
 
 // hashToMD converts a hash.Hash implementation from this package
-// to a BoringCrypto *C.GO_EVP_MD.
-func hashToMD(h hash.Hash) *C.GO_EVP_MD {
+// to a BoringCrypto *C.EVP_MD.
+func hashToMD(h hash.Hash) *C.EVP_MD {
 	switch h.(type) {
 	case *sha1Hash:
 		return C._goboringcrypto_EVP_sha1()
@@ -34,8 +34,8 @@ func hashToMD(h hash.Hash) *C.GO_EVP_MD {
 }
 
 // cryptoHashToMD converts a crypto.Hash
-// to a BoringCrypto *C.GO_EVP_MD.
-func cryptoHashToMD(ch crypto.Hash) *C.GO_EVP_MD {
+// to a BoringCrypto *C.EVP_MD.
+func cryptoHashToMD(ch crypto.Hash) *C.EVP_MD {
 	switch ch {
 	case crypto.MD5:
 		return C._goboringcrypto_EVP_md5()
@@ -91,9 +91,9 @@ func NewHMAC(h func() hash.Hash, key []byte) hash.Hash {
 }
 
 type boringHMAC struct {
-	md          *C.GO_EVP_MD
-	ctx         *C.GO_HMAC_CTX
-	ctx2        *C.GO_HMAC_CTX
+	md          *C.EVP_MD
+	ctx         *C.HMAC_CTX
+	ctx2        *C.HMAC_CTX
 	size        int
 	blockSize   int
 	key         []byte

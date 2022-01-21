@@ -21,7 +21,7 @@ type ecdsaSignature struct {
 }
 
 type PrivateKeyECDSA struct {
-	key *C.GO_EC_KEY
+	key *C.EC_KEY
 }
 
 func (k *PrivateKeyECDSA) finalize() {
@@ -29,7 +29,7 @@ func (k *PrivateKeyECDSA) finalize() {
 }
 
 type PublicKeyECDSA struct {
-	key *C.GO_EC_KEY
+	key *C.EC_KEY
 }
 
 func (k *PublicKeyECDSA) finalize() {
@@ -42,13 +42,13 @@ var errUnsupportedCurve = errors.New("boringcrypto: unsupported elliptic curve")
 func curveNID(curve string) (C.int, error) {
 	switch curve {
 	case "P-224":
-		return C.GO_NID_secp224r1, nil
+		return C.NID_secp224r1, nil
 	case "P-256":
-		return C.GO_NID_X9_62_prime256v1, nil
+		return C.NID_X9_62_prime256v1, nil
 	case "P-384":
-		return C.GO_NID_secp384r1, nil
+		return C.NID_secp384r1, nil
 	case "P-521":
-		return C.GO_NID_secp521r1, nil
+		return C.NID_secp521r1, nil
 	}
 	return 0, errUnknownCurve
 }
@@ -67,7 +67,7 @@ func NewPublicKeyECDSA(curve string, X, Y *big.Int) (*PublicKeyECDSA, error) {
 	return k, nil
 }
 
-func newECKey(curve string, X, Y *big.Int) (*C.GO_EC_KEY, error) {
+func newECKey(curve string, X, Y *big.Int) (*C.EC_KEY, error) {
 	nid, err := curveNID(curve)
 	if err != nil {
 		return nil, err

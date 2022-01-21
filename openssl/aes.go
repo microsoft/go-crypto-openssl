@@ -90,7 +90,7 @@ func (c *aesCipher) Encrypt(dst, src []byte) {
 
 	if c.enc_ctx == nil {
 		var err error
-		c.enc_ctx, err = newCipherCtx(c.cipher, C.GO_AES_ENCRYPT, c.key, nil)
+		c.enc_ctx, err = newCipherCtx(c.cipher, C.AES_ENCRYPT, c.key, nil)
 		if err != nil {
 			panic(err)
 		}
@@ -113,7 +113,7 @@ func (c *aesCipher) Decrypt(dst, src []byte) {
 	}
 	if c.dec_ctx == nil {
 		var err error
-		c.dec_ctx, err = newCipherCtx(c.cipher, C.GO_AES_DECRYPT, c.key, nil)
+		c.dec_ctx, err = newCipherCtx(c.cipher, C.AES_DECRYPT, c.key, nil)
 		if err != nil {
 			panic(err)
 		}
@@ -177,7 +177,7 @@ func (c *aesCipher) NewCBCEncrypter(iv []byte) cipher.BlockMode {
 		panic("crypto/boring: unsupported key length")
 	}
 	var err error
-	x.ctx, err = newCipherCtx(cipher, C.GO_AES_ENCRYPT, c.key, iv)
+	x.ctx, err = newCipherCtx(cipher, C.AES_ENCRYPT, c.key, iv)
 	if err != nil {
 		panic(err)
 	}
@@ -207,7 +207,7 @@ func (c *aesCipher) NewCBCDecrypter(iv []byte) cipher.BlockMode {
 	}
 
 	var err error
-	x.ctx, err = newCipherCtx(cipher, C.GO_AES_DECRYPT, c.key, iv)
+	x.ctx, err = newCipherCtx(cipher, C.AES_DECRYPT, c.key, iv)
 	if err != nil {
 		panic(err)
 	}
@@ -256,7 +256,7 @@ func (c *aesCipher) NewCTR(iv []byte) cipher.Stream {
 		panic("crypto/boring: unsupported key length")
 	}
 	var err error
-	x.ctx, err = newCipherCtx(cipher, C.GO_AES_ENCRYPT, c.key, iv)
+	x.ctx, err = newCipherCtx(cipher, C.AES_ENCRYPT, c.key, iv)
 	if err != nil {
 		panic(err)
 	}
@@ -362,7 +362,7 @@ func (g *aesGCM) Seal(dst, nonce, plaintext, additionalData []byte) []byte {
 		panic("cipher: invalid buffer overlap")
 	}
 
-	ctx, err := newCipherCtx(g.cipher, C.GO_AES_ENCRYPT, g.key, nonce)
+	ctx, err := newCipherCtx(g.cipher, C.AES_ENCRYPT, g.key, nonce)
 	if err != nil {
 		panic(err)
 	}
@@ -421,7 +421,7 @@ func (g *aesGCM) Open(dst, nonce, ciphertext, additionalData []byte) ([]byte, er
 		panic("cipher: invalid buffer overlap")
 	}
 
-	ctx, err := newCipherCtx(g.cipher, C.GO_AES_DECRYPT, g.key, nonce)
+	ctx, err := newCipherCtx(g.cipher, C.AES_DECRYPT, g.key, nonce)
 	if err != nil {
 		panic(err)
 	}

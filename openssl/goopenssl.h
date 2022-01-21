@@ -38,36 +38,6 @@ int _goboringcrypto_OPENSSL_setup(void);
 
 #include "apibridge_1_1.h"
 
-enum
-{
-    GO_NID_secp224r1 = NID_secp224r1,
-    GO_NID_X9_62_prime256v1 = NID_X9_62_prime256v1,
-    GO_NID_secp384r1 = NID_secp384r1,
-    GO_NID_secp521r1 = NID_secp521r1,
-    GO_AES_ENCRYPT = 1,
-    GO_AES_DECRYPT = 0,
-    GO_RSA_PKCS1_PADDING = 1,
-    GO_RSA_NO_PADDING = 3,
-    GO_RSA_PKCS1_OAEP_PADDING = 4,
-    GO_RSA_PKCS1_PSS_PADDING = 6,
-};
-
-typedef SHA_CTX GO_SHA_CTX;
-typedef SHA256_CTX GO_SHA256_CTX;
-typedef SHA512_CTX GO_SHA512_CTX;
-typedef EVP_MD GO_EVP_MD;
-typedef HMAC_CTX GO_HMAC_CTX;
-typedef BN_CTX GO_BN_CTX;
-typedef BIGNUM GO_BIGNUM;
-typedef EC_GROUP GO_EC_GROUP;
-typedef EC_POINT GO_EC_POINT;
-typedef EC_KEY GO_EC_KEY;
-typedef ECDSA_SIG GO_ECDSA_SIG;
-typedef RSA GO_RSA;
-typedef BN_GENCB GO_BN_GENCB;
-typedef EVP_PKEY GO_EVP_PKEY;
-typedef EVP_PKEY_CTX GO_EVP_PKEY_CTX;
-
 // Define pointers to all the used OpenSSL functions.
 // Calling C function pointers from Go is currently not supported.
 // It is possible to circumvent this by using a C function wrapper.

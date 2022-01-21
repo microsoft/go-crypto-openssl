@@ -24,4 +24,6 @@ void local_RSA_get0_key(const RSA *rsa, const BIGNUM **n, const BIGNUM **e, cons
 #define OPENSSL_INIT_ADD_ALL_CIPHERS 0x00000004L
 #define OPENSSL_INIT_ADD_ALL_DIGESTS 0x00000008L
 #define OPENSSL_INIT_LOAD_CONFIG 0x00000040L
+#define AES_ENCRYPT 1
+#define AES_DECRYPT 0
 #endif

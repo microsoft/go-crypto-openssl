@@ -22,7 +22,7 @@ func NewSHA1() hash.Hash {
 }
 
 type sha1Hash struct {
-	ctx C.GO_SHA_CTX
+	ctx C.SHA_CTX
 	out [20]byte
 }
 
@@ -103,7 +103,7 @@ func NewSHA224() hash.Hash {
 }
 
 type sha224Hash struct {
-	ctx C.GO_SHA256_CTX
+	ctx C.SHA256_CTX
 	out [224 / 8]byte
 }
 
@@ -135,7 +135,7 @@ func NewSHA256() hash.Hash {
 }
 
 type sha256Hash struct {
-	ctx C.GO_SHA256_CTX
+	ctx C.SHA256_CTX
 	out [256 / 8]byte
 }
 
@@ -266,7 +266,7 @@ func NewSHA384() hash.Hash {
 }
 
 type sha384Hash struct {
-	ctx C.GO_SHA512_CTX
+	ctx C.SHA512_CTX
 	out [384 / 8]byte
 }
 
@@ -298,7 +298,7 @@ func NewSHA512() hash.Hash {
 }
 
 type sha512Hash struct {
-	ctx C.GO_SHA512_CTX
+	ctx C.SHA512_CTX
 	out [512 / 8]byte
 }
 
