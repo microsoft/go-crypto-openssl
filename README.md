@@ -4,6 +4,10 @@ The `openssl` package implements Go crypto primitives using OpenSSL shared libra
 
 The `openssl` package is designed to be used as a drop-in replacement for the [boring](https://pkg.go.dev/crypto/internal/boring) package in order to facilitate integrating `openssl` inside a forked Go toolchain.
 
+## Disclaimer
+
+A program directly or indirectly using this package in FIPS mode can claim it is using a FIPS-certified cryptographic module -OpenSSL-, but it can't claim the program as a whole is FIPS certified without passing the certification process, nor claim it is FIPS compliant without ensuring all crypto APIs and workflows are implemented in a FIPS-compliant manner.
+
 ## Background
 
 FIPS 140-2 is a U.S. government computer security standard used to approve cryptographic modules. FIPS compliance may come up when working with U.S. government and other regulated industries.
