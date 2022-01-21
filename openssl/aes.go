@@ -233,10 +233,10 @@ func (x *aesCTR) XORKeyStream(dst, src []byte) {
 	if len(src) == 0 {
 		return
 	}
-	C._goboringcrypto_EVP_AES_ctr128_enc(
+	C._goboringcrypto_EVP_EncryptUpdate_wrapper(
 		x.ctx,
-		(*C.uint8_t)(unsafe.Pointer(&src[0])),
 		(*C.uint8_t)(unsafe.Pointer(&dst[0])),
+		(*C.uint8_t)(unsafe.Pointer(&src[0])),
 		C.size_t(len(src)))
 	runtime.KeepAlive(x)
 }

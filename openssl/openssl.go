@@ -84,7 +84,7 @@ func bigToBN(x *big.Int) *C.GO_BIGNUM {
 }
 
 func bnToBig(bn *C.GO_BIGNUM) *big.Int {
-	raw := make([]byte, C._goboringcrypto_BN_num_bytes(bn))
+	raw := make([]byte, (C._goboringcrypto_BN_num_bits(bn)+7)/8)
 	n := C._goboringcrypto_BN_bn2bin(bn, base(raw))
 	return new(big.Int).SetBytes(raw[:n])
 }

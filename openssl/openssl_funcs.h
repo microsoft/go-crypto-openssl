@@ -16,29 +16,24 @@
 // they are not resolved here but just accumulated in FOR_ALL_OPENSSL_FUNCTIONS.
 //
 // DEFINEFUNC defines and loads openssl functions that can be directly called from Go as their signatures match
-// the boringssl and do not require special logic.
+// the OpenSSL API and do not require special logic.
 // The process will be aborted if the function can't be loaded.
 //
-// DEFINEFUNCINTERNAL defines and loads openssl functions that will be wrapped due to signature incompatibility or
-// because it does not exist in all supported openssl versions.
-// The process will be aborted if the function can't be loaded.
-//
-// DEFINEFUNC_LEGACY acts like DEFINEFUNCINTERNAL but only aborts the process if the function can't be loaded
+// DEFINEFUNC_LEGACY acts like DEFINEFUNC but only aborts the process if the function can't be loaded
 // when using 1.0.x. This indicates the function is required when using 1.0.x, but is unused when using later versions.
 // It also might not exist in later versions.
 //
-// DEFINEFUNC_110 acts like DEFINEFUNCINTERNAL but only aborts the process if function can't be loaded
+// DEFINEFUNC_110 acts like DEFINEFUNC but only aborts the process if function can't be loaded
 // when using 1.1.0 or higher.
 //
-// DEFINEFUNC_RENAMED acts like DEFINEFUNCINTERNAL but if the function can't be loaded it will try with another
+// DEFINEFUNC_RENAMED acts like DEFINEFUNC but if the function can't be loaded it will try with another
 // function name, as in some version jumps openssl has renamed functions without changing the signature.
 // The process will be aborted if neither function can be loaded.
 //
 #define FOR_ALL_OPENSSL_FUNCTIONS \
 DEFINEFUNC(unsigned long, ERR_get_error, (void), ()) \
 DEFINEFUNC(void, ERR_error_string_n, (unsigned long e, unsigned char *buf, size_t len), (e, buf, len)) \
-DEFINEFUNCINTERNAL(int, RAND_poll, (void), ()) \
-DEFINEFUNCINTERNAL(void, OPENSSL_init, (void), ()) \
+DEFINEFUNC(void, OPENSSL_init, (void), ()) \
 DEFINEFUNC_LEGACY(void, ERR_load_crypto_strings, (void), ()) \
 DEFINEFUNC_LEGACY(int, CRYPTO_num_locks, (void), ()) \
 DEFINEFUNC_LEGACY(void, CRYPTO_set_id_callback, (unsigned long (*id_function)(void)), (id_function)) \
@@ -75,9 +70,9 @@ DEFINEFUNC_RENAMED(int, EVP_MD_get_type, EVP_MD_type, (const GO_EVP_MD *arg0), (
 DEFINEFUNC_RENAMED(size_t, EVP_MD_get_size, EVP_MD_size, (const GO_EVP_MD *arg0), (arg0)) \
 DEFINEFUNC_FALLBACK(const GO_EVP_MD*, EVP_md5_sha1, (void), ()) \
 DEFINEFUNC_FALLBACK(void*, EVP_MD_CTX_md_data, (EVP_MD_CTX *ctx), (ctx)) \
-DEFINEFUNCINTERNAL(int, MD5_Init, (MD5_CTX *c), (c)) \
-DEFINEFUNCINTERNAL(int, MD5_Update, (MD5_CTX *c, const void *data, size_t len), (c, data, len)) \
-DEFINEFUNCINTERNAL(int, MD5_Final, (unsigned char *md, MD5_CTX *c), (md, c)) \
+DEFINEFUNC(int, MD5_Init, (MD5_CTX *c), (c)) \
+DEFINEFUNC(int, MD5_Update, (MD5_CTX *c, const void *data, size_t len), (c, data, len)) \
+DEFINEFUNC(int, MD5_Final, (unsigned char *md, MD5_CTX *c), (md, c)) \
 DEFINEFUNC_LEGACY(void, HMAC_CTX_init, (GO_HMAC_CTX * arg0), (arg0)) \
 DEFINEFUNC_LEGACY(void, HMAC_CTX_cleanup, (GO_HMAC_CTX * arg0), (arg0)) \
 DEFINEFUNC(int, HMAC_Init_ex, \
@@ -100,9 +95,9 @@ DEFINEFUNC(int, EVP_CipherUpdate, \
            (ctx, out, outl, in, inl)) \
 DEFINEFUNC(GO_BIGNUM *, BN_new, (void), ()) \
 DEFINEFUNC(void, BN_free, (GO_BIGNUM * arg0), (arg0)) \
-DEFINEFUNCINTERNAL(void, BN_clear_free, (GO_BIGNUM * arg0), (arg0)) \
+DEFINEFUNC(void, BN_clear_free, (GO_BIGNUM * arg0), (arg0)) \
 DEFINEFUNC(int, BN_set_word, (GO_BIGNUM *a, BN_ULONG w), (a, w)) \
-DEFINEFUNCINTERNAL(unsigned int, BN_num_bits, (const GO_BIGNUM *arg0), (arg0)) \
+DEFINEFUNC(unsigned int, BN_num_bits, (const GO_BIGNUM *arg0), (arg0)) \
 DEFINEFUNC(GO_BIGNUM *, BN_bin2bn, (const uint8_t *arg0, size_t arg1, GO_BIGNUM *arg2), (arg0, arg1, arg2)) \
 DEFINEFUNC(size_t, BN_bn2bin, (const GO_BIGNUM *arg0, uint8_t *arg1), (arg0, arg1)) \
 DEFINEFUNC(void, EC_GROUP_free, (GO_EC_GROUP * arg0), (arg0)) \
@@ -194,12 +189,9 @@ DEFINEFUNC(int, EVP_PKEY_verify, \
     (ctx, sig, siglen, tbs, tbslen)) \
 DEFINEFUNC(GO_EVP_PKEY_CTX *, EVP_PKEY_CTX_new, (GO_EVP_PKEY * arg0, ENGINE *arg1), (arg0, arg1)) \
 DEFINEFUNC(void, EVP_PKEY_CTX_free, (GO_EVP_PKEY_CTX * arg0), (arg0)) \
-DEFINEFUNCINTERNAL(int, EVP_PKEY_CTX_ctrl, \
+DEFINEFUNC(int, EVP_PKEY_CTX_ctrl, \
     (GO_EVP_PKEY_CTX * ctx, int keytype, int optype, int cmd, int p1, void *p2), \
     (ctx, keytype, optype, cmd, p1, p2)) \
-DEFINEFUNC_FALLBACK(int, RSA_pkey_ctx_ctrl, \
-    (GO_EVP_PKEY_CTX *ctx, int optype, int cmd, int p1, void *p2), \
-    (ctx, optype, cmd, p1, p2)) \
 DEFINEFUNC(int, EVP_PKEY_decrypt, \
     (GO_EVP_PKEY_CTX * arg0, uint8_t *arg1, unsigned int *arg2, const uint8_t *arg3, unsigned int arg4), \
     (arg0, arg1, arg2, arg3, arg4)) \

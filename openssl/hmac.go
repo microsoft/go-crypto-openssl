@@ -67,7 +67,7 @@ func NewHMAC(h func() hash.Hash, key []byte) hash.Hash {
 	}
 
 	var hkey []byte
-	if key != nil && len(key) > 0 {
+	if len(key) > 0 {
 		// Note: Could hash down long keys here using EVP_Digest.
 		hkey = make([]byte, len(key))
 		copy(hkey, key)
@@ -115,8 +115,8 @@ func (h *boringHMAC) Reset() {
 	if C._goboringcrypto_HMAC_Init_ex(h.ctx, unsafe.Pointer(base(h.key)), C.int(len(h.key)), h.md, nil) == 0 {
 		panic("boringcrypto: HMAC_Init failed")
 	}
-	if int(C._goboringcrypto_HMAC_size(h.ctx)) != h.size {
-		println("boringcrypto: HMAC size:", C._goboringcrypto_HMAC_size(h.ctx), "!=", h.size)
+	if size := int(C._goboringcrypto_EVP_MD_get_size(h.md)); size != h.size {
+		println("boringcrypto: HMAC size:", size, "!=", h.size)
 		panic("boringcrypto: HMAC size mismatch")
 	}
 	runtime.KeepAlive(h) // Next line will keep h alive too; just making doubly sure.
@@ -153,7 +153,7 @@ func (h *boringHMAC) Sum(in []byte) []byte {
 	// In particular it is OK to Sum, then Write more, then Sum again,
 	// and the second Sum acts as if the first didn't happen.
 	h.ctx2 = C._goboringcrypto_HMAC_CTX_new()
-	if C._goboringcrypto_HMAC_CTX_copy_ex(h.ctx2, h.ctx) == 0 {
+	if C._goboringcrypto_HMAC_CTX_copy(h.ctx2, h.ctx) == 0 {
 		panic("boringcrypto: HMAC_CTX_copy_ex failed")
 	}
 	C._goboringcrypto_HMAC_Final(h.ctx2, (*C.uint8_t)(unsafe.Pointer(&h.sum[0])), nil)

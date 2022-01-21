@@ -18,7 +18,6 @@ int local_RSA_set0_key(RSA * r, BIGNUM *n, BIGNUM *e, BIGNUM *d);
 int local_RSA_set0_factors(RSA * r, BIGNUM *p, BIGNUM *q);
 void local_RSA_get0_factors(const RSA *rsa, const BIGNUM **p, const BIGNUM **q);
 void local_RSA_get0_key(const RSA *rsa, const BIGNUM **n, const BIGNUM **e, const BIGNUM **d);
-int local_RSA_pkey_ctx_ctrl(EVP_PKEY_CTX* ctx, int optype, int cmd, int p1, void* p2);
 
 #if OPENSSL_VERSION_NUMBER < OPENSSL_VERSION_1_1_0_RTM
 #define OPENSSL_INIT_LOAD_CRYPTO_STRINGS 0x00000002L

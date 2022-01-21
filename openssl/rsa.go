@@ -156,15 +156,15 @@ func setupRSA(withKey func(func(*C.GO_RSA) C.int) C.int,
 	if init(ctx) == 0 {
 		return nil, nil, newOpenSSLError("EVP_PKEY_operation_init failed")
 	}
-	if C._goboringcrypto_EVP_PKEY_CTX_set_rsa_padding(ctx, padding) == 0 {
-		return nil, nil, newOpenSSLError("EVP_PKEY_CTX_set_rsa_padding failed")
+	if C._goboringcrypto_EVP_PKEY_CTX_ctrl(ctx, -1, -1, C.EVP_PKEY_CTRL_RSA_PADDING, padding, nil) == 0 {
+		return nil, nil, newOpenSSLError("_goboringcrypto_EVP_PKEY_CTX_ctrl failed")
 	}
 	if padding == C.GO_RSA_PKCS1_OAEP_PADDING {
 		md := hashToMD(h)
 		if md == nil {
 			return nil, nil, errors.New("crypto/rsa: unsupported hash function")
 		}
-		if C._goboringcrypto_EVP_PKEY_CTX_set_rsa_oaep_md(ctx, md) == 0 {
+		if C._goboringcrypto_EVP_PKEY_CTX_ctrl(ctx, C.EVP_PKEY_RSA, C.EVP_PKEY_OP_TYPE_CRYPT, C.EVP_PKEY_CTRL_RSA_OAEP_MD, 0, unsafe.Pointer(md)) == 0 {
 			return nil, nil, newOpenSSLError("EVP_PKEY_set_rsa_oaep_md failed")
 		}
 		// ctx takes ownership of label, so malloc a copy for BoringCrypto to free.
@@ -173,13 +173,13 @@ func setupRSA(withKey func(func(*C.GO_RSA) C.int) C.int,
 			return nil, nil, fail("OPENSSL_malloc")
 		}
 		copy((*[1 << 30]byte)(unsafe.Pointer(clabel))[:len(label)], label)
-		if C._goboringcrypto_EVP_PKEY_CTX_set0_rsa_oaep_label(ctx, clabel, C.int(len(label))) == 0 {
-			return nil, nil, newOpenSSLError("EVP_PKEY_CTX_set0_rsa_oaep_label failed")
+		if C._goboringcrypto_EVP_PKEY_CTX_ctrl(ctx, C.EVP_PKEY_RSA, C.EVP_PKEY_OP_TYPE_CRYPT, C.EVP_PKEY_CTRL_RSA_OAEP_LABEL, C.int(len(label)), unsafe.Pointer(clabel)) == 0 {
+			return nil, nil, newOpenSSLError("_goboringcrypto_EVP_PKEY_CTX_ctrl failed")
 		}
 	}
 	if padding == C.GO_RSA_PKCS1_PSS_PADDING {
 		if saltLen != 0 {
-			if C._goboringcrypto_EVP_PKEY_CTX_set_rsa_pss_saltlen(ctx, C.int(saltLen)) == 0 {
+			if C._goboringcrypto_EVP_PKEY_CTX_ctrl(ctx, C.EVP_PKEY_RSA, C.EVP_PKEY_OP_SIGN|C.EVP_PKEY_OP_VERIFY, C.EVP_PKEY_CTRL_RSA_PSS_SALTLEN, C.int(saltLen), nil) == 0 {
 				return nil, nil, newOpenSSLError("EVP_PKEY_set_rsa_pss_saltlen failed")
 			}
 		}
@@ -187,8 +187,8 @@ func setupRSA(withKey func(func(*C.GO_RSA) C.int) C.int,
 		if md == nil {
 			return nil, nil, errors.New("crypto/rsa: unsupported hash function")
 		}
-		if C._goboringcrypto_EVP_PKEY_CTX_set_signature_md(ctx, md) == 0 {
-			return nil, nil, newOpenSSLError("EVP_PKEY_CTX_set_signature_md failed")
+		if C._goboringcrypto_EVP_PKEY_CTX_ctrl(ctx, -1, C.EVP_PKEY_OP_TYPE_SIG, C.EVP_PKEY_CTRL_MD, 0, unsafe.Pointer(md)) == 0 {
+			return nil, nil, newOpenSSLError("_goboringcrypto_EVP_PKEY_CTX_ctrl failed")
 		}
 	}
 
@@ -344,7 +344,7 @@ func SignRSAPKCS1v15(priv *PrivateKeyRSA, h crypto.Hash, hashed []byte) ([]byte,
 		return nil, errors.New("crypto/rsa: unsupported hash function: " + strconv.Itoa(int(h)))
 	}
 
-	nid := C._goboringcrypto_EVP_MD_type(md)
+	nid := C._goboringcrypto_EVP_MD_get_type(md)
 	var out []byte
 	var outLen C.uint
 	if priv.withKey(func(key *C.GO_RSA) C.int {
@@ -386,7 +386,7 @@ func VerifyRSAPKCS1v15(pub *PublicKeyRSA, h crypto.Hash, hashed, sig []byte) err
 	if md == nil {
 		return errors.New("crypto/rsa: unsupported hash function")
 	}
-	nid := C._goboringcrypto_EVP_MD_type(md)
+	nid := C._goboringcrypto_EVP_MD_get_type(md)
 	if pub.withKey(func(key *C.GO_RSA) C.int {
 		return C._goboringcrypto_RSA_verify(nid, base(hashed), C.uint(len(hashed)),
 			base(sig), C.uint(len(sig)), key)
