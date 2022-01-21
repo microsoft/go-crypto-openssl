@@ -247,8 +247,8 @@ func DecryptRSANoPadding(priv *PrivateKeyRSA, ciphertext []byte) ([]byte, error)
 	// We could return here, but the Go standard library test expects DecryptRSANoPadding to verify the result
 	// in order to defend against errors in the CRT computation.
 	//
-	// The following code tries to replicate the verification implemented in the upstream function decryptoAndCheck, found at
-	// https://github.com/microsoft/go/blob/288c23b43e8416a0f46148ba0c190ab88a1f5b4c/src/crypto/rsa/rsa.go#L626-L639.
+	// The following code tries to replicate the verification implemented in the upstream function decryptAndCheck, found at
+	// https://github.com/golang/go/blob/9de1ac6ac2cad3871760d0aa288f5ca713afd0a6/src/crypto/rsa/rsa.go#L569-L582.
 	var n, e, d *C.GO_BIGNUM
 	priv.withKey(func(key *C.GO_RSA) C.int {
 		C._goboringcrypto_RSA_get0_key(key, &n, &e, &d)
