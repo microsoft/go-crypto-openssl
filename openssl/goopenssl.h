@@ -26,8 +26,8 @@
 #include <openssl/ecdsa.h>
 #include <openssl/rsa.h>
 
-void* _goboringcrypto_DLOPEN_OPENSSL(void);
-int _goboringcrypto_OPENSSL_setup(void);
+void* go_openssl_load(void);
+int go_openssl_setup(void);
 
 // x.x.x, considering the max number of decimal digits for each component
 #define MaxVersionStringLength 32
@@ -44,7 +44,7 @@ int _goboringcrypto_OPENSSL_setup(void);
 // https://pkg.go.dev/cmd/cgo
 #define DEFINEFUNC(ret, func, args, argscall)      \
     extern ret (*_g_##func)args;                   \
-    static inline ret _goboringcrypto_##func args  \
+    static inline ret go_openssl_##func args  \
     {                                              \
         return _g_##func argscall;                 \
     }
@@ -68,8 +68,8 @@ FOR_ALL_OPENSSL_FUNCTIONS
 // This wrapper allocate out_len on the C stack, and check that it matches the expected
 // value, to avoid having to pass a pointer from Go, which would escape to the heap.
 static inline void
-_goboringcrypto_EVP_EncryptUpdate_wrapper(EVP_CIPHER_CTX *ctx, uint8_t *out, const uint8_t *in, size_t in_len)
+go_openssl_EVP_EncryptUpdate_wrapper(EVP_CIPHER_CTX *ctx, uint8_t *out, const uint8_t *in, size_t in_len)
 {
     int len;
-    _goboringcrypto_EVP_EncryptUpdate(ctx, out, &len, in, in_len);
+    go_openssl_EVP_EncryptUpdate(ctx, out, &len, in, in_len);
 }

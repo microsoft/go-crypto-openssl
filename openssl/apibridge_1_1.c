@@ -83,7 +83,7 @@ local_HMAC_CTX_free(HMAC_CTX* ctx)
 {
     if (ctx != NULL)
     {
-        _goboringcrypto_HMAC_CTX_cleanup(ctx);
+        go_openssl_HMAC_CTX_cleanup(ctx);
         free(ctx);
     }
 }
@@ -106,7 +106,7 @@ local_HMAC_CTX_new()
     HMAC_CTX* ctx = malloc(sizeof(HMAC_CTX));
     if (ctx)
     {
-        _goboringcrypto_HMAC_CTX_init(ctx);
+        go_openssl_HMAC_CTX_init(ctx);
     }
 
     return ctx;
@@ -114,8 +114,8 @@ local_HMAC_CTX_new()
 
 void
 local_HMAC_CTX_reset(HMAC_CTX* ctx) {
-    _goboringcrypto_HMAC_CTX_cleanup(ctx);
-    _goboringcrypto_HMAC_CTX_init(ctx);
+    go_openssl_HMAC_CTX_cleanup(ctx);
+    go_openssl_HMAC_CTX_init(ctx);
 }
 
 struct md5_sha1_ctx {
@@ -126,26 +126,26 @@ struct md5_sha1_ctx {
 static int
 md5_sha1_init(EVP_MD_CTX *ctx)
 {
-  struct md5_sha1_ctx *mctx = _goboringcrypto_EVP_MD_CTX_md_data(ctx);
-  if (!_goboringcrypto_MD5_Init(&mctx->md5))
+  struct md5_sha1_ctx *mctx = go_openssl_EVP_MD_CTX_md_data(ctx);
+  if (!go_openssl_MD5_Init(&mctx->md5))
     return 0;
-  return _goboringcrypto_SHA1_Init(&mctx->sha1);
+  return go_openssl_SHA1_Init(&mctx->sha1);
 }
 
 static int md5_sha1_update(EVP_MD_CTX *ctx, const void *data, size_t count)
 {
-  struct md5_sha1_ctx *mctx = _goboringcrypto_EVP_MD_CTX_md_data(ctx);
-  if (!_goboringcrypto_MD5_Update(&mctx->md5, data, count))
+  struct md5_sha1_ctx *mctx = go_openssl_EVP_MD_CTX_md_data(ctx);
+  if (!go_openssl_MD5_Update(&mctx->md5, data, count))
     return 0;
-  return _goboringcrypto_SHA1_Update(&mctx->sha1, data, count);
+  return go_openssl_SHA1_Update(&mctx->sha1, data, count);
 }
 
 static int md5_sha1_final(EVP_MD_CTX *ctx, unsigned char *md)
 {
-  struct md5_sha1_ctx *mctx = _goboringcrypto_EVP_MD_CTX_md_data(ctx);
-  if (!_goboringcrypto_MD5_Final(md, &mctx->md5))
+  struct md5_sha1_ctx *mctx = go_openssl_EVP_MD_CTX_md_data(ctx);
+  if (!go_openssl_MD5_Final(md, &mctx->md5))
     return 0;
-  return _goboringcrypto_SHA1_Final(md + MD5_DIGEST_LENGTH, &mctx->sha1);
+  return go_openssl_SHA1_Final(md + MD5_DIGEST_LENGTH, &mctx->sha1);
 }
 
 // Change: Removed:
@@ -182,17 +182,17 @@ local_RSA_set0_crt_params(RSA * r, BIGNUM *dmp1, BIGNUM *dmq1, BIGNUM *iqmp)
 
     if (dmp1 != NULL)
     {
-        _goboringcrypto_BN_clear_free(r->dmp1);
+        go_openssl_BN_clear_free(r->dmp1);
         r->dmp1 = dmp1;
     }
     if (dmq1 != NULL)
     {
-        _goboringcrypto_BN_clear_free(r->dmq1);
+        go_openssl_BN_clear_free(r->dmq1);
         r->dmq1 = dmq1;
     }
     if (iqmp != NULL)
     {
-        _goboringcrypto_BN_clear_free(r->iqmp);
+        go_openssl_BN_clear_free(r->iqmp);
         r->iqmp = iqmp;
     }
 
@@ -223,17 +223,17 @@ local_RSA_set0_key(RSA * r, BIGNUM *n, BIGNUM *e, BIGNUM *d)
 
     if (n != NULL) 
     {
-        _goboringcrypto_BN_free(r->n);
+        go_openssl_BN_free(r->n);
         r->n = n;
     }
     if (e != NULL)
     {
-        _goboringcrypto_BN_free(r->e);
+        go_openssl_BN_free(r->e);
         r->e = e;
     }
     if (d != NULL)
     {
-        _goboringcrypto_BN_clear_free(r->d);
+        go_openssl_BN_clear_free(r->d);
         r->d = d;
     }
 
@@ -252,12 +252,12 @@ local_RSA_set0_factors(RSA * r, BIGNUM *p, BIGNUM *q)
 
     if (p != NULL)
     {
-        _goboringcrypto_BN_clear_free(r->p);
+        go_openssl_BN_clear_free(r->p);
         r->p = p;
     }
     if (q != NULL)
     {
-        _goboringcrypto_BN_clear_free(r->q);
+        go_openssl_BN_clear_free(r->q);
         r->q = q;
     }
 

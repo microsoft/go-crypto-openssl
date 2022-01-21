@@ -52,11 +52,11 @@ func NewAESCipher(key []byte) (cipher.Block, error) {
 
 	switch len(c.key) * 8 {
 	case 128:
-		c.cipher = C._goboringcrypto_EVP_aes_128_ecb()
+		c.cipher = C.go_openssl_EVP_aes_128_ecb()
 	case 192:
-		c.cipher = C._goboringcrypto_EVP_aes_192_ecb()
+		c.cipher = C.go_openssl_EVP_aes_192_ecb()
 	case 256:
-		c.cipher = C._goboringcrypto_EVP_aes_256_ecb()
+		c.cipher = C.go_openssl_EVP_aes_256_ecb()
 	default:
 		return nil, errors.New("crypto/cipher: Invalid key size")
 	}
@@ -68,10 +68,10 @@ func NewAESCipher(key []byte) (cipher.Block, error) {
 
 func (c *aesCipher) finalize() {
 	if c.enc_ctx != nil {
-		C._goboringcrypto_EVP_CIPHER_CTX_free(c.enc_ctx)
+		C.go_openssl_EVP_CIPHER_CTX_free(c.enc_ctx)
 	}
 	if c.dec_ctx != nil {
-		C._goboringcrypto_EVP_CIPHER_CTX_free(c.dec_ctx)
+		C.go_openssl_EVP_CIPHER_CTX_free(c.dec_ctx)
 	}
 }
 
@@ -97,7 +97,7 @@ func (c *aesCipher) Encrypt(dst, src []byte) {
 	}
 
 	outlen := C.int(0)
-	C._goboringcrypto_EVP_CipherUpdate(c.enc_ctx, (*C.uchar)(unsafe.Pointer(&dst[0])), &outlen, (*C.uchar)(unsafe.Pointer(&src[0])), C.int(aesBlockSize))
+	C.go_openssl_EVP_CipherUpdate(c.enc_ctx, (*C.uchar)(unsafe.Pointer(&dst[0])), &outlen, (*C.uchar)(unsafe.Pointer(&src[0])), C.int(aesBlockSize))
 	runtime.KeepAlive(c)
 }
 
@@ -120,7 +120,7 @@ func (c *aesCipher) Decrypt(dst, src []byte) {
 	}
 
 	outlen := C.int(0)
-	C._goboringcrypto_EVP_CipherUpdate(c.dec_ctx, (*C.uchar)(unsafe.Pointer(&dst[0])), &outlen, (*C.uchar)(unsafe.Pointer(&src[0])), C.int(aesBlockSize))
+	C.go_openssl_EVP_CipherUpdate(c.dec_ctx, (*C.uchar)(unsafe.Pointer(&dst[0])), &outlen, (*C.uchar)(unsafe.Pointer(&src[0])), C.int(aesBlockSize))
 	runtime.KeepAlive(c)
 }
 
@@ -142,7 +142,7 @@ func (x *aesCBC) CryptBlocks(dst, src []byte) {
 	}
 	if len(src) > 0 {
 		outlen := C.int(0)
-		if C._goboringcrypto_EVP_CipherUpdate(
+		if C.go_openssl_EVP_CipherUpdate(
 			x.ctx,
 			base(dst), &outlen,
 			base(src), C.int(len(src)),
@@ -157,7 +157,7 @@ func (x *aesCBC) SetIV(iv []byte) {
 	if len(iv) != aesBlockSize {
 		panic("cipher: incorrect length IV")
 	}
-	if C.int(1) != C._goboringcrypto_EVP_CipherInit_ex(x.ctx, nil, nil, nil, (*C.uchar)(unsafe.Pointer(&iv[0])), -1) {
+	if C.int(1) != C.go_openssl_EVP_CipherInit_ex(x.ctx, nil, nil, nil, (*C.uchar)(unsafe.Pointer(&iv[0])), -1) {
 		panic("cipher: unable to initialize EVP cipher ctx")
 	}
 }
@@ -168,13 +168,13 @@ func (c *aesCipher) NewCBCEncrypter(iv []byte) cipher.BlockMode {
 	var cipher *C.EVP_CIPHER
 	switch len(c.key) * 8 {
 	case 128:
-		cipher = C._goboringcrypto_EVP_aes_128_cbc()
+		cipher = C.go_openssl_EVP_aes_128_cbc()
 	case 192:
-		cipher = C._goboringcrypto_EVP_aes_192_cbc()
+		cipher = C.go_openssl_EVP_aes_192_cbc()
 	case 256:
-		cipher = C._goboringcrypto_EVP_aes_256_cbc()
+		cipher = C.go_openssl_EVP_aes_256_cbc()
 	default:
-		panic("crypto/boring: unsupported key length")
+		panic("openssl: unsupported key length")
 	}
 	var err error
 	x.ctx, err = newCipherCtx(cipher, C.AES_ENCRYPT, c.key, iv)
@@ -188,7 +188,7 @@ func (c *aesCipher) NewCBCEncrypter(iv []byte) cipher.BlockMode {
 }
 
 func (c *aesCBC) finalize() {
-	C._goboringcrypto_EVP_CIPHER_CTX_free(c.ctx)
+	C.go_openssl_EVP_CIPHER_CTX_free(c.ctx)
 }
 
 func (c *aesCipher) NewCBCDecrypter(iv []byte) cipher.BlockMode {
@@ -197,13 +197,13 @@ func (c *aesCipher) NewCBCDecrypter(iv []byte) cipher.BlockMode {
 	var cipher *C.EVP_CIPHER
 	switch len(c.key) * 8 {
 	case 128:
-		cipher = C._goboringcrypto_EVP_aes_128_cbc()
+		cipher = C.go_openssl_EVP_aes_128_cbc()
 	case 192:
-		cipher = C._goboringcrypto_EVP_aes_192_cbc()
+		cipher = C.go_openssl_EVP_aes_192_cbc()
 	case 256:
-		cipher = C._goboringcrypto_EVP_aes_256_cbc()
+		cipher = C.go_openssl_EVP_aes_256_cbc()
 	default:
-		panic("crypto/boring: unsupported key length")
+		panic("openssl: unsupported key length")
 	}
 
 	var err error
@@ -211,7 +211,7 @@ func (c *aesCipher) NewCBCDecrypter(iv []byte) cipher.BlockMode {
 	if err != nil {
 		panic(err)
 	}
-	if C.int(1) != C._goboringcrypto_EVP_CIPHER_CTX_set_padding(x.ctx, 0) {
+	if C.int(1) != C.go_openssl_EVP_CIPHER_CTX_set_padding(x.ctx, 0) {
 		panic("cipher: unable to set padding")
 	}
 
@@ -233,7 +233,7 @@ func (x *aesCTR) XORKeyStream(dst, src []byte) {
 	if len(src) == 0 {
 		return
 	}
-	C._goboringcrypto_EVP_EncryptUpdate_wrapper(
+	C.go_openssl_EVP_EncryptUpdate_wrapper(
 		x.ctx,
 		(*C.uint8_t)(unsafe.Pointer(&dst[0])),
 		(*C.uint8_t)(unsafe.Pointer(&src[0])),
@@ -247,13 +247,13 @@ func (c *aesCipher) NewCTR(iv []byte) cipher.Stream {
 	var cipher *C.EVP_CIPHER
 	switch len(c.key) * 8 {
 	case 128:
-		cipher = C._goboringcrypto_EVP_aes_128_ctr()
+		cipher = C.go_openssl_EVP_aes_128_ctr()
 	case 192:
-		cipher = C._goboringcrypto_EVP_aes_192_ctr()
+		cipher = C.go_openssl_EVP_aes_192_ctr()
 	case 256:
-		cipher = C._goboringcrypto_EVP_aes_256_ctr()
+		cipher = C.go_openssl_EVP_aes_256_ctr()
 	default:
-		panic("crypto/boring: unsupported key length")
+		panic("openssl: unsupported key length")
 	}
 	var err error
 	x.ctx, err = newCipherCtx(cipher, C.AES_ENCRYPT, c.key, iv)
@@ -267,7 +267,7 @@ func (c *aesCipher) NewCTR(iv []byte) cipher.Stream {
 }
 
 func (c *aesCTR) finalize() {
-	C._goboringcrypto_EVP_CIPHER_CTX_free(c.ctx)
+	C.go_openssl_EVP_CIPHER_CTX_free(c.ctx)
 }
 
 type aesGCM struct {
@@ -314,13 +314,13 @@ func (c *aesCipher) newGCM(tls bool) (cipher.AEAD, error) {
 	g := &aesGCM{key: c.key, tls: tls}
 	switch len(c.key) * 8 {
 	case 128:
-		g.cipher = C._goboringcrypto_EVP_aes_128_gcm()
+		g.cipher = C.go_openssl_EVP_aes_128_gcm()
 	case 192:
-		g.cipher = C._goboringcrypto_EVP_aes_192_gcm()
+		g.cipher = C.go_openssl_EVP_aes_192_gcm()
 	case 256:
-		g.cipher = C._goboringcrypto_EVP_aes_256_gcm()
+		g.cipher = C.go_openssl_EVP_aes_256_gcm()
 	default:
-		panic("crypto/boring: unsupported key length")
+		panic("openssl: unsupported key length")
 	}
 
 	return g, nil
@@ -366,27 +366,27 @@ func (g *aesGCM) Seal(dst, nonce, plaintext, additionalData []byte) []byte {
 	if err != nil {
 		panic(err)
 	}
-	defer C._goboringcrypto_EVP_CIPHER_CTX_free(ctx)
+	defer C.go_openssl_EVP_CIPHER_CTX_free(ctx)
 
 	var encLen C.int
 	// Encrypt additional data.
-	if C._goboringcrypto_EVP_EncryptUpdate(ctx, nil, &encLen, base(additionalData), C.int(len(additionalData))) != C.int(1) {
+	if C.go_openssl_EVP_EncryptUpdate(ctx, nil, &encLen, base(additionalData), C.int(len(additionalData))) != C.int(1) {
 		panic(fail("EVP_CIPHER_CTX_seal"))
 	}
 
 	// Encrypt plain text.
-	if C._goboringcrypto_EVP_EncryptUpdate(ctx, base(out), &encLen, base(plaintext), C.int(len(plaintext))) != C.int(1) {
+	if C.go_openssl_EVP_EncryptUpdate(ctx, base(out), &encLen, base(plaintext), C.int(len(plaintext))) != C.int(1) {
 		panic(fail("EVP_CIPHER_CTX_seal"))
 	}
 
 	// Finalise encryption.
 	var encFinalLen C.int
-	if C._goboringcrypto_EVP_EncryptFinal_ex(ctx, base(out[encLen:]), &encFinalLen) != C.int(1) {
+	if C.go_openssl_EVP_EncryptFinal_ex(ctx, base(out[encLen:]), &encFinalLen) != C.int(1) {
 		panic(fail("EVP_CIPHER_CTX_seal"))
 	}
 	encLen += encFinalLen
 
-	if C._goboringcrypto_EVP_CIPHER_CTX_ctrl(ctx, C.EVP_CTRL_GCM_GET_TAG, C.int(16), unsafe.Pointer(&out[encLen])) != C.int(1) {
+	if C.go_openssl_EVP_CIPHER_CTX_ctrl(ctx, C.EVP_CTRL_GCM_GET_TAG, C.int(16), unsafe.Pointer(&out[encLen])) != C.int(1) {
 		panic(fail("EVP_CIPHER_CTX_seal"))
 	}
 	encLen += 16
@@ -425,7 +425,7 @@ func (g *aesGCM) Open(dst, nonce, ciphertext, additionalData []byte) ([]byte, er
 	if err != nil {
 		panic(err)
 	}
-	defer C._goboringcrypto_EVP_CIPHER_CTX_free(ctx)
+	defer C.go_openssl_EVP_CIPHER_CTX_free(ctx)
 
 	clearAndFail := func(err error) ([]byte, error) {
 		for i := range out {
@@ -436,24 +436,24 @@ func (g *aesGCM) Open(dst, nonce, ciphertext, additionalData []byte) ([]byte, er
 
 	// Provide any AAD data.
 	var tmplen C.int
-	if C._goboringcrypto_EVP_DecryptUpdate(ctx, nil, &tmplen, base(additionalData), C.int(len(additionalData))) != C.int(1) {
+	if C.go_openssl_EVP_DecryptUpdate(ctx, nil, &tmplen, base(additionalData), C.int(len(additionalData))) != C.int(1) {
 		return clearAndFail(errOpen)
 	}
 
 	// Provide the message to be decrypted, and obtain the plaintext output.
 	var decLen C.int
-	if C._goboringcrypto_EVP_DecryptUpdate(ctx, base(out), &decLen, base(ciphertext), C.int(len(ciphertext))) != C.int(1) {
+	if C.go_openssl_EVP_DecryptUpdate(ctx, base(out), &decLen, base(ciphertext), C.int(len(ciphertext))) != C.int(1) {
 		return clearAndFail(errOpen)
 	}
 
 	// Set expected tag value. Works in OpenSSL 1.0.1d and later.
-	if C._goboringcrypto_EVP_CIPHER_CTX_ctrl(ctx, C.EVP_CTRL_GCM_SET_TAG, 16, unsafe.Pointer(&tag[0])) != C.int(1) {
+	if C.go_openssl_EVP_CIPHER_CTX_ctrl(ctx, C.EVP_CTRL_GCM_SET_TAG, 16, unsafe.Pointer(&tag[0])) != C.int(1) {
 		return clearAndFail(errOpen)
 	}
 
 	// Finalise the decryption.
 	var tagLen C.int
-	if C._goboringcrypto_EVP_DecryptFinal_ex(ctx, base(out[int(decLen):]), &tagLen) != C.int(1) {
+	if C.go_openssl_EVP_DecryptFinal_ex(ctx, base(out[int(decLen):]), &tagLen) != C.int(1) {
 		return clearAndFail(errOpen)
 	}
 
@@ -476,11 +476,11 @@ func sliceForAppend(in []byte, n int) (head, tail []byte) {
 }
 
 func newCipherCtx(cipher *C.EVP_CIPHER, mode C.int, key, iv []byte) (*C.EVP_CIPHER_CTX, error) {
-	ctx := C._goboringcrypto_EVP_CIPHER_CTX_new()
+	ctx := C.go_openssl_EVP_CIPHER_CTX_new()
 	if ctx == nil {
 		return nil, fail("unable to create EVP cipher ctx")
 	}
-	if C.int(1) != C._goboringcrypto_EVP_CipherInit_ex(ctx, cipher, nil, base(key), base(iv), mode) {
+	if C.int(1) != C.go_openssl_EVP_CipherInit_ex(ctx, cipher, nil, base(key), base(iv), mode) {
 		return nil, fail("unable to initialize EVP cipher ctx")
 	}
 	return ctx, nil

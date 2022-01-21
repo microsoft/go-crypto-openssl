@@ -4,7 +4,7 @@
 #include <stdlib.h> // size_t
 #include <stdint.h> // uint8_t
 
-// List of all functions from the libcrypto that are used in the crypto/internal/boring.
+// List of all functions from the libcrypto that are used in this package.
 // Forgetting to add a function here results in build failure with message reporting the function
 // that needs to be added.
 //

@@ -25,19 +25,19 @@ func Init() error {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
-	if C._goboringcrypto_DLOPEN_OPENSSL() == C.NULL {
-		return errors.New("boringcrypto: OpenSSL dlopen failed")
+	if C.go_openssl_load() == C.NULL {
+		return errors.New("openssl: OpenSSL dlopen failed")
 	}
 
-	if C._goboringcrypto_OPENSSL_setup() != 1 {
-		return errors.New("boringcrypto: OpenSSL setup failed")
+	if C.go_openssl_setup() != 1 {
+		return errors.New("openssl: OpenSSL setup failed")
 	}
 	return nil
 }
 
 // FIPS returns true if OpenSSL is running in FIPS mode, else returns false.
 func FIPS() bool {
-	return C._goboringcrypto_FIPS_mode() == 1
+	return C.go_openssl_FIPS_mode() == 1
 }
 
 // SetFIPS enables or disables FIPS mode.
@@ -48,8 +48,8 @@ func SetFIPS(enabled bool) error {
 	} else {
 		mode = C.int(0)
 	}
-	if C._goboringcrypto_FIPS_mode_set(mode) != 1 {
-		return newOpenSSLError("boringcrypto: set FIPS mode")
+	if C.go_openssl_FIPS_mode_set(mode) != 1 {
+		return newOpenSSLError("openssl: set FIPS mode")
 	}
 	return nil
 }
@@ -62,12 +62,12 @@ func newOpenSSLError(msg string) error {
 	b.WriteString("\nopenssl error(s):\n")
 
 	for {
-		e = C._goboringcrypto_ERR_get_error()
+		e = C.go_openssl_ERR_get_error()
 		if e == 0 {
 			break
 		}
 		var buf [256]byte
-		C._goboringcrypto_ERR_error_string_n(e, base(buf[:]), 256)
+		C.go_openssl_ERR_error_string_n(e, base(buf[:]), 256)
 		b.Write(buf[:])
 		b.WriteByte('\n')
 	}
@@ -76,29 +76,29 @@ func newOpenSSLError(msg string) error {
 
 type fail string
 
-func (e fail) Error() string { return "boringcrypto: " + string(e) + " failed" }
+func (e fail) Error() string { return "openssl: " + string(e) + " failed" }
 
 func bigToBN(x *big.Int) *C.BIGNUM {
 	raw := x.Bytes()
-	return C._goboringcrypto_BN_bin2bn(base(raw), C.size_t(len(raw)), nil)
+	return C.go_openssl_BN_bin2bn(base(raw), C.size_t(len(raw)), nil)
 }
 
 func bnToBig(bn *C.BIGNUM) *big.Int {
-	raw := make([]byte, (C._goboringcrypto_BN_num_bits(bn)+7)/8)
-	n := C._goboringcrypto_BN_bn2bin(bn, base(raw))
+	raw := make([]byte, (C.go_openssl_BN_num_bits(bn)+7)/8)
+	n := C.go_openssl_BN_bn2bin(bn, base(raw))
 	return new(big.Int).SetBytes(raw[:n])
 }
 
 func bigToBn(bnp **C.BIGNUM, b *big.Int) bool {
 	if *bnp != nil {
-		C._goboringcrypto_BN_free(*bnp)
+		C.go_openssl_BN_free(*bnp)
 		*bnp = nil
 	}
 	if b == nil {
 		return true
 	}
 	raw := b.Bytes()
-	bn := C._goboringcrypto_BN_bin2bn(base(raw), C.size_t(len(raw)), nil)
+	bn := C.go_openssl_BN_bin2bn(base(raw), C.size_t(len(raw)), nil)
 	if bn == nil {
 		return false
 	}
