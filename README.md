@@ -6,7 +6,7 @@ The `openssl` package is designed to be used as a drop-in replacement for the [b
 
 ## Disclaimer
 
-A program directly or indirectly using this package in FIPS mode can claim it is using a FIPS-certified cryptographic module -OpenSSL-, but it can't claim the program as a whole is FIPS certified without passing the certification process, nor claim it is FIPS compliant without ensuring all crypto APIs and workflows are implemented in a FIPS-compliant manner.
+A program directly or indirectly using this package in FIPS mode can claim it is using a FIPS-certified cryptographic module (OpenSSL), but it can't claim the program as a whole is FIPS certified without passing the certification process, nor claim it is FIPS compliant without ensuring all crypto APIs and workflows are implemented in a FIPS-compliant manner.
 
 ## Background
 
