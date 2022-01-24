@@ -1,14 +1,69 @@
-# Project
+# go-crypto-openssl
 
-> This repo has been populated by an initial template to help get you started. Please
-> make sure to update the content to build a great experience for community-building.
+The `openssl` package implements Go crypto primitives using OpenSSL shared libraries and cgo. When configured correctly, OpenSSL can be executed in FIPS mode, making the `openssl` package FIPS compliant.
 
-As the maintainer of this project, please make a few updates:
+The `openssl` package is designed to be used as a drop-in replacement for the [boring](https://pkg.go.dev/crypto/internal/boring) package in order to facilitate integrating `openssl` inside a forked Go toolchain.
 
-- Improving this README.MD file to provide a great experience
-- Updating SUPPORT.MD with content about this project's support experience
-- Understanding the security reporting process in SECURITY.MD
-- Remove this section from the README
+## Disclaimer
+
+A program directly or indirectly using this package in FIPS mode can claim it is using a FIPS-certified cryptographic module (OpenSSL), but it can't claim the program as a whole is FIPS certified without passing the certification process, nor claim it is FIPS compliant without ensuring all crypto APIs and workflows are implemented in a FIPS-compliant manner.
+
+## Background
+
+FIPS 140-2 is a U.S. government computer security standard used to approve cryptographic modules. FIPS compliance may come up when working with U.S. government and other regulated industries.
+
+### Go FIPS compliance
+
+The Go `crypto` package is not FIPS certified, and the Go team has stated that it won't be, e.g. in [golang/go/issues/21734](https://github.com/golang/go/issues/21734#issuecomment-326980213) Adam Langley says:
+
+> The status of FIPS 140 for Go itself remains "no plans, basically zero chance".
+
+On the other hand, Google maintains a branch that uses cgo and BoringSSL to implement various crypto primitives: https://github.com/golang/go/blob/dev.boringcrypto/README.boringcrypto.md. As BoringSSL is FIPS 140-2 certified, an application using that branch is more likely to be FIPS 140-2 compliant, yet Google does not provide any liability about the suitability of this code in relation to the FIPS 140-2 standard.
+
+## Features
+
+### Multiple OpenSSL versions supported
+
+OpenSSL does not maintain ABI compatibility between different releases, even if only the last digit is increased. The `openssl` package has support for multiple OpenSSL versions, yet each version has a different amount of automated validation:
+
+- OpenSSL 1.1.1: the Microsoft CI builds official releases and runs automated tests with this version.
+- OpenSSL 1.0.1: the Microsoft CI builds official releases, but doesn't run tests, so it may not produce working applications.
+- OpenSSL 1.1.0 and 3.0: the Microsoft CI does not build nor test these versions, so they may or may not work.
+
+Versions not listed above are not supported at all.
+
+### Dynamic OpenSSL loading
+
+The OpenSSL shared library `libcrypto` is loaded at runtime using [dlopen](https://man7.org/linux/man-pages/man3/dlopen.3.html) when calling `openssl.Init`. Therefore, dlopen's shared library search conventions also apply here.
+
+The `libcrypto` shared library file name varies among different platforms, so a best effort is done to find and load the right file:
+
+- The base name is always `libcrypto.so`.
+- Well-known version strings are appended to the base name, until the file is found, in the following order: `3` -> `1.1` -> `11` -> `111` -> `1.0.2` -> `1.0.0`.
+
+This algorithm can be overridden by setting the environment variable `GO_OPENSSL_VERSION_OVERRIDE` to the desired version string. For example, `GO_OPENSSL_VERSION_OVERRIDE="1.1.1k-fips"` makes the runtime look for the shared library `libcrypto.so.1.1.1k-fips` before running the checks for well-known versions.
+
+### Portable OpenSSL
+
+The OpenSSL bindings are implemented in such a way that the OpenSSL version used when building a program does not have to match with the OpenSSL version used when running it.
+
+This feature does not require any additional configuration, but it only works with OpenSSL versions known and supported by the Go toolchain.
+
+## Limitations
+
+OpenSSL is used for a given build only in limited circumstances:
+
+- The platform must be GOOS=linux.
+- The build must have cgo enabled.
+- The android build tag must not be specified.
+
+## Acknowledgements
+
+The work done to support FIPS compatibility mode leverages code and ideas from other open-source projects:
+
+- All crypto stubs are a mirror of Google's [dev.boringcrypto branch](https://github.com/golang/go/tree/dev.boringcrypto) and the release branch ports of that branch.
+- The mapping between BoringSSL and OpenSSL APIs is taken from Fedora's [Go fork](https://pagure.io/go).
+- The portable OpenSSL implementation is ported from Microsoft's [.NET runtime](https://github.com/dotnet/runtime) cryptography module.
 
 ## Contributing
 
