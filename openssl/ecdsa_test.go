@@ -75,7 +75,7 @@ func testECDSASignAndVerify(t *testing.T, c elliptic.Curve) {
 	}
 	hashed[0] ^= 0xff
 	if VerifyECDSA(pub, hashed, r, s) {
-		t.Errorf("Verify always works!")
+		t.Errorf("Verify succeeded despite intentionally invalid hash!")
 	}
 }
 
