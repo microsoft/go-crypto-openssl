@@ -9,6 +9,7 @@ package openssl
 import (
 	"bytes"
 	"crypto/cipher"
+	"math/bits"
 	"testing"
 )
 
@@ -112,8 +113,7 @@ func TestSealPanic(t *testing.T) {
 		// maxInt is implemented as math.MaxInt, but this constant
 		// is only available since go1.17.
 		// TODO: use math.MaxInt once go1.16 is no longer supported.
-		const intSize = 32 << (^uint(0) >> 63) // 32 or 64
-		maxInt := 1<<(intSize-1) - 1
+		maxInt := bits.OnesCount(^uint(0))
 		gcm.Seal(nil, make([]byte, gcmStandardNonceSize), make([]byte, maxInt), nil)
 	})
 }
