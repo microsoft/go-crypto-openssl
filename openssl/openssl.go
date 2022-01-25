@@ -54,6 +54,11 @@ func SetFIPS(enabled bool) error {
 	return nil
 }
 
+// VersionText returns the version text of the OpenSSL currently loaded.
+func VersionText() string {
+	return C.GoString(C.go_openssl_OpenSSL_version(0))
+}
+
 func newOpenSSLError(msg string) error {
 	var b strings.Builder
 	var e C.ulong

@@ -33,6 +33,7 @@
 #define FOR_ALL_OPENSSL_FUNCTIONS \
 DEFINEFUNC(unsigned long, ERR_get_error, (void), ()) \
 DEFINEFUNC(void, ERR_error_string_n, (unsigned long e, unsigned char *buf, size_t len), (e, buf, len)) \
+DEFINEFUNC_RENAMED(const char *, OpenSSL_version, SSLeay_version, (int type), (type)) \
 DEFINEFUNC(void, OPENSSL_init, (void), ()) \
 DEFINEFUNC_LEGACY(void, ERR_load_crypto_strings, (void), ()) \
 DEFINEFUNC_LEGACY(int, CRYPTO_num_locks, (void), ()) \
