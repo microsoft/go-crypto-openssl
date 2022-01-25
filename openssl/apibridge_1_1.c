@@ -20,12 +20,9 @@ struct crypto_ex_data_10_st
 
 struct hmac_ctx_st
 {
-    const EVP_MD *md;
-    const void* _ignored0;
-    const void* _ignored1;
-    const void* _ignored2;
-    unsigned int _ignored3;
-    unsigned char _ignored4[128];
+    // 0x120 is the sizeof value when building against OpenSSL 1.0.2 on
+    // Ubuntu 16.04
+    unsigned char _ignored0[0x120];
 };
 struct rsa_st
 {
@@ -92,12 +89,6 @@ void*
 local_EVP_MD_CTX_md_data(EVP_MD_CTX *ctx)
 {
     return ctx->md_data;
-}
-
-const EVP_MD*
-local_HMAC_CTX_get_md(const HMAC_CTX* ctx)
-{
-    return ctx->md;
 }
 
 HMAC_CTX*

@@ -83,7 +83,6 @@ DEFINEFUNC(int, HMAC_Update, (HMAC_CTX * arg0, const uint8_t *arg1, size_t arg2)
 DEFINEFUNC(int, HMAC_Final, (HMAC_CTX * arg0, uint8_t *arg1, unsigned int *arg2), (arg0, arg1, arg2)) \
 DEFINEFUNC(size_t, HMAC_CTX_copy, (HMAC_CTX *dest, HMAC_CTX *src), (dest, src)) \
 DEFINEFUNC_FALLBACK(void, HMAC_CTX_free, (HMAC_CTX * arg0), (arg0)) \
-DEFINEFUNC_FALLBACK(const EVP_MD*, HMAC_CTX_get_md, (const HMAC_CTX* ctx), (ctx)) \
 DEFINEFUNC_FALLBACK(HMAC_CTX*, HMAC_CTX_new, (void), ()) \
 DEFINEFUNC_FALLBACK(void, HMAC_CTX_reset, (HMAC_CTX * arg0), (arg0)) \
 DEFINEFUNC(EVP_CIPHER_CTX *, EVP_CIPHER_CTX_new, (void), ()) \
