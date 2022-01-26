@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
@@ -32,7 +32,7 @@ esac
 cd /usr/local/src
 wget -O $tag.tar.gz https://github.com/openssl/openssl/archive/refs/tags/$tag.tar.gz
 echo "$sha256 $tag.tar.gz" | sha256sum -c -
-rm -rf openssl-$ta
+rm -rf openssl-$tag
 tar -xzf $tag.tar.gz
 
 rm -rf openssl-$version

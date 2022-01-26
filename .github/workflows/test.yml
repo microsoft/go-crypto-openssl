@@ -27,7 +27,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Install OpenSSL - Build
-      run: sudo bash ./scripts/openssl.bash ${{ matrix.openssl-version-build }}
+      run: sudo sh ./scripts/openssl.sh ${{ matrix.openssl-version-build }}
     - name: Run Test - Build
       run: go test -v ./...
       env:
@@ -38,7 +38,7 @@ jobs:
       env:
         GO_OPENSSL_VERSION_OVERRIDE: ${{ matrix.openssl-version-build }}
     - name: Install OpenSSL - Test
-      run: sudo bash ./scripts/openssl.bash ${{ matrix.openssl-version-test }}
+      run: sudo sh ./scripts/openssl.sh ${{ matrix.openssl-version-test }}
       if: ${{ matrix.openssl-version-build != matrix.openssl-version-test }}
     - name: Run Test 2 - Test
       run: ./test -test.v
