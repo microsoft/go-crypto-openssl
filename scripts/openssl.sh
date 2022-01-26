@@ -20,7 +20,7 @@ case "$version" in
         tag="OpenSSL_1_1_1m"
         sha256="36ae24ad7cf0a824d0b76ac08861262e47ec541e5d0f20e6d94bab90b2dab360"
         ;;
-    "3.0.0")
+    "3.0.1")
         tag="openssl-3.0.1";
         sha256="2a9dcf05531e8be96c296259e817edc41619017a4bf3e229b4618a70103251d5"
         ;;
