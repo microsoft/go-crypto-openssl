@@ -42,37 +42,6 @@ struct rsa_st
     int _ignored5;
     int _ignored6;
 };
-struct evp_md_ctx_st {
-    const void *_ignored0;
-    void *_ignored1;
-    unsigned long _ignored2;
-    void *md_data;
-    void *_ignored3;
-    int (*_ignored4) (void *ctx, const void *data, size_t count);
-};
-struct evp_md_st {
-    int type;
-    int pkey_type;
-    int md_size;
-    unsigned long flags;
-    int (*init) (EVP_MD_CTX *ctx);
-    int (*update) (EVP_MD_CTX *ctx, const void *data, size_t count);
-    int (*final) (EVP_MD_CTX *ctx, unsigned char *md);
-    int (*copy) (EVP_MD_CTX *to, const EVP_MD_CTX *from);
-    int (*cleanup) (EVP_MD_CTX *ctx);
-    /* FIXME: prototype these some day */
-    int (*sign) (int type, const unsigned char *m, unsigned int m_length,
-                 unsigned char *sigret, unsigned int *siglen, void *key);
-    int (*verify) (int type, const unsigned char *m, unsigned int m_length,
-                   const unsigned char *sigbuf, unsigned int siglen,
-                   void *key);
-    int required_pkey_type[5];  /* EVP_PKEY_xxx */
-    int block_size;
-    int ctx_size;               /* how big does the ctx->md_data need to be */
-    /* control function */
-    int (*md_ctrl) (EVP_MD_CTX *ctx, int cmd, int p1, void *p2);
-};
-#define EVP_PKEY_NULL_method    NULL,NULL,{0,0,0,0}
 #endif
 
 void
@@ -103,58 +72,14 @@ local_HMAC_CTX_reset(HMAC_CTX* ctx) {
     go_openssl_HMAC_CTX_init(ctx);
 }
 
-struct md5_sha1_ctx {
-  MD5_CTX md5;
-  SHA_CTX sha1;
-};
-
-static int
-md5_sha1_init(EVP_MD_CTX *ctx)
+const void* local_EVP_md5_sha1(void)
 {
-  struct md5_sha1_ctx *mctx = ctx->md_data;
-  if (!go_openssl_MD5_Init(&mctx->md5))
-    return 0;
-  return go_openssl_SHA1_Init(&mctx->sha1);
-}
-
-static int md5_sha1_update(EVP_MD_CTX *ctx, const void *data, size_t count)
-{
-  struct md5_sha1_ctx *mctx = ctx->md_data;
-  if (!go_openssl_MD5_Update(&mctx->md5, data, count))
-    return 0;
-  return go_openssl_SHA1_Update(&mctx->sha1, data, count);
-}
-
-static int md5_sha1_final(EVP_MD_CTX *ctx, unsigned char *md)
-{
-  struct md5_sha1_ctx *mctx = ctx->md_data;
-  if (!go_openssl_MD5_Final(md, &mctx->md5))
-    return 0;
-  return go_openssl_SHA1_Final(md + MD5_DIGEST_LENGTH, &mctx->sha1);
-}
-
-// Change: Removed:
-// static int ctrl(EVP_MD_CTX *ctx, int cmd, int mslen, void *ms)
-
-static const EVP_MD md5_sha1_md = {
-    NID_md5_sha1,
-    NID_md5_sha1,
-    MD5_DIGEST_LENGTH + SHA_DIGEST_LENGTH,
-    0,
-    md5_sha1_init,
-    md5_sha1_update,
-    md5_sha1_final,
-    NULL,
-    NULL,
-    EVP_PKEY_NULL_method, // Change: inserted
-    MD5_CBLOCK,
-    sizeof(EVP_MD *) + sizeof(struct md5_sha1_ctx),
-    NULL, // Change: was ctrl
-};
-
-const EVP_MD* local_EVP_md5_sha1(void)
-{
-  return &md5_sha1_md;
+    // MD5SHA1 is not implemented in OpenSSL 1.0.2.
+    // It is implemented in higher versions but without FIPS support.
+    // We don't want to support it because it requires a lot of efford to
+    // implement it for OpenSSL 1.0.2 and it is considered a deprecated digest,
+    // not approved by FIPS 140-2 and only used in pre-TLS 1.2.
+  return NULL;
 }
 
 int

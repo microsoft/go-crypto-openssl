@@ -13,6 +13,7 @@ import (
 	"errors"
 	"hash"
 	"runtime"
+	"strconv"
 	"unsafe"
 )
 
@@ -26,6 +27,9 @@ type evpHash struct {
 
 func newEvpHash(ch crypto.Hash, size, blockSize int) *evpHash {
 	md := cryptoHashToMD(ch)
+	if md == nil {
+		panic("openssl: unsupported hash function: " + strconv.Itoa(int(ch)))
+	}
 	ctx := C.go_openssl_EVP_MD_CTX_new()
 	ctx2 := C.go_openssl_EVP_MD_CTX_new()
 	h := &evpHash{
