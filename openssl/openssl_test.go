@@ -13,7 +13,8 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	err := Init()
+	v := os.Getenv("GO_OPENSSL_VERSION_OVERRIDE")
+	err := Init(v)
 	if err != nil {
 		fmt.Println("skipping on linux platform without OpenSSL")
 		os.Exit(0)
