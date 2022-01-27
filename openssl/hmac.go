@@ -75,7 +75,7 @@ func NewHMAC(h func() hash.Hash, key []byte) hash.Hash {
 		// This is supported in OpenSSL/Standard lib and as such
 		// we must support it here. When using HMAC with a null key
 		// HMAC_Init will try and reuse the key from the ctx. This is
-		// not the bahavior previously implemented, so as a workaround
+		// not the behavior previously implemented, so as a workaround
 		// we pass an "empty" key.
 		hkey = make([]byte, C.EVP_MAX_MD_SIZE)
 	}
@@ -86,30 +86,22 @@ func NewHMAC(h func() hash.Hash, key []byte) hash.Hash {
 		key:       hkey,
 		ctx:       C.go_openssl_HMAC_CTX_new(),
 	}
+	runtime.SetFinalizer(hmac, (*opensslHMAC).finalize)
 	hmac.Reset()
 	return hmac
 }
 
 type opensslHMAC struct {
-	md          *C.EVP_MD
-	ctx         *C.HMAC_CTX
-	ctx2        *C.HMAC_CTX
-	size        int
-	blockSize   int
-	key         []byte
-	sum         []byte
-	needCleanup bool
+	md        *C.EVP_MD
+	ctx       *C.HMAC_CTX
+	ctx2      *C.HMAC_CTX
+	size      int
+	blockSize int
+	key       []byte
+	sum       []byte
 }
 
 func (h *opensslHMAC) Reset() {
-	if !h.needCleanup {
-		h.needCleanup = true
-		// Note: Because of the finalizer, any time h.ctx is passed to cgo,
-		// that call must be followed by a call to runtime.KeepAlive(h),
-		// to make sure h is not collected (and finalized) before the cgo
-		// call returns.
-		runtime.SetFinalizer(h, (*opensslHMAC).finalize)
-	}
 	C.go_openssl_HMAC_CTX_reset(h.ctx)
 
 	if C.go_openssl_HMAC_Init_ex(h.ctx, unsafe.Pointer(base(h.key)), C.int(len(h.key)), h.md, nil) == 0 {
