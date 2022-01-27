@@ -70,7 +70,6 @@ DEFINEFUNC(const EVP_MD *, EVP_sha512, (void), ()) \
 DEFINEFUNC_RENAMED(int, EVP_MD_get_type, EVP_MD_type, (const EVP_MD *arg0), (arg0)) \
 DEFINEFUNC_RENAMED(size_t, EVP_MD_get_size, EVP_MD_size, (const EVP_MD *arg0), (arg0)) \
 DEFINEFUNC_FALLBACK(const EVP_MD*, EVP_md5_sha1, (void), ()) \
-DEFINEFUNC_FALLBACK(void*, EVP_MD_CTX_md_data, (EVP_MD_CTX *ctx), (ctx)) \
 DEFINEFUNC(int, MD5_Init, (MD5_CTX *c), (c)) \
 DEFINEFUNC(int, MD5_Update, (MD5_CTX *c, const void *data, size_t len), (c, data, len)) \
 DEFINEFUNC(int, MD5_Final, (unsigned char *md, MD5_CTX *c), (md, c)) \

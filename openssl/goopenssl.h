@@ -11,7 +11,6 @@
 
 #include <openssl/ossl_typ.h>
 #include <openssl/opensslv.h>
-#include <openssl/ssl.h>
 #include <openssl/crypto.h>
 #include <openssl/err.h>
 #include <openssl/rand.h>

@@ -85,12 +85,6 @@ local_HMAC_CTX_free(HMAC_CTX* ctx)
     }
 }
 
-void*
-local_EVP_MD_CTX_md_data(EVP_MD_CTX *ctx)
-{
-    return ctx->md_data;
-}
-
 HMAC_CTX*
 local_HMAC_CTX_new()
 {
@@ -117,7 +111,7 @@ struct md5_sha1_ctx {
 static int
 md5_sha1_init(EVP_MD_CTX *ctx)
 {
-  struct md5_sha1_ctx *mctx = go_openssl_EVP_MD_CTX_md_data(ctx);
+  struct md5_sha1_ctx *mctx = ctx->md_data;
   if (!go_openssl_MD5_Init(&mctx->md5))
     return 0;
   return go_openssl_SHA1_Init(&mctx->sha1);
@@ -125,7 +119,7 @@ md5_sha1_init(EVP_MD_CTX *ctx)
 
 static int md5_sha1_update(EVP_MD_CTX *ctx, const void *data, size_t count)
 {
-  struct md5_sha1_ctx *mctx = go_openssl_EVP_MD_CTX_md_data(ctx);
+  struct md5_sha1_ctx *mctx = ctx->md_data;
   if (!go_openssl_MD5_Update(&mctx->md5, data, count))
     return 0;
   return go_openssl_SHA1_Update(&mctx->sha1, data, count);
@@ -133,7 +127,7 @@ static int md5_sha1_update(EVP_MD_CTX *ctx, const void *data, size_t count)
 
 static int md5_sha1_final(EVP_MD_CTX *ctx, unsigned char *md)
 {
-  struct md5_sha1_ctx *mctx = go_openssl_EVP_MD_CTX_md_data(ctx);
+  struct md5_sha1_ctx *mctx = ctx->md_data;
   if (!go_openssl_MD5_Final(md, &mctx->md5))
     return 0;
   return go_openssl_SHA1_Final(md + MD5_DIGEST_LENGTH, &mctx->sha1);
