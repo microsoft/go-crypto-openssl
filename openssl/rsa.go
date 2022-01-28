@@ -15,7 +15,6 @@ import (
 	"hash"
 	"math/big"
 	"runtime"
-	"strconv"
 	"unsafe"
 )
 
@@ -24,23 +23,29 @@ func GenerateKeyRSA(bits int) (N, E, D, P, Q, Dp, Dq, Qinv *big.Int, err error) 
 		return nil, nil, nil, nil, nil, nil, nil, nil, e
 	}
 
-	key := C.go_openssl_RSA_new()
+	ctx := C.go_openssl_EVP_PKEY_CTX_new_id(C.EVP_PKEY_RSA, nil)
+	if ctx == nil {
+		return bad(newOpenSSLError("EVP_PKEY_CTX_new_id failed"))
+	}
+	defer C.go_openssl_EVP_PKEY_CTX_free(ctx)
+
+	if C.go_openssl_EVP_PKEY_keygen_init(ctx) != 1 {
+		return bad(newOpenSSLError("EVP_PKEY_keygen_init failed"))
+	}
+
+	if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, C.EVP_PKEY_RSA, C.EVP_PKEY_OP_KEYGEN, C.EVP_PKEY_CTRL_RSA_KEYGEN_BITS, C.int(bits), nil) != 1 {
+		return bad(newOpenSSLError("PKEY_CTX_set_rsa_keygen_bits failed"))
+	}
+
+	var pkey *C.EVP_PKEY
+	if C.go_openssl_EVP_PKEY_keygen(ctx, &pkey) != 1 {
+		return bad(newOpenSSLError("EVP_PKEY_keygen failed"))
+	}
+	defer C.go_openssl_EVP_PKEY_free(pkey)
+
+	key := C.go_openssl_EVP_PKEY_get1_RSA(pkey)
 	if key == nil {
-		return bad(newOpenSSLError("RSA_new failed"))
-	}
-	defer C.go_openssl_RSA_free(key)
-
-	bn := C.go_openssl_BN_new()
-	if bn == nil {
-		return bad(newOpenSSLError("BN_new failed"))
-	}
-	defer C.go_openssl_BN_free(bn)
-
-	if C.go_openssl_BN_set_word(bn, C.RSA_F4) != C.int(1) {
-		return bad(newOpenSSLError("BN_set_word failed"))
-	}
-	if C.go_openssl_RSA_generate_key_ex(key, C.int(bits), bn, nil) != C.int(1) {
-		return bad(newOpenSSLError("RSA_generate_key_ex failed"))
+		return bad(newOpenSSLError("EVP_PKEY_get1_RSA failed"))
 	}
 
 	var n, e, d, p, q, dp, dq, qinv *C.BIGNUM
@@ -51,8 +56,8 @@ func GenerateKeyRSA(bits int) (N, E, D, P, Q, Dp, Dq, Qinv *big.Int, err error) 
 }
 
 type PublicKeyRSA struct {
-	// _key MUST NOT be accessed directly. Instead, use the withKey method.
-	_key *C.RSA
+	// _pkey MUST NOT be accessed directly. Instead, use the withKey method.
+	_pkey *C.EVP_PKEY
 }
 
 func NewPublicKeyRSA(N, E *big.Int) (*PublicKeyRSA, error) {
@@ -64,26 +69,36 @@ func NewPublicKeyRSA(N, E *big.Int) (*PublicKeyRSA, error) {
 	n = bigToBN(N)
 	e = bigToBN(E)
 	C.go_openssl_RSA_set0_key(key, n, e, nil)
-	k := &PublicKeyRSA{_key: key}
+	pkey := C.go_openssl_EVP_PKEY_new()
+	if pkey == nil {
+		C.go_openssl_RSA_free(key)
+		return nil, newOpenSSLError("EVP_PKEY_new failed")
+	}
+	if C.go_openssl_EVP_PKEY_assign(pkey, C.EVP_PKEY_RSA, key) != 1 {
+		C.go_openssl_RSA_free(key)
+		C.go_openssl_EVP_PKEY_free(pkey)
+		return nil, newOpenSSLError("EVP_PKEY_assign failed")
+	}
+	k := &PublicKeyRSA{_pkey: pkey}
 	runtime.SetFinalizer(k, (*PublicKeyRSA).finalize)
 	return k, nil
 }
 
 func (k *PublicKeyRSA) finalize() {
-	C.go_openssl_RSA_free(k._key)
+	C.go_openssl_EVP_PKEY_free(k._pkey)
 }
 
-func (k *PublicKeyRSA) withKey(f func(*C.RSA) C.int) C.int {
-	// Because of the finalizer, any time _key is passed to cgo, that call must
+func (k *PublicKeyRSA) withKey(f func(*C.EVP_PKEY) C.int) C.int {
+	// Because of the finalizer, any time _pkey is passed to cgo, that call must
 	// be followed by a call to runtime.KeepAlive, to make sure k is not
 	// collected (and finalized) before the cgo call returns.
 	defer runtime.KeepAlive(k)
-	return f(k._key)
+	return f(k._pkey)
 }
 
 type PrivateKeyRSA struct {
-	// _key MUST NOT be accessed directly. Instead, use the withKey method.
-	_key *C.RSA
+	// _pkey MUST NOT be accessed directly. Instead, use the withKey method.
+	_pkey *C.EVP_PKEY
 }
 
 func NewPrivateKeyRSA(N, E, D, P, Q, Dp, Dq, Qinv *big.Int) (*PrivateKeyRSA, error) {
@@ -107,32 +122,42 @@ func NewPrivateKeyRSA(N, E, D, P, Q, Dp, Dq, Qinv *big.Int) (*PrivateKeyRSA, err
 		qinv = bigToBN(Qinv)
 		C.go_openssl_RSA_set0_crt_params(key, dp, dq, qinv)
 	}
-	k := &PrivateKeyRSA{_key: key}
+	pkey := C.go_openssl_EVP_PKEY_new()
+	if pkey == nil {
+		C.go_openssl_RSA_free(key)
+		return nil, newOpenSSLError("EVP_PKEY_new failed")
+	}
+	if C.go_openssl_EVP_PKEY_assign(pkey, C.EVP_PKEY_RSA, key) != 1 {
+		C.go_openssl_RSA_free(key)
+		C.go_openssl_EVP_PKEY_free(pkey)
+		return nil, newOpenSSLError("EVP_PKEY_assign failed")
+	}
+	k := &PrivateKeyRSA{_pkey: pkey}
 	runtime.SetFinalizer(k, (*PrivateKeyRSA).finalize)
 	return k, nil
 }
 
 func (k *PrivateKeyRSA) finalize() {
-	C.go_openssl_RSA_free(k._key)
+	C.go_openssl_EVP_PKEY_free(k._pkey)
 }
 
-func (k *PrivateKeyRSA) withKey(f func(*C.RSA) C.int) C.int {
+func (k *PrivateKeyRSA) withKey(f func(*C.EVP_PKEY) C.int) C.int {
 	// Because of the finalizer, any time _key is passed to cgo, that call must
 	// be followed by a call to runtime.KeepAlive, to make sure k is not
 	// collected (and finalized) before the cgo call returns.
 	defer runtime.KeepAlive(k)
-	return f(k._key)
+	return f(k._pkey)
 }
 
-func setupRSA(withKey func(func(*C.RSA) C.int) C.int,
-	padding C.int, h hash.Hash, label []byte, saltLen int, ch crypto.Hash,
-	init func(*C.EVP_PKEY_CTX) C.int) (pkey *C.EVP_PKEY, ctx *C.EVP_PKEY_CTX, err error) {
+type withKeyFunc func(func(*C.EVP_PKEY) C.int) C.int
+type initFunc func(*C.EVP_PKEY_CTX) C.int
+type cryptFunc func(*C.EVP_PKEY_CTX, *C.uint8_t, *C.uint, *C.uint8_t, C.uint) C.int
+
+func setupRSA(withKey withKeyFunc, padding C.int,
+	h hash.Hash, label []byte, saltLen int, ch crypto.Hash,
+	init initFunc) (ctx *C.EVP_PKEY_CTX, err error) {
 	defer func() {
 		if err != nil {
-			if pkey != nil {
-				C.go_openssl_EVP_PKEY_free(pkey)
-				pkey = nil
-			}
 			if ctx != nil {
 				C.go_openssl_EVP_PKEY_CTX_free(ctx)
 				ctx = nil
@@ -140,82 +165,87 @@ func setupRSA(withKey func(func(*C.RSA) C.int) C.int,
 		}
 	}()
 
-	pkey = C.go_openssl_EVP_PKEY_new()
-	if pkey == nil {
-		return nil, nil, newOpenSSLError("EVP_PKEY_new failed")
-	}
-	if withKey(func(key *C.RSA) C.int {
-		return C.go_openssl_EVP_PKEY_set1_RSA(pkey, key)
-	}) == 0 {
-		return nil, nil, fail("EVP_PKEY_set1_RSA")
-	}
-	ctx = C.go_openssl_EVP_PKEY_CTX_new(pkey, nil)
+	withKey(func(pkey *C.EVP_PKEY) C.int {
+		ctx = C.go_openssl_EVP_PKEY_CTX_new(pkey, nil)
+		return 1
+	})
 	if ctx == nil {
-		return nil, nil, newOpenSSLError("EVP_PKEY_CTX_new failed")
+		return nil, newOpenSSLError("EVP_PKEY_CTX_new failed")
 	}
 	if init(ctx) == 0 {
-		return nil, nil, newOpenSSLError("EVP_PKEY_operation_init failed")
+		return nil, newOpenSSLError("EVP_PKEY_operation_init failed")
 	}
-	if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, -1, -1, C.EVP_PKEY_CTRL_RSA_PADDING, padding, nil) == 0 {
-		return nil, nil, newOpenSSLError("go_openssl_EVP_PKEY_CTX_ctrl failed")
+	if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, C.EVP_PKEY_RSA, -1, C.EVP_PKEY_CTRL_RSA_PADDING, padding, nil) == 0 {
+		return nil, newOpenSSLError("go_openssl_EVP_PKEY_CTX_ctrl failed")
 	}
-	if padding == C.RSA_PKCS1_OAEP_PADDING {
+	switch padding {
+	case C.RSA_PKCS1_OAEP_PADDING:
 		md := hashToMD(h)
 		if md == nil {
-			return nil, nil, errors.New("crypto/rsa: unsupported hash function")
+			return nil, errors.New("crypto/rsa: unsupported hash function")
 		}
 		if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, C.EVP_PKEY_RSA, C.EVP_PKEY_OP_TYPE_CRYPT, C.EVP_PKEY_CTRL_RSA_OAEP_MD, 0, unsafe.Pointer(md)) == 0 {
-			return nil, nil, newOpenSSLError("EVP_PKEY_set_rsa_oaep_md failed")
+			return nil, newOpenSSLError("EVP_PKEY_set_rsa_oaep_md failed")
 		}
 		// ctx takes ownership of label, so malloc a copy for OpenSSL to free.
 		clabel := (*C.uint8_t)(C.malloc(C.size_t(len(label))))
 		if clabel == nil {
-			return nil, nil, fail("OPENSSL_malloc")
+			return nil, fail("OPENSSL_malloc")
 		}
 		copy((*[1 << 30]byte)(unsafe.Pointer(clabel))[:len(label)], label)
 		if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, C.EVP_PKEY_RSA, C.EVP_PKEY_OP_TYPE_CRYPT, C.EVP_PKEY_CTRL_RSA_OAEP_LABEL, C.int(len(label)), unsafe.Pointer(clabel)) == 0 {
-			return nil, nil, newOpenSSLError("go_openssl_EVP_PKEY_CTX_ctrl failed")
+			return nil, newOpenSSLError("go_openssl_EVP_PKEY_CTX_ctrl failed")
 		}
-	}
-	if padding == C.RSA_PKCS1_PSS_PADDING {
+	case C.RSA_PKCS1_PSS_PADDING:
 		if saltLen != 0 {
 			if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, C.EVP_PKEY_RSA, C.EVP_PKEY_OP_SIGN|C.EVP_PKEY_OP_VERIFY, C.EVP_PKEY_CTRL_RSA_PSS_SALTLEN, C.int(saltLen), nil) == 0 {
-				return nil, nil, newOpenSSLError("EVP_PKEY_set_rsa_pss_saltlen failed")
+				return nil, newOpenSSLError("EVP_PKEY_set_rsa_pss_saltlen failed")
 			}
 		}
 		md := cryptoHashToMD(ch)
 		if md == nil {
-			return nil, nil, errors.New("crypto/rsa: unsupported hash function")
+			return nil, errors.New("crypto/rsa: unsupported hash function")
 		}
 		if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, -1, C.EVP_PKEY_OP_TYPE_SIG, C.EVP_PKEY_CTRL_MD, 0, unsafe.Pointer(md)) == 0 {
-			return nil, nil, newOpenSSLError("go_openssl_EVP_PKEY_CTX_ctrl failed")
+			return nil, newOpenSSLError("go_openssl_EVP_PKEY_CTX_ctrl failed")
+		}
+	case C.RSA_PKCS1_PADDING:
+		if ch != 0 {
+			// We support unhashed messages.
+			md := cryptoHashToMD(ch)
+			if md == nil {
+				return nil, errors.New("crypto/rsa: unsupported hash function")
+			}
+			if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, -1, C.EVP_PKEY_OP_TYPE_SIG, C.EVP_PKEY_CTRL_MD, 0, unsafe.Pointer(md)) == 0 {
+				return nil, newOpenSSLError("go_openssl_EVP_PKEY_CTX_ctrl failed")
+			}
 		}
 	}
 
-	return pkey, ctx, nil
+	return ctx, nil
 }
 
-func cryptRSA(withKey func(func(*C.RSA) C.int) C.int,
-	padding C.int, h hash.Hash, label []byte, saltLen int, ch crypto.Hash,
-	init func(*C.EVP_PKEY_CTX) C.int,
-	crypt func(*C.EVP_PKEY_CTX, *C.uint8_t, *C.uint, *C.uint8_t, C.uint) C.int,
-	out, in []byte) ([]byte, error) {
+func cryptRSA(withKey withKeyFunc, padding C.int,
+	h hash.Hash, label []byte, saltLen int, ch crypto.Hash,
+	init initFunc, crypt cryptFunc,
+	sig, in []byte) ([]byte, error) {
 
-	pkey, ctx, err := setupRSA(withKey, padding, h, label, saltLen, ch, init)
+	ctx, err := setupRSA(withKey, padding, h, label, saltLen, ch, init)
 	if err != nil {
 		return nil, err
 	}
-	defer C.go_openssl_EVP_PKEY_free(pkey)
 	defer C.go_openssl_EVP_PKEY_CTX_free(ctx)
 
+	var out []byte
 	var outLen C.uint
-	if out == nil {
+	if sig == nil {
 		if crypt(ctx, nil, &outLen, base(in), C.uint(len(in))) == 0 {
 			return nil, newOpenSSLError("EVP_PKEY_decrypt/encrypt failed")
 		}
 		out = make([]byte, outLen)
 	} else {
-		outLen = C.uint(len(out))
+		out = sig
+		outLen = C.uint(len(sig))
 	}
 	if crypt(ctx, base(out), &outLen, base(in), C.uint(len(in))) <= 0 {
 		return nil, newOpenSSLError("EVP_PKEY_decrypt/encrypt failed")
@@ -249,15 +279,8 @@ func DecryptRSANoPadding(priv *PrivateKeyRSA, ciphertext []byte) ([]byte, error)
 	//
 	// The following code tries to replicate the verification implemented in the upstream function decryptAndCheck, found at
 	// https://github.com/golang/go/blob/9de1ac6ac2cad3871760d0aa288f5ca713afd0a6/src/crypto/rsa/rsa.go#L569-L582.
-	var n, e, d *C.BIGNUM
-	priv.withKey(func(key *C.RSA) C.int {
-		C.go_openssl_RSA_get0_key(key, &n, &e, &d)
-		return 1
-	})
-	pub, err := NewPublicKeyRSA(bnToBig(n), bnToBig(e))
-	if err != nil {
-		return nil, err
-	}
+	pub := &PublicKeyRSA{_pkey: priv._pkey}
+	// A private EVP_PKEY can be used as a public key as it contains the public information.
 	enc, err := EncryptRSANoPadding(pub, ret)
 	if err != nil {
 		return nil, err
@@ -324,42 +347,12 @@ func VerifyRSAPSS(pub *PublicKeyRSA, h crypto.Hash, hashed, sig []byte, saltLen 
 }
 
 func SignRSAPKCS1v15(priv *PrivateKeyRSA, h crypto.Hash, hashed []byte) ([]byte, error) {
-	if h == 0 {
-		// No hashing.
-		var out []byte
-		var outLen C.int
-		if priv.withKey(func(key *C.RSA) C.int {
-			out = make([]byte, C.go_openssl_RSA_size(key))
-			outLen = C.go_openssl_RSA_private_encrypt(C.int(len(hashed)), base(hashed),
-				base(out), key, C.RSA_PKCS1_PADDING)
-			return outLen
-		}) <= 0 {
-			return nil, newOpenSSLError("RSA_private_encrypt")
-		}
-		return out[:outLen], nil
-	}
-
-	md := cryptoHashToMD(h)
-	if md == nil {
-		return nil, errors.New("crypto/rsa: unsupported hash function: " + strconv.Itoa(int(h)))
-	}
-
-	nid := C.go_openssl_EVP_MD_get_type(md)
-	var out []byte
-	var outLen C.uint
-	if priv.withKey(func(key *C.RSA) C.int {
-		out = make([]byte, C.go_openssl_RSA_size(key))
-		return C.go_openssl_RSA_sign(nid, base(hashed), C.uint(len(hashed)),
-			base(out), &outLen, key)
-	}) == 0 {
-		return nil, newOpenSSLError("RSA_sign")
-	}
-	return out[:outLen], nil
+	return cryptRSA(priv.withKey, C.RSA_PKCS1_PADDING, nil, nil, 0, h, signtInit, sign, nil, hashed)
 }
 
 func VerifyRSAPKCS1v15(pub *PublicKeyRSA, h crypto.Hash, hashed, sig []byte) error {
-	if pub.withKey(func(key *C.RSA) C.int {
-		size := int(C.go_openssl_RSA_size(key))
+	if pub.withKey(func(pkey *C.EVP_PKEY) C.int {
+		size := int(C.go_openssl_EVP_PKEY_get_size(pkey))
 		if len(sig) < size {
 			return 0
 		}
@@ -367,31 +360,11 @@ func VerifyRSAPKCS1v15(pub *PublicKeyRSA, h crypto.Hash, hashed, sig []byte) err
 	}) == 0 {
 		return errors.New("crypto/rsa: verification error")
 	}
+	out, err := cryptRSA(pub.withKey, C.RSA_PKCS1_PADDING, nil, nil, 0, h, verifyInit, verify, sig, hashed)
 	if h == 0 {
-		var out []byte
-		var outLen C.int
-		if pub.withKey(func(key *C.RSA) C.int {
-			out = make([]byte, C.go_openssl_RSA_size(key))
-			outLen = C.go_openssl_RSA_public_decrypt(C.int(len(sig)), base(sig), base(out), key, C.RSA_PKCS1_PADDING)
-			return outLen
-		}) <= 0 {
-			return newOpenSSLError("RSA_verify")
+		if subtle.ConstantTimeCompare(hashed, out) != 1 {
+			return fail("VerifyRSAPKCS1v15")
 		}
-		if subtle.ConstantTimeCompare(hashed, out[:outLen]) != 1 {
-			return fail("RSA_verify")
-		}
-		return nil
 	}
-	md := cryptoHashToMD(h)
-	if md == nil {
-		return errors.New("crypto/rsa: unsupported hash function")
-	}
-	nid := C.go_openssl_EVP_MD_get_type(md)
-	if pub.withKey(func(key *C.RSA) C.int {
-		return C.go_openssl_RSA_verify(nid, base(hashed), C.uint(len(hashed)),
-			base(sig), C.uint(len(sig)), key)
-	}) == 0 {
-		return newOpenSSLError("RSA_verify failed")
-	}
-	return nil
+	return err
 }

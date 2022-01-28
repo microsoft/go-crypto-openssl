@@ -124,21 +124,6 @@ DEFINEFUNC(int, ECDSA_verify,  \
     (type, dgst, dgstlen, sig, siglen, eckey)) \
 DEFINEFUNC(RSA *, RSA_new, (void), ()) \
 DEFINEFUNC(void, RSA_free, (RSA * arg0), (arg0)) \
-DEFINEFUNC(int, RSA_sign, \
-    (int arg0, const uint8_t *arg1, unsigned int arg2, uint8_t *arg3, unsigned int *arg4, RSA *arg5), \
-    (arg0, arg1, arg2, arg3, arg4, arg5)) \
-DEFINEFUNC(int, RSA_verify, \
-    (int arg0, const uint8_t *arg1, unsigned int arg2, const uint8_t *arg3, unsigned int arg4, RSA *arg5), \
-    (arg0, arg1, arg2, arg3, arg4, arg5)) \
-DEFINEFUNC(int, RSA_private_encrypt, \
-    (int flen, uint8_t *from, uint8_t *to, RSA *rsa, int padding), \
-    (flen, from, to, rsa, padding)) \
-DEFINEFUNC(int, RSA_public_decrypt, \
-    (int flen, uint8_t *from, uint8_t *to, RSA *rsa, int padding), \
-    (flen, from, to, rsa, padding)) \
-DEFINEFUNC(int, RSA_generate_key_ex, \
-    (RSA * arg0, int arg1, BIGNUM *arg2, BN_GENCB *arg3), \
-    (arg0, arg1, arg2, arg3)) \
 DEFINEFUNC_FALLBACK(int, RSA_set0_factors, (RSA * rsa, BIGNUM *p, BIGNUM *q), (rsa, p, q)) \
 DEFINEFUNC_FALLBACK(int, RSA_set0_crt_params, \
     (RSA * rsa, BIGNUM *dmp1, BIGNUM *dmp2, BIGNUM *iqmp), \
@@ -151,7 +136,6 @@ DEFINEFUNC_FALLBACK(void, RSA_get0_factors, (const RSA *rsa, const BIGNUM **p, c
 DEFINEFUNC_FALLBACK(void, RSA_get0_key, \
     (const RSA *rsa, const BIGNUM **n, const BIGNUM **e, const BIGNUM **d), \
     (rsa, n, e, d)) \
-DEFINEFUNC(unsigned int, RSA_size, (const RSA *arg0), (arg0)) \
 DEFINEFUNC(int, EVP_EncryptInit_ex, \
     (EVP_CIPHER_CTX *ctx, const EVP_CIPHER *type, ENGINE *impl, const unsigned char *key, const unsigned char *iv), \
     (ctx, type, impl, key, iv)) \
@@ -179,12 +163,17 @@ DEFINEFUNC(const EVP_CIPHER*, EVP_aes_256_gcm, (void), ()) \
 DEFINEFUNC(void, EVP_CIPHER_CTX_free, (EVP_CIPHER_CTX* arg0), (arg0)) \
 DEFINEFUNC(int, EVP_CIPHER_CTX_ctrl, (EVP_CIPHER_CTX *ctx, int type, int arg, void *ptr), (ctx, type, arg, ptr)) \
 DEFINEFUNC(EVP_PKEY *, EVP_PKEY_new, (void), ()) \
+DEFINEFUNC_RENAMED(int, EVP_PKEY_get_size, EVP_PKEY_size, (const EVP_PKEY *pkey), (pkey)) \
 DEFINEFUNC(void, EVP_PKEY_free, (EVP_PKEY * arg0), (arg0)) \
-DEFINEFUNC(int, EVP_PKEY_set1_RSA, (EVP_PKEY * arg0, RSA *arg1), (arg0, arg1)) \
+DEFINEFUNC(RSA *, EVP_PKEY_get1_RSA, (EVP_PKEY *pkey), (pkey)) \
+DEFINEFUNC(int, EVP_PKEY_assign, (EVP_PKEY *pkey, int type, void *key), (pkey, type, key)) \
 DEFINEFUNC(int, EVP_PKEY_verify, \
     (EVP_PKEY_CTX *ctx, const uint8_t *sig, unsigned int siglen, const uint8_t *tbs, unsigned int tbslen), \
     (ctx, sig, siglen, tbs, tbslen)) \
 DEFINEFUNC(EVP_PKEY_CTX *, EVP_PKEY_CTX_new, (EVP_PKEY * arg0, ENGINE *arg1), (arg0, arg1)) \
+DEFINEFUNC(EVP_PKEY_CTX *, EVP_PKEY_CTX_new_id, (int id, ENGINE *e), (id, e)) \
+DEFINEFUNC(int, EVP_PKEY_keygen_init, (EVP_PKEY_CTX *ctx), (ctx)) \
+DEFINEFUNC(int, EVP_PKEY_keygen, (EVP_PKEY_CTX *ctx, EVP_PKEY **ppkey), (ctx, ppkey)) \
 DEFINEFUNC(void, EVP_PKEY_CTX_free, (EVP_PKEY_CTX * arg0), (arg0)) \
 DEFINEFUNC(int, EVP_PKEY_CTX_ctrl, \
     (EVP_PKEY_CTX * ctx, int keytype, int optype, int cmd, int p1, void *p2), \
