@@ -21,19 +21,29 @@ type ecdsaSignature struct {
 }
 
 type PrivateKeyECDSA struct {
-	key *C.EC_KEY
+	_pkey *C.EVP_PKEY
 }
 
 func (k *PrivateKeyECDSA) finalize() {
-	C.go_openssl_EC_KEY_free(k.key)
+	C.go_openssl_EVP_PKEY_free(k._pkey)
+}
+
+func (k *PrivateKeyECDSA) withKey(f func(*C.EVP_PKEY) C.int) C.int {
+	defer runtime.KeepAlive(k)
+	return f(k._pkey)
 }
 
 type PublicKeyECDSA struct {
-	key *C.EC_KEY
+	_pkey *C.EVP_PKEY
 }
 
 func (k *PublicKeyECDSA) finalize() {
-	C.go_openssl_EC_KEY_free(k.key)
+	C.go_openssl_EVP_PKEY_free(k._pkey)
+}
+
+func (k *PublicKeyECDSA) withKey(f func(*C.EVP_PKEY) C.int) C.int {
+	defer runtime.KeepAlive(k)
+	return f(k._pkey)
 }
 
 var errUnknownCurve = errors.New("openssl: unknown elliptic curve")
@@ -58,7 +68,17 @@ func NewPublicKeyECDSA(curve string, X, Y *big.Int) (*PublicKeyECDSA, error) {
 	if err != nil {
 		return nil, err
 	}
-	k := &PublicKeyECDSA{key}
+	pkey := C.go_openssl_EVP_PKEY_new()
+	if pkey == nil {
+		C.go_openssl_EC_KEY_free(key)
+		return nil, newOpenSSLError("EVP_PKEY_new failed")
+	}
+	if C.go_openssl_EVP_PKEY_assign(pkey, C.EVP_PKEY_EC, (unsafe.Pointer)(key)) != 1 {
+		C.go_openssl_EC_KEY_free(key)
+		C.go_openssl_EVP_PKEY_free(pkey)
+		return nil, newOpenSSLError("EVP_PKEY_assign failed")
+	}
+	k := &PublicKeyECDSA{_pkey: pkey}
 	// Note: Because of the finalizer, any time k.key is passed to cgo,
 	// that call must be followed by a call to runtime.KeepAlive(k),
 	// to make sure k is not collected (and finalized) before the cgo
@@ -114,7 +134,17 @@ func NewPrivateKeyECDSA(curve string, X, Y *big.Int, D *big.Int) (*PrivateKeyECD
 		C.go_openssl_EC_KEY_free(key)
 		return nil, newOpenSSLError("EC_KEY_set_private_key failed")
 	}
-	k := &PrivateKeyECDSA{key}
+	pkey := C.go_openssl_EVP_PKEY_new()
+	if pkey == nil {
+		C.go_openssl_EC_KEY_free(key)
+		return nil, newOpenSSLError("EVP_PKEY_new failed")
+	}
+	if C.go_openssl_EVP_PKEY_assign(pkey, C.EVP_PKEY_EC, (unsafe.Pointer)(key)) != 1 {
+		C.go_openssl_EC_KEY_free(key)
+		C.go_openssl_EVP_PKEY_free(pkey)
+		return nil, newOpenSSLError("EVP_PKEY_assign failed")
+	}
+	k := &PrivateKeyECDSA{_pkey: pkey}
 	// Note: Because of the finalizer, any time k.key is passed to cgo,
 	// that call must be followed by a call to runtime.KeepAlive(k),
 	// to make sure k is not collected (and finalized) before the cgo
@@ -140,14 +170,7 @@ func SignECDSA(priv *PrivateKeyECDSA, hash []byte) (r, s *big.Int, err error) {
 }
 
 func SignMarshalECDSA(priv *PrivateKeyECDSA, hash []byte) ([]byte, error) {
-	size := C.go_openssl_ECDSA_size(priv.key)
-	sig := make([]byte, size)
-	var sigLen C.uint
-	if C.go_openssl_ECDSA_sign(0, base(hash), C.size_t(len(hash)), (*C.uint8_t)(unsafe.Pointer(&sig[0])), &sigLen, priv.key) == 0 {
-		return nil, newOpenSSLError("ECDSA_sign failed")
-	}
-	runtime.KeepAlive(priv)
-	return sig[:sigLen], nil
+	return evpSign(priv.withKey, 0, 0, 0, hash)
 }
 
 func VerifyECDSA(pub *PublicKeyECDSA, hash []byte, r, s *big.Int) bool {
@@ -158,9 +181,8 @@ func VerifyECDSA(pub *PublicKeyECDSA, hash []byte, r, s *big.Int) bool {
 	if err != nil {
 		return false
 	}
-	ok := C.go_openssl_ECDSA_verify(0, base(hash), C.size_t(len(hash)), (*C.uint8_t)(unsafe.Pointer(&sig[0])), C.uint(len(sig)), pub.key) > 0
-	runtime.KeepAlive(pub)
-	return ok
+	_, err = evpVerify(pub.withKey, 0, 0, 0, sig, hash)
+	return err != nil
 }
 
 func GenerateKeyECDSA(curve string) (X, Y, D *big.Int, err error) {

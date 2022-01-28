@@ -115,13 +115,6 @@ DEFINEFUNC(int, EC_KEY_set_private_key, (EC_KEY * arg0, const BIGNUM *arg1), (ar
 DEFINEFUNC(int, EC_KEY_set_public_key, (EC_KEY * arg0, const EC_POINT *arg1), (arg0, arg1)) \
 DEFINEFUNC(const BIGNUM *, EC_KEY_get0_private_key, (const EC_KEY *arg0), (arg0)) \
 DEFINEFUNC(const EC_POINT *, EC_KEY_get0_public_key, (const EC_KEY *arg0), (arg0)) \
-DEFINEFUNC(size_t, ECDSA_size, (const EC_KEY *arg0), (arg0)) \
-DEFINEFUNC(int, ECDSA_sign,  \
-    (int type, const unsigned char *dgst, size_t dgstlen, unsigned char *sig, unsigned int *siglen, EC_KEY *eckey), \
-    (type, dgst, dgstlen, sig, siglen, eckey)) \
-DEFINEFUNC(int, ECDSA_verify,  \
-    (int type, const unsigned char *dgst, size_t dgstlen, const unsigned char *sig, unsigned int siglen, EC_KEY *eckey), \
-    (type, dgst, dgstlen, sig, siglen, eckey)) \
 DEFINEFUNC(RSA *, RSA_new, (void), ()) \
 DEFINEFUNC(void, RSA_free, (RSA * arg0), (arg0)) \
 DEFINEFUNC_FALLBACK(int, RSA_set0_factors, (RSA * rsa, BIGNUM *p, BIGNUM *q), (rsa, p, q)) \
