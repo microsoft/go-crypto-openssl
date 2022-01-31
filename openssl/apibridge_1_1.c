@@ -20,12 +20,9 @@ struct crypto_ex_data_10_st
 
 struct hmac_ctx_st
 {
-    const EVP_MD *md;
-    const void* _ignored0;
-    const void* _ignored1;
-    const void* _ignored2;
-    unsigned int _ignored3;
-    unsigned char _ignored4[128];
+    // 0x120 is the sizeof value when building against OpenSSL 1.0.2 on
+    // Ubuntu 16.04
+    unsigned char _ignored0[0x120];
 };
 struct rsa_st
 {
@@ -83,7 +80,7 @@ local_HMAC_CTX_free(HMAC_CTX* ctx)
 {
     if (ctx != NULL)
     {
-        _goboringcrypto_internal_HMAC_CTX_cleanup(ctx);
+        go_openssl_HMAC_CTX_cleanup(ctx);
         free(ctx);
     }
 }
@@ -94,19 +91,13 @@ local_EVP_MD_CTX_md_data(EVP_MD_CTX *ctx)
     return ctx->md_data;
 }
 
-const EVP_MD*
-local_HMAC_CTX_get_md(const HMAC_CTX* ctx)
-{
-    return ctx->md;
-}
-
 HMAC_CTX*
 local_HMAC_CTX_new()
 {
     HMAC_CTX* ctx = malloc(sizeof(HMAC_CTX));
     if (ctx)
     {
-        _goboringcrypto_internal_HMAC_CTX_init(ctx);
+        go_openssl_HMAC_CTX_init(ctx);
     }
 
     return ctx;
@@ -114,8 +105,8 @@ local_HMAC_CTX_new()
 
 void
 local_HMAC_CTX_reset(HMAC_CTX* ctx) {
-    _goboringcrypto_internal_HMAC_CTX_cleanup(ctx);
-    _goboringcrypto_internal_HMAC_CTX_init(ctx);
+    go_openssl_HMAC_CTX_cleanup(ctx);
+    go_openssl_HMAC_CTX_init(ctx);
 }
 
 struct md5_sha1_ctx {
@@ -126,26 +117,26 @@ struct md5_sha1_ctx {
 static int
 md5_sha1_init(EVP_MD_CTX *ctx)
 {
-  struct md5_sha1_ctx *mctx = _goboringcrypto_internal_EVP_MD_CTX_md_data(ctx);
-  if (!_goboringcrypto_internal_MD5_Init(&mctx->md5))
+  struct md5_sha1_ctx *mctx = go_openssl_EVP_MD_CTX_md_data(ctx);
+  if (!go_openssl_MD5_Init(&mctx->md5))
     return 0;
-  return _goboringcrypto_SHA1_Init(&mctx->sha1);
+  return go_openssl_SHA1_Init(&mctx->sha1);
 }
 
 static int md5_sha1_update(EVP_MD_CTX *ctx, const void *data, size_t count)
 {
-  struct md5_sha1_ctx *mctx = _goboringcrypto_internal_EVP_MD_CTX_md_data(ctx);
-  if (!_goboringcrypto_internal_MD5_Update(&mctx->md5, data, count))
+  struct md5_sha1_ctx *mctx = go_openssl_EVP_MD_CTX_md_data(ctx);
+  if (!go_openssl_MD5_Update(&mctx->md5, data, count))
     return 0;
-  return _goboringcrypto_SHA1_Update(&mctx->sha1, data, count);
+  return go_openssl_SHA1_Update(&mctx->sha1, data, count);
 }
 
 static int md5_sha1_final(EVP_MD_CTX *ctx, unsigned char *md)
 {
-  struct md5_sha1_ctx *mctx = _goboringcrypto_internal_EVP_MD_CTX_md_data(ctx);
-  if (!_goboringcrypto_internal_MD5_Final(md, &mctx->md5))
+  struct md5_sha1_ctx *mctx = go_openssl_EVP_MD_CTX_md_data(ctx);
+  if (!go_openssl_MD5_Final(md, &mctx->md5))
     return 0;
-  return _goboringcrypto_SHA1_Final(md + MD5_DIGEST_LENGTH, &mctx->sha1);
+  return go_openssl_SHA1_Final(md + MD5_DIGEST_LENGTH, &mctx->sha1);
 }
 
 // Change: Removed:
@@ -182,17 +173,17 @@ local_RSA_set0_crt_params(RSA * r, BIGNUM *dmp1, BIGNUM *dmq1, BIGNUM *iqmp)
 
     if (dmp1 != NULL)
     {
-        _goboringcrypto_internal_BN_clear_free(r->dmp1);
+        go_openssl_BN_clear_free(r->dmp1);
         r->dmp1 = dmp1;
     }
     if (dmq1 != NULL)
     {
-        _goboringcrypto_internal_BN_clear_free(r->dmq1);
+        go_openssl_BN_clear_free(r->dmq1);
         r->dmq1 = dmq1;
     }
     if (iqmp != NULL)
     {
-        _goboringcrypto_internal_BN_clear_free(r->iqmp);
+        go_openssl_BN_clear_free(r->iqmp);
         r->iqmp = iqmp;
     }
 
@@ -223,17 +214,17 @@ local_RSA_set0_key(RSA * r, BIGNUM *n, BIGNUM *e, BIGNUM *d)
 
     if (n != NULL) 
     {
-        _goboringcrypto_BN_free(r->n);
+        go_openssl_BN_free(r->n);
         r->n = n;
     }
     if (e != NULL)
     {
-        _goboringcrypto_BN_free(r->e);
+        go_openssl_BN_free(r->e);
         r->e = e;
     }
     if (d != NULL)
     {
-        _goboringcrypto_internal_BN_clear_free(r->d);
+        go_openssl_BN_clear_free(r->d);
         r->d = d;
     }
 
@@ -252,12 +243,12 @@ local_RSA_set0_factors(RSA * r, BIGNUM *p, BIGNUM *q)
 
     if (p != NULL)
     {
-        _goboringcrypto_internal_BN_clear_free(r->p);
+        go_openssl_BN_clear_free(r->p);
         r->p = p;
     }
     if (q != NULL)
     {
-        _goboringcrypto_internal_BN_clear_free(r->q);
+        go_openssl_BN_clear_free(r->q);
         r->q = q;
     }
 
@@ -282,10 +273,4 @@ local_RSA_get0_key(const RSA *rsa, const BIGNUM **n, const BIGNUM **e, const BIG
         *e = rsa->e;
     if (d)
         *d = rsa->d;
-}
-
-int
-local_RSA_pkey_ctx_ctrl(EVP_PKEY_CTX* ctx, int optype, int cmd, int p1, void* p2)
-{
-    return _goboringcrypto_internal_EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_RSA, optype, cmd, p1, p2);
 }

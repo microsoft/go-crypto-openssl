@@ -19,5 +19,7 @@ func TestMain(m *testing.M) {
 		os.Exit(0)
 	}
 	_ = SetFIPS(true) // Skip the error as we still want to run the tests on machines without FIPS support.
+	fmt.Println("OpenSSL version:", VersionText())
+	fmt.Println("FIPS enabled:", FIPS())
 	os.Exit(m.Run())
 }
