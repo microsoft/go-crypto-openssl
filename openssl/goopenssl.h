@@ -80,39 +80,3 @@ go_openssl_EVP_EncryptUpdate_wrapper(EVP_CIPHER_CTX *ctx, uint8_t *out, const ui
     int len;
     go_openssl_EVP_EncryptUpdate(ctx, out, &len, in, in_len);
 }
-
-static inline int
-go_openssl_FIPS_Enabled()
-{
-    if (API_EXISTS(FIPS_mode))
-    {
-        return go_openssl_FIPS_mode();
-    }
-    else
-    {
-        if (go_openssl_EVP_default_properties_is_fips_enabled(NULL) == 0)
-        {
-            return 0;
-        }
-        // EVP_default_properties_is_fips_enabled can return true even if the FIPS provider isn't loaded.
-        // It is only based on the default properties.
-        return go_openssl_OSSL_PROVIDER_available(NULL, "fips");
-    }
-}
-
-static inline int
-go_openssl_FIPS_Enable(int enabled)
-{
-    if (API_EXISTS(FIPS_mode_set))
-    {
-        return go_openssl_FIPS_mode_set(enabled);
-    }
-    else
-    {
-        if (go_openssl_OSSL_PROVIDER_available(NULL, "fips") == 0)
-        {
-            return 0;
-        }
-        return go_openssl_EVP_default_properties_enable_fips(NULL, enabled);
-    }
-}

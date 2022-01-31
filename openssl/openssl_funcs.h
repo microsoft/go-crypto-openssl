@@ -61,6 +61,7 @@ DEFINEFUNC(int, EVP_DigestInit_ex, (EVP_MD_CTX *ctx, const EVP_MD *type, ENGINE 
 DEFINEFUNC(int, EVP_DigestUpdate, (EVP_MD_CTX *ctx, const void *d, size_t cnt), (ctx, d, cnt)) \
 DEFINEFUNC(int, EVP_DigestFinal_ex, (EVP_MD_CTX *ctx, unsigned char *md, unsigned int *s), (ctx, md, s)) \
 DEFINEFUNC_RENAMED(EVP_MD_CTX *, EVP_MD_CTX_new, EVP_MD_CTX_create, (), ()) \
+DEFINEFUNC_RENAMED(void, EVP_MD_CTX_free, EVP_MD_CTX_destroy, (EVP_MD_CTX *ctx), (ctx)) \
 DEFINEFUNC(int, EVP_MD_CTX_copy_ex, (EVP_MD_CTX *out, const EVP_MD_CTX *in), (out, in)) \
 DEFINEFUNC_RENAMED(int, EVP_MD_CTX_reset, EVP_MD_CTX_cleanup, (EVP_MD_CTX *ctx), (ctx)) \
 DEFINEFUNC(const EVP_MD *, EVP_md5, (void), ()) \

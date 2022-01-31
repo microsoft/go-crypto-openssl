@@ -29,6 +29,10 @@ var (
 	sentinelNameV1   = C.CString("FIPS_mode")
 )
 
+// version_major holds the major OpenSSL version.
+// It is only populated if Init has been called.
+var version_major int
+
 // Init loads and initializes OpenSSL.
 // It must be called before any other OpenSSL call.
 //
@@ -49,18 +53,27 @@ func Init(version string) error {
 
 	C.go_openssl_load_functions(handle, v1_0_sentinel, v1_sentinel)
 
-	if v1_0_sentinel != nil {
-		return initV1_0()
-	}
 	if v1_sentinel != nil {
+		version_major = 1
+		if v1_0_sentinel != nil {
+			return initV1_0()
+		}
 		return initV1_1()
 	}
+	version_major = 3
 	return initV3()
 }
 
 // FIPS returns true if OpenSSL is running in FIPS mode, else returns false.
 func FIPS() bool {
-	return C.go_openssl_FIPS_Enabled() == 1
+	// FIPS_mode has been removed in OpenSSL 3
+	if C._g_FIPS_mode != nil {
+		return C.go_openssl_FIPS_mode() == 1
+	}
+	if C.go_openssl_EVP_default_properties_is_fips_enabled(nil) == 0 {
+		return false
+	}
+	return C.go_openssl_OSSL_PROVIDER_available(nil, providerNameFips) == 1
 }
 
 // SetFIPS enables or disables FIPS mode.
@@ -71,8 +84,18 @@ func SetFIPS(enabled bool) error {
 	} else {
 		mode = C.int(0)
 	}
-	if C.go_openssl_FIPS_Enable(mode) != 1 {
-		return newOpenSSLError("openssl: set FIPS mode")
+	// FIPS_mode_set has been removed in OpenSSL 3
+	if C._g_FIPS_mode_set != nil {
+		if C.go_openssl_FIPS_mode_set(mode) != 1 {
+			return newOpenSSLError("openssl: FIPS_mode_set")
+		}
+		return nil
+	}
+	if C.go_openssl_OSSL_PROVIDER_available(nil, providerNameFips) == 0 {
+		return fail("fips provider not available")
+	}
+	if C.go_openssl_EVP_default_properties_enable_fips(nil, mode) != 1 {
+		return newOpenSSLError("openssl: EVP_default_properties_enable_fips")
 	}
 	return nil
 }
