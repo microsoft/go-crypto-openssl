@@ -95,7 +95,7 @@ func (h *evpHash) sum(out []byte) {
 // The EVP_MD_CTX memory layout has changed in OpenSSL 3
 // and the property holding the internal structure is no longer md_data but algctx.
 func (h *evpHash) shaCtx() unsafe.Pointer {
-	switch version_major {
+	switch vMajor {
 	case 1:
 		type mdCtx struct {
 			_       [2]unsafe.Pointer
@@ -112,7 +112,7 @@ func (h *evpHash) shaCtx() unsafe.Pointer {
 		}
 		return (*mdCtx)(unsafe.Pointer(h.ctx)).algctx
 	default:
-		panic("openssl: OpenSSL major version: " + strconv.Itoa(version_major))
+		panic(errUnsuportedVersion())
 	}
 }
 
