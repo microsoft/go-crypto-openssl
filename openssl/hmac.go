@@ -94,7 +94,6 @@ func NewHMAC(h func() hash.Hash, key []byte) hash.Hash {
 type opensslHMAC struct {
 	md        *C.EVP_MD
 	ctx       *C.HMAC_CTX
-	ctx2      *C.HMAC_CTX
 	size      int
 	blockSize int
 	key       []byte
@@ -144,11 +143,11 @@ func (h *opensslHMAC) Sum(in []byte) []byte {
 	// that Sum has no effect on the underlying stream.
 	// In particular it is OK to Sum, then Write more, then Sum again,
 	// and the second Sum acts as if the first didn't happen.
-	h.ctx2 = C.go_openssl_HMAC_CTX_new()
-	if C.go_openssl_HMAC_CTX_copy(h.ctx2, h.ctx) == 0 {
+	ctx2 := C.go_openssl_HMAC_CTX_new()
+	if C.go_openssl_HMAC_CTX_copy(ctx2, h.ctx) == 0 {
 		panic("openssl: HMAC_CTX_copy_ex failed")
 	}
-	C.go_openssl_HMAC_Final(h.ctx2, (*C.uint8_t)(unsafe.Pointer(&h.sum[0])), nil)
-	C.go_openssl_HMAC_CTX_free(h.ctx2)
+	C.go_openssl_HMAC_Final(ctx2, (*C.uint8_t)(unsafe.Pointer(&h.sum[0])), nil)
+	C.go_openssl_HMAC_CTX_free(ctx2)
 	return append(in, h.sum...)
 }
