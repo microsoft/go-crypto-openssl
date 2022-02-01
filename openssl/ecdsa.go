@@ -63,31 +63,7 @@ func curveNID(curve string) (C.int, error) {
 	return 0, errUnknownCurve
 }
 
-func NewPublicKeyECDSA(curve string, X, Y *big.Int) (*PublicKeyECDSA, error) {
-	key, err := newECKey(curve, X, Y)
-	if err != nil {
-		return nil, err
-	}
-	pkey := C.go_openssl_EVP_PKEY_new()
-	if pkey == nil {
-		C.go_openssl_EC_KEY_free(key)
-		return nil, newOpenSSLError("EVP_PKEY_new failed")
-	}
-	if C.go_openssl_EVP_PKEY_assign(pkey, C.EVP_PKEY_EC, (unsafe.Pointer)(key)) != 1 {
-		C.go_openssl_EC_KEY_free(key)
-		C.go_openssl_EVP_PKEY_free(pkey)
-		return nil, newOpenSSLError("EVP_PKEY_assign failed")
-	}
-	k := &PublicKeyECDSA{_pkey: pkey}
-	// Note: Because of the finalizer, any time k.key is passed to cgo,
-	// that call must be followed by a call to runtime.KeepAlive(k),
-	// to make sure k is not collected (and finalized) before the cgo
-	// call returns.
-	runtime.SetFinalizer(k, (*PublicKeyECDSA).finalize)
-	return k, nil
-}
-
-func newECKey(curve string, X, Y *big.Int) (*C.EC_KEY, error) {
+func newECKey(curve string, X, Y, D *big.Int) (*C.EVP_PKEY, error) {
 	nid, err := curveNID(curve)
 	if err != nil {
 		return nil, err
@@ -107,22 +83,16 @@ func newECKey(curve string, X, Y *big.Int) (*C.EC_KEY, error) {
 		C.go_openssl_EC_KEY_free(key)
 		return nil, newOpenSSLError("EC_KEY_set_public_key_affine_coordinates failed")
 	}
-	return key, nil
-}
-
-func NewPrivateKeyECDSA(curve string, X, Y *big.Int, D *big.Int) (*PrivateKeyECDSA, error) {
-	key, err := newECKey(curve, X, Y)
-	if err != nil {
-		return nil, err
-	}
-	bd := bigToBN(D)
-	if bd == nil {
-		return nil, newOpenSSLError("BN_bin2bn failed")
-	}
-	defer C.go_openssl_BN_free(bd)
-	if C.go_openssl_EC_KEY_set_private_key(key, bd) != 1 {
-		C.go_openssl_EC_KEY_free(key)
-		return nil, newOpenSSLError("EC_KEY_set_private_key failed")
+	if D != nil {
+		bd := bigToBN(D)
+		if bd == nil {
+			return nil, newOpenSSLError("BN_bin2bn failed")
+		}
+		defer C.go_openssl_BN_free(bd)
+		if C.go_openssl_EC_KEY_set_private_key(key, bd) != 1 {
+			C.go_openssl_EC_KEY_free(key)
+			return nil, newOpenSSLError("EC_KEY_set_private_key failed")
+		}
 	}
 	pkey := C.go_openssl_EVP_PKEY_new()
 	if pkey == nil {
@@ -133,6 +103,28 @@ func NewPrivateKeyECDSA(curve string, X, Y *big.Int, D *big.Int) (*PrivateKeyECD
 		C.go_openssl_EC_KEY_free(key)
 		C.go_openssl_EVP_PKEY_free(pkey)
 		return nil, newOpenSSLError("EVP_PKEY_assign failed")
+	}
+	return pkey, nil
+}
+
+func NewPublicKeyECDSA(curve string, X, Y *big.Int) (*PublicKeyECDSA, error) {
+	pkey, err := newECKey(curve, X, Y, nil)
+	if err != nil {
+		return nil, err
+	}
+	k := &PublicKeyECDSA{_pkey: pkey}
+	// Note: Because of the finalizer, any time k.key is passed to cgo,
+	// that call must be followed by a call to runtime.KeepAlive(k),
+	// to make sure k is not collected (and finalized) before the cgo
+	// call returns.
+	runtime.SetFinalizer(k, (*PublicKeyECDSA).finalize)
+	return k, nil
+}
+
+func NewPrivateKeyECDSA(curve string, X, Y *big.Int, D *big.Int) (*PrivateKeyECDSA, error) {
+	pkey, err := newECKey(curve, X, Y, D)
+	if err != nil {
+		return nil, err
 	}
 	k := &PrivateKeyECDSA{_pkey: pkey}
 	// Note: Because of the finalizer, any time k.key is passed to cgo,
