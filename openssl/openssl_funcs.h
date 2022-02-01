@@ -100,20 +100,14 @@ DEFINEFUNC(unsigned int, BN_num_bits, (const BIGNUM *arg0), (arg0)) \
 DEFINEFUNC(BIGNUM *, BN_bin2bn, (const uint8_t *arg0, size_t arg1, BIGNUM *arg2), (arg0, arg1, arg2)) \
 DEFINEFUNC(size_t, BN_bn2bin, (const BIGNUM *arg0, uint8_t *arg1), (arg0, arg1)) \
 DEFINEFUNC(void, EC_GROUP_free, (EC_GROUP * arg0), (arg0)) \
-DEFINEFUNC(EC_POINT *, EC_POINT_new, (const EC_GROUP *arg0), (arg0)) \
-DEFINEFUNC(void, EC_POINT_free, (EC_POINT * arg0), (arg0)) \
 DEFINEFUNC(int, EC_POINT_get_affine_coordinates_GFp, \
            (const EC_GROUP *arg0, const EC_POINT *arg1, BIGNUM *arg2, BIGNUM *arg3, BN_CTX *arg4), \
            (arg0, arg1, arg2, arg3, arg4)) \
-DEFINEFUNC(int, EC_POINT_set_affine_coordinates_GFp, \
-           (const EC_GROUP *arg0, EC_POINT *arg1, const BIGNUM *arg2, const BIGNUM *arg3, BN_CTX *arg4), \
-           (arg0, arg1, arg2, arg3, arg4)) \
 DEFINEFUNC(EC_KEY *, EC_KEY_new_by_curve_name, (int arg0), (arg0)) \
+DEFINEFUNC(int, EC_KEY_set_public_key_affine_coordinates, (EC_KEY *key, BIGNUM *x, BIGNUM *y), (key, x, y)) \
 DEFINEFUNC(void, EC_KEY_free, (EC_KEY * arg0), (arg0)) \
 DEFINEFUNC(const EC_GROUP *, EC_KEY_get0_group, (const EC_KEY *arg0), (arg0)) \
-DEFINEFUNC(int, EC_KEY_generate_key, (EC_KEY * arg0), (arg0)) \
 DEFINEFUNC(int, EC_KEY_set_private_key, (EC_KEY * arg0, const BIGNUM *arg1), (arg0, arg1)) \
-DEFINEFUNC(int, EC_KEY_set_public_key, (EC_KEY * arg0, const EC_POINT *arg1), (arg0, arg1)) \
 DEFINEFUNC(const BIGNUM *, EC_KEY_get0_private_key, (const EC_KEY *arg0), (arg0)) \
 DEFINEFUNC(const EC_POINT *, EC_KEY_get0_public_key, (const EC_KEY *arg0), (arg0)) \
 DEFINEFUNC(RSA *, RSA_new, (void), ()) \
@@ -159,6 +153,7 @@ DEFINEFUNC(int, EVP_CIPHER_CTX_ctrl, (EVP_CIPHER_CTX *ctx, int type, int arg, vo
 DEFINEFUNC(EVP_PKEY *, EVP_PKEY_new, (void), ()) \
 DEFINEFUNC_RENAMED(int, EVP_PKEY_get_size, EVP_PKEY_size, (const EVP_PKEY *pkey), (pkey)) \
 DEFINEFUNC(void, EVP_PKEY_free, (EVP_PKEY * arg0), (arg0)) \
+DEFINEFUNC(EC_KEY *, EVP_PKEY_get1_EC_KEY, (EVP_PKEY *pkey), (pkey)) \
 DEFINEFUNC(RSA *, EVP_PKEY_get1_RSA, (EVP_PKEY *pkey), (pkey)) \
 DEFINEFUNC(int, EVP_PKEY_assign, (EVP_PKEY *pkey, int type, void *key), (pkey, type, key)) \
 DEFINEFUNC(int, EVP_PKEY_verify, \

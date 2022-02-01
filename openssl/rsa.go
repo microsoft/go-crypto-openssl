@@ -18,28 +18,55 @@ import (
 	"unsafe"
 )
 
+func evpKeyGen(name string, bits int, curve string) (*C.EVP_PKEY, error) {
+	if (bits == 0 && curve == "") || (bits != 0 && curve != "") {
+		panic("openssl: incorrect evpKeyGen parameters")
+	}
+	var id C.int
+	switch name {
+	case "RSA":
+		id = C.EVP_PKEY_RSA
+	case "EC":
+		id = C.EVP_PKEY_EC
+	default:
+		panic("openssl: unknown pkey name: " + name)
+	}
+	ctx := C.go_openssl_EVP_PKEY_CTX_new_id(id, nil)
+	if ctx == nil {
+		return nil, newOpenSSLError("EVP_PKEY_CTX_new_id failed")
+	}
+	defer C.go_openssl_EVP_PKEY_CTX_free(ctx)
+	if C.go_openssl_EVP_PKEY_keygen_init(ctx) != 1 {
+		return nil, newOpenSSLError("EVP_PKEY_keygen_init failed")
+	}
+	if bits != 0 {
+		if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, id, -1, C.EVP_PKEY_CTRL_RSA_KEYGEN_BITS, C.int(bits), nil) != 1 {
+			return nil, newOpenSSLError("EVP_PKEY_CTX_ctrl failed")
+		}
+	}
+	if curve != "" {
+		nid, err := curveNID(curve)
+		if err != nil {
+			return nil, err
+		}
+		if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, id, -1, C.EVP_PKEY_CTRL_EC_PARAMGEN_CURVE_NID, nid, nil) != 1 {
+			return nil, newOpenSSLError("EVP_PKEY_CTX_ctrl failed")
+		}
+	}
+	var pkey *C.EVP_PKEY
+	if C.go_openssl_EVP_PKEY_keygen(ctx, &pkey) != 1 {
+		return nil, newOpenSSLError("EVP_PKEY_keygen failed")
+	}
+	return pkey, nil
+}
+
 func GenerateKeyRSA(bits int) (N, E, D, P, Q, Dp, Dq, Qinv *big.Int, err error) {
 	bad := func(e error) (N, E, D, P, Q, Dp, Dq, Qinv *big.Int, err error) {
 		return nil, nil, nil, nil, nil, nil, nil, nil, e
 	}
-
-	ctx := C.go_openssl_EVP_PKEY_CTX_new_id(C.EVP_PKEY_RSA, nil)
-	if ctx == nil {
-		return bad(newOpenSSLError("EVP_PKEY_CTX_new_id failed"))
-	}
-	defer C.go_openssl_EVP_PKEY_CTX_free(ctx)
-
-	if C.go_openssl_EVP_PKEY_keygen_init(ctx) != 1 {
-		return bad(newOpenSSLError("EVP_PKEY_keygen_init failed"))
-	}
-
-	if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, C.EVP_PKEY_RSA, -1, C.EVP_PKEY_CTRL_RSA_KEYGEN_BITS, C.int(bits), nil) != 1 {
-		return bad(newOpenSSLError("EVP_PKEY_CTX_ctrl failed"))
-	}
-
-	var pkey *C.EVP_PKEY
-	if C.go_openssl_EVP_PKEY_keygen(ctx, &pkey) != 1 {
-		return bad(newOpenSSLError("EVP_PKEY_keygen failed"))
+	pkey, err := evpKeyGen("RSA", bits, "")
+	if err != nil {
+		return bad(err)
 	}
 	defer C.go_openssl_EVP_PKEY_free(pkey)
 
@@ -47,6 +74,7 @@ func GenerateKeyRSA(bits int) (N, E, D, P, Q, Dp, Dq, Qinv *big.Int, err error) 
 	if key == nil {
 		return bad(newOpenSSLError("EVP_PKEY_get1_RSA failed"))
 	}
+	defer C.go_openssl_RSA_free(key)
 
 	var n, e, d, p, q, dp, dq, qinv *C.BIGNUM
 	C.go_openssl_RSA_get0_key(key, &n, &e, &d)
