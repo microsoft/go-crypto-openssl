@@ -9,31 +9,28 @@ package openssl
 import (
 	"bytes"
 	"crypto"
+	"strconv"
 	"testing"
 )
 
 func TestRSAKeyGeneration(t *testing.T) {
-	for _, size := range []int{128, 1024, 2048, 3072} {
-		priv, pub := newRSAKey(t, size)
-		testRSAKeyBasics(t, priv, pub)
-	}
-}
-
-func testRSAKeyBasics(t *testing.T, priv *PrivateKeyRSA, pub *PublicKeyRSA) {
-	// Cannot call encrypt/decrypt directly. Test via PKCS1v15.
-	msg := []byte("hi!")
-	enc, err := EncryptRSAPKCS1(pub, msg)
-	if err != nil {
-		t.Errorf("EncryptPKCS1v15: %v", err)
-		return
-	}
-	dec, err := DecryptRSAPKCS1(priv, enc)
-	if err != nil {
-		t.Errorf("DecryptPKCS1v15: %v", err)
-		return
-	}
-	if !bytes.Equal(dec, msg) {
-		t.Errorf("got:%x want:%x", dec, msg)
+	for _, size := range []int{2048, 3072} {
+		t.Run(strconv.Itoa(size), func(t *testing.T) {
+			t.Parallel()
+			priv, pub := newRSAKey(t, size)
+			msg := []byte("hi!")
+			enc, err := EncryptRSAPKCS1(pub, msg)
+			if err != nil {
+				t.Fatalf("EncryptPKCS1v15: %v", err)
+			}
+			dec, err := DecryptRSAPKCS1(priv, enc)
+			if err != nil {
+				t.Fatalf("DecryptPKCS1v15: %v", err)
+			}
+			if !bytes.Equal(dec, msg) {
+				t.Fatalf("got:%x want:%x", dec, msg)
+			}
+		})
 	}
 }
 
@@ -134,15 +131,15 @@ func newRSAKey(t *testing.T, size int) (*PrivateKeyRSA, *PublicKeyRSA) {
 	t.Helper()
 	N, E, D, P, Q, Dp, Dq, Qinv, err := GenerateKeyRSA(size)
 	if err != nil {
-		t.Errorf("GenerateKeyRSA(%d): %v", size, err)
+		t.Fatalf("GenerateKeyRSA(%d): %v", size, err)
 	}
 	priv, err := NewPrivateKeyRSA(N, E, D, P, Q, Dp, Dq, Qinv)
 	if err != nil {
-		t.Errorf("NewPrivateKeyRSA(%d): %v", size, err)
+		t.Fatalf("NewPrivateKeyRSA(%d): %v", size, err)
 	}
 	pub, err := NewPublicKeyRSA(N, E)
 	if err != nil {
-		t.Errorf("NewPublicKeyRSA(%d): %v", size, err)
+		t.Fatalf("NewPublicKeyRSA(%d): %v", size, err)
 	}
 	return priv, pub
 }

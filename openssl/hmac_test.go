@@ -13,39 +13,52 @@ import (
 )
 
 func TestHMAC(t *testing.T) {
-	for i, fn := range []func() hash.Hash{NewSHA1, NewSHA224, NewSHA256, NewSHA384, NewSHA512} {
-		h := NewHMAC(fn, nil)
-		h.Write([]byte("hello"))
-		sumHello := h.Sum(nil)
+	var tests = []struct {
+		name string
+		fn   func() hash.Hash
+	}{
+		{"sha1", NewSHA1},
+		{"sha224", NewSHA224},
+		{"sha256", NewSHA256},
+		{"sha384", NewSHA384},
+		{"sha512", NewSHA512},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			h := NewHMAC(tt.fn, nil)
+			h.Write([]byte("hello"))
+			sumHello := h.Sum(nil)
 
-		h = NewHMAC(fn, nil)
-		h.Write([]byte("hello world"))
-		sumHelloWorld := h.Sum(nil)
+			h = NewHMAC(tt.fn, nil)
+			h.Write([]byte("hello world"))
+			sumHelloWorld := h.Sum(nil)
 
-		// Test that Sum has no effect on future Sum or Write operations.
-		// This is a bit unusual as far as usage, but it's allowed
-		// by the definition of Go hash.Hash, and some clients expect it to work.
-		h = NewHMAC(fn, nil)
-		h.Write([]byte("hello"))
-		if sum := h.Sum(nil); !bytes.Equal(sum, sumHello) {
-			t.Fatalf("i %d: 1st Sum after hello = %x, want %x", i, sum, sumHello)
-		}
-		if sum := h.Sum(nil); !bytes.Equal(sum, sumHello) {
-			t.Fatalf("i %d: 2nd Sum after hello = %x, want %x", i, sum, sumHello)
-		}
+			// Test that Sum has no effect on future Sum or Write operations.
+			// This is a bit unusual as far as usage, but it's allowed
+			// by the definition of Go hash.Hash, and some clients expect it to work.
+			h = NewHMAC(tt.fn, nil)
+			h.Write([]byte("hello"))
+			if sum := h.Sum(nil); !bytes.Equal(sum, sumHello) {
+				t.Fatalf("1st Sum after hello = %x, want %x", sum, sumHello)
+			}
+			if sum := h.Sum(nil); !bytes.Equal(sum, sumHello) {
+				t.Fatalf("2nd Sum after hello = %x, want %x", sum, sumHello)
+			}
 
-		h.Write([]byte(" world"))
-		if sum := h.Sum(nil); !bytes.Equal(sum, sumHelloWorld) {
-			t.Fatalf("i %d: 1st Sum after hello world = %x, want %x", i, sum, sumHelloWorld)
-		}
-		if sum := h.Sum(nil); !bytes.Equal(sum, sumHelloWorld) {
-			t.Fatalf("i %d: 2nd Sum after hello world = %x, want %x", i, sum, sumHelloWorld)
-		}
+			h.Write([]byte(" world"))
+			if sum := h.Sum(nil); !bytes.Equal(sum, sumHelloWorld) {
+				t.Fatalf("1st Sum after hello world = %x, want %x", sum, sumHelloWorld)
+			}
+			if sum := h.Sum(nil); !bytes.Equal(sum, sumHelloWorld) {
+				t.Fatalf("2nd Sum after hello world = %x, want %x", sum, sumHelloWorld)
+			}
 
-		h.Reset()
-		h.Write([]byte("hello"))
-		if sum := h.Sum(nil); !bytes.Equal(sum, sumHello) {
-			t.Fatalf("i %d: Sum after Reset + hello = %x, want %x", i, sum, sumHello)
-		}
+			h.Reset()
+			h.Write([]byte("hello"))
+			if sum := h.Sum(nil); !bytes.Equal(sum, sumHello) {
+				t.Fatalf("Sum after Reset + hello = %x, want %x", sum, sumHello)
+			}
+		})
 	}
 }

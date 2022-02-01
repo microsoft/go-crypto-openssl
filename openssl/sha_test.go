@@ -15,41 +15,53 @@ import (
 
 func TestSha(t *testing.T) {
 	msg := []byte("testig")
-	for i, fn := range []func() hash.Hash{NewSHA1, NewSHA224, NewSHA256, NewSHA384, NewSHA512} {
-		h := fn()
-		initSum := h.Sum(nil)
-		n, err := h.Write(msg)
-		if err != nil {
-			t.Errorf("i %d: %v", i, err)
-			continue
-		}
-		if n != len(msg) {
-			t.Errorf("i %d: got: %d, want: %d", i, n, len(msg))
-		}
-		sum := h.Sum(nil)
-		if size := h.Size(); len(sum) != size {
-			t.Errorf("i %d: got: %d, want: %d", i, len(sum), size)
-		}
-		if bytes.Equal(sum, initSum) {
-			t.Errorf("i %d: Write didn't change internal hash state", i)
-		}
+	var tests = []struct {
+		name string
+		fn   func() hash.Hash
+	}{
+		{"sha1", NewSHA1},
+		{"sha224", NewSHA224},
+		{"sha256", NewSHA256},
+		{"sha384", NewSHA384},
+		{"sha512", NewSHA512},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			h := tt.fn()
+			initSum := h.Sum(nil)
+			n, err := h.Write(msg)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if n != len(msg) {
+				t.Errorf("got: %d, want: %d", n, len(msg))
+			}
+			sum := h.Sum(nil)
+			if size := h.Size(); len(sum) != size {
+				t.Errorf("got: %d, want: %d", len(sum), size)
+			}
+			if bytes.Equal(sum, initSum) {
+				t.Error("Write didn't change internal hash state")
+			}
 
-		state, err := h.(encoding.BinaryMarshaler).MarshalBinary()
-		if err != nil {
-			t.Errorf("i: %d: could not marshal: %v", i, err)
-		}
-		h2 := fn()
-		if err := h2.(encoding.BinaryUnmarshaler).UnmarshalBinary(state); err != nil {
-			t.Errorf("i: %d: could not unmarshal: %v", i, err)
-		}
-		if actual, actual2 := h.Sum(nil), h2.Sum(nil); !bytes.Equal(actual, actual2) {
-			t.Errorf("i: %d = 0x%x != marshaled 0x%x", i, actual, actual2)
-		}
+			state, err := h.(encoding.BinaryMarshaler).MarshalBinary()
+			if err != nil {
+				t.Errorf("could not marshal: %v", err)
+			}
+			h2 := tt.fn()
+			if err := h2.(encoding.BinaryUnmarshaler).UnmarshalBinary(state); err != nil {
+				t.Errorf("could not unmarshal: %v", err)
+			}
+			if actual, actual2 := h.Sum(nil), h2.Sum(nil); !bytes.Equal(actual, actual2) {
+				t.Errorf("0x%x != marshaled 0x%x", actual, actual2)
+			}
 
-		h.Reset()
-		sum = h.Sum(nil)
-		if !bytes.Equal(sum, initSum) {
-			t.Errorf("i %d: got:%x want:%x", i, sum, initSum)
-		}
+			h.Reset()
+			sum = h.Sum(nil)
+			if !bytes.Equal(sum, initSum) {
+				t.Errorf("got:%x want:%x", sum, initSum)
+			}
+		})
 	}
 }
