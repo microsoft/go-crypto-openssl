@@ -19,6 +19,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
 	"unsafe"
 )
 
@@ -41,12 +42,13 @@ var vMajor int
 // Init loads and initializes OpenSSL.
 // It must be called before any other OpenSSL call.
 //
-// If version is not empty it will be appended to the OpenSSL shared library name as a version suffix when calling dlopen.
-// For example, "version=1.1.1k-fips" makes Init look for the shared library libcrypto.so.1.1.1k-fips.
-//
-// If version is empty Init will try to load the OpenSSL shared library using a list if supported and well-known version suffixes,
-// going from higher to lower versions.
-func Init(version string) error {
+// If GO_OPENSSL_VERSION_OVERRIDE enviornment variable is not empty, its value will be appended to the OpenSSL shared library name
+// as a version suffix when calling dlopen. For example, "GO_OPENSSL_VERSION_OVERRIDE=1.1.1k-fips"
+// makes Init look for the shared library libcrypto.so.1.1.1k-fips.
+// If GO_OPENSSL_VERSION_OVERRIDE enviornment variable is empty, Init will try to load the OpenSSL shared library
+// using a list if supported and well-known version suffixes, going from higher to lower versions.
+func Init() error {
+	version, _ := syscall.Getenv("GO_OPENSSL_VERSION_OVERRIDE")
 	handle, err := loadLibrary(version)
 	if err != nil {
 		return err
