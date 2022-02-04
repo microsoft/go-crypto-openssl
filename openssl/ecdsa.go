@@ -65,45 +65,56 @@ func curveNID(curve string) (C.int, error) {
 	return 0, errUnknownCurve
 }
 
-func newECKey(curve string, X, Y, D *big.Int) (*C.EVP_PKEY, error) {
-	nid, err := curveNID(curve)
-	if err != nil {
+func newECKey(curve string, X, Y, D *big.Int) (pkey *C.EVP_PKEY, err error) {
+	var key *C.EC_KEY
+	var bx, by, bd *C.BIGNUM
+	defer func() {
+		if bx != nil {
+			C.go_openssl_BN_free(bx)
+		}
+		if by != nil {
+			C.go_openssl_BN_free(by)
+		}
+		if bd != nil {
+			C.go_openssl_BN_free(bd)
+		}
+		if err != nil {
+			if key != nil {
+				C.go_openssl_EC_KEY_free(key)
+			}
+			if pkey != nil {
+				C.go_openssl_EVP_PKEY_free(pkey)
+				pkey = nil
+			}
+		}
+	}()
+	var nid C.int
+	if nid, err = curveNID(curve); err != nil {
 		return nil, err
 	}
-	key := C.go_openssl_EC_KEY_new_by_curve_name(nid)
-	if key == nil {
+	if key = C.go_openssl_EC_KEY_new_by_curve_name(nid); key == nil {
 		return nil, newOpenSSLError("EC_KEY_new_by_curve_name failed")
 	}
-	bx := bigToBN(X)
-	by := bigToBN(Y)
+	bx = bigToBN(X)
+	by = bigToBN(Y)
 	if bx == nil || by == nil {
 		return nil, newOpenSSLError("BN_bin2bn failed")
 	}
-	defer C.go_openssl_BN_free(bx)
-	defer C.go_openssl_BN_free(by)
 	if C.go_openssl_EC_KEY_set_public_key_affine_coordinates(key, bx, by) != 1 {
-		C.go_openssl_EC_KEY_free(key)
 		return nil, newOpenSSLError("EC_KEY_set_public_key_affine_coordinates failed")
 	}
 	if D != nil {
-		bd := bigToBN(D)
-		if bd == nil {
+		if bd = bigToBN(D); bd == nil {
 			return nil, newOpenSSLError("BN_bin2bn failed")
 		}
-		defer C.go_openssl_BN_free(bd)
 		if C.go_openssl_EC_KEY_set_private_key(key, bd) != 1 {
-			C.go_openssl_EC_KEY_free(key)
 			return nil, newOpenSSLError("EC_KEY_set_private_key failed")
 		}
 	}
-	pkey := C.go_openssl_EVP_PKEY_new()
-	if pkey == nil {
-		C.go_openssl_EC_KEY_free(key)
+	if pkey = C.go_openssl_EVP_PKEY_new(); pkey == nil {
 		return nil, newOpenSSLError("EVP_PKEY_new failed")
 	}
 	if C.go_openssl_EVP_PKEY_assign(pkey, C.EVP_PKEY_EC, (unsafe.Pointer)(key)) != 1 {
-		C.go_openssl_EC_KEY_free(key)
-		C.go_openssl_EVP_PKEY_free(pkey)
 		return nil, newOpenSSLError("EVP_PKEY_assign failed")
 	}
 	return pkey, nil
@@ -186,11 +197,14 @@ func GenerateKeyECDSA(curve string) (X, Y, D *big.Int, err error) {
 		return nil, nil, nil, newOpenSSLError("EC_KEY_get0_private_key failed")
 	}
 	bx := C.go_openssl_BN_new()
-	by := C.go_openssl_BN_new()
-	if bx == nil || by == nil {
+	if bx == nil {
 		return nil, nil, nil, newOpenSSLError("BN_new failed")
 	}
 	defer C.go_openssl_BN_free(bx)
+	by := C.go_openssl_BN_new()
+	if by == nil {
+		return nil, nil, nil, newOpenSSLError("BN_new failed")
+	}
 	defer C.go_openssl_BN_free(by)
 	if C.go_openssl_EC_POINT_get_affine_coordinates_GFp(group, pt, bx, by, nil) == 0 {
 		return nil, nil, nil, newOpenSSLError("EC_POINT_get_affine_coordinates_GFp failed")
