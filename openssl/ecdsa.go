@@ -21,6 +21,7 @@ type ecdsaSignature struct {
 }
 
 type PrivateKeyECDSA struct {
+	// _pkey MUST NOT be accessed directly. Instead, use the withKey method.
 	_pkey *C.EVP_PKEY
 }
 
@@ -34,6 +35,7 @@ func (k *PrivateKeyECDSA) withKey(f func(*C.EVP_PKEY) C.int) C.int {
 }
 
 type PublicKeyECDSA struct {
+	// _pkey MUST NOT be accessed directly. Instead, use the withKey method.
 	_pkey *C.EVP_PKEY
 }
 
