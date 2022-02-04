@@ -71,9 +71,9 @@ func TestEncryptDecryptOAEP_WrongLabel(t *testing.T) {
 
 func TestSignVerifyPKCS1v15(t *testing.T) {
 	sha256 := NewSHA256()
-	msg := []byte("hi!")
 	priv, pub := newRSAKey(t, 2048)
-	hashed := sha256.Sum(msg)
+	sha256.Write([]byte("hi!"))
+	hashed := sha256.Sum(nil)
 	signed, err := SignRSAPKCS1v15(priv, crypto.SHA256, hashed)
 	if err != nil {
 		t.Fatal(err)
@@ -101,7 +101,8 @@ func TestSignVerifyPKCS1v15_Invalid(t *testing.T) {
 	sha256 := NewSHA256()
 	msg := []byte("hi!")
 	priv, pub := newRSAKey(t, 2048)
-	hashed := sha256.Sum(msg)
+	sha256.Write(msg)
+	hashed := sha256.Sum(nil)
 	signed, err := SignRSAPKCS1v15(priv, crypto.SHA256, hashed)
 	if err != nil {
 		t.Fatal(err)
@@ -115,7 +116,7 @@ func TestSignVerifyPKCS1v15_Invalid(t *testing.T) {
 func TestSignVerifyRSAPSS(t *testing.T) {
 	sha1 := NewSHA1()
 	priv, pub := newRSAKey(t, 2048)
-	sha1.Sum([]byte("testing"))
+	sha1.Write([]byte("testing"))
 	hashed := sha1.Sum(nil)
 	signed, err := SignRSAPSS(priv, crypto.SHA1, hashed, 0)
 	if err != nil {
