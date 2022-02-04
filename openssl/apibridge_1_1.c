@@ -72,16 +72,6 @@ local_HMAC_CTX_reset(HMAC_CTX* ctx) {
     go_openssl_HMAC_CTX_init(ctx);
 }
 
-const void* local_EVP_md5_sha1(void)
-{
-    // MD5SHA1 is not implemented in OpenSSL 1.0.2.
-    // It is implemented in higher versions but without FIPS support.
-    // We don't want to support it because it requires a some efford to
-    // implement it for OpenSSL 1.0.2 and it is considered a deprecated digest,
-    // not approved by FIPS 140-2 and only used in pre-TLS 1.2.
-  return NULL;
-}
-
 int
 local_RSA_set0_crt_params(RSA * r, BIGNUM *dmp1, BIGNUM *dmq1, BIGNUM *iqmp)
 {

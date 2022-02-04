@@ -35,9 +35,9 @@ func errUnsuportedVersion() error {
 	return errors.New("openssl: OpenSSL major version: " + strconv.Itoa(vMajor))
 }
 
-// vMajor holds the major OpenSSL version.
+// vMajor and vMinor hold the major/minor OpenSSL version.
 // It is only populated if Init has been called.
-var vMajor int
+var vMajor, vMinor int
 
 // Init loads and initializes OpenSSL.
 // It must be called before any other OpenSSL call.
@@ -63,11 +63,14 @@ func Init() error {
 	if v1_sentinel != nil {
 		vMajor = 1
 		if v1_0_sentinel != nil {
+			vMinor = 0
 			return initV1_0()
 		}
+		vMinor = 1
 		return initV1_1()
 	}
 	vMajor = 3
+	vMinor = 0
 	return initV3()
 }
 

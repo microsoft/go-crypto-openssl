@@ -72,7 +72,7 @@ DEFINEFUNC(const EVP_MD *, EVP_sha384, (void), ()) \
 DEFINEFUNC(const EVP_MD *, EVP_sha512, (void), ()) \
 DEFINEFUNC_RENAMED(int, EVP_MD_get_type, EVP_MD_type, (const EVP_MD *arg0), (arg0)) \
 DEFINEFUNC_RENAMED(size_t, EVP_MD_get_size, EVP_MD_size, (const EVP_MD *arg0), (arg0)) \
-DEFINEFUNC_FALLBACK(const EVP_MD*, EVP_md5_sha1, (void), ()) \
+DEFINEFUNC_1_1(const EVP_MD*, EVP_md5_sha1, (void), ()) \
 DEFINEFUNC_LEGACY_1_0(void, HMAC_CTX_init, (HMAC_CTX * arg0), (arg0)) \
 DEFINEFUNC_LEGACY_1_0(void, HMAC_CTX_cleanup, (HMAC_CTX * arg0), (arg0)) \
 DEFINEFUNC(int, HMAC_Init_ex, \
