@@ -92,7 +92,7 @@ func NewHMAC(h func() hash.Hash, key []byte) hash.Hash {
 		size:      ch.Size(),
 		blockSize: ch.BlockSize(),
 		key:       hkey,
-		ctx:       C.go_openssl_HMAC_CTX_new(),
+		ctx:       hmac_ctx_new(),
 	}
 	runtime.SetFinalizer(hmac, (*opensslHMAC).finalize)
 	hmac.Reset()
@@ -109,7 +109,7 @@ type opensslHMAC struct {
 }
 
 func (h *opensslHMAC) Reset() {
-	C.go_openssl_HMAC_CTX_reset(h.ctx)
+	hmac_ctx_reset(h.ctx)
 
 	if C.go_openssl_HMAC_Init_ex(h.ctx, unsafe.Pointer(base(h.key)), C.int(len(h.key)), h.md, nil) == 0 {
 		panic("openssl: HMAC_Init failed")
@@ -123,7 +123,7 @@ func (h *opensslHMAC) Reset() {
 }
 
 func (h *opensslHMAC) finalize() {
-	C.go_openssl_HMAC_CTX_free(h.ctx)
+	hmac_ctx_free(h.ctx)
 }
 
 func (h *opensslHMAC) Write(p []byte) (int, error) {
@@ -151,11 +151,47 @@ func (h *opensslHMAC) Sum(in []byte) []byte {
 	// that Sum has no effect on the underlying stream.
 	// In particular it is OK to Sum, then Write more, then Sum again,
 	// and the second Sum acts as if the first didn't happen.
-	ctx2 := C.go_openssl_HMAC_CTX_new()
+	ctx2 := hmac_ctx_new()
 	if C.go_openssl_HMAC_CTX_copy(ctx2, h.ctx) == 0 {
 		panic("openssl: HMAC_CTX_copy_ex failed")
 	}
 	C.go_openssl_HMAC_Final(ctx2, (*C.uint8_t)(unsafe.Pointer(&h.sum[0])), nil)
-	C.go_openssl_HMAC_CTX_free(ctx2)
+	hmac_ctx_free(ctx2)
 	return append(in, h.sum...)
+}
+
+func hmac_ctx_reset(ctx *C.HMAC_CTX) {
+	if ctx == nil {
+		return
+	}
+	if vMajor == 1 && vMinor == 0 {
+		C.go_openssl_HMAC_CTX_cleanup(ctx)
+		C.go_openssl_HMAC_CTX_init(ctx)
+		return
+	}
+	C.go_openssl_HMAC_CTX_reset(ctx)
+}
+
+func hmac_ctx_new() *C.HMAC_CTX {
+	if vMajor == 1 && vMinor == 0 {
+		// 0x120 is the sizeof value when building against OpenSSL 1.0.2 on Ubuntu 16.04.
+		ctx := (*C.HMAC_CTX)(C.malloc(0x120))
+		if ctx != nil {
+			C.go_openssl_HMAC_CTX_init(ctx)
+		}
+		return ctx
+	}
+	return C.go_openssl_HMAC_CTX_new()
+}
+
+func hmac_ctx_free(ctx *C.HMAC_CTX) {
+	if ctx == nil {
+		return
+	}
+	if vMajor == 1 && vMinor == 0 {
+		C.go_openssl_HMAC_CTX_cleanup(ctx)
+		C.free(unsafe.Pointer(ctx))
+		return
+	}
+	C.go_openssl_HMAC_CTX_free(ctx)
 }

@@ -18,6 +18,34 @@ import (
 	"unsafe"
 )
 
+// rsa_st_1_0_2 is rsa_st memory layout in OpenSSL 1.0.2.
+type rsa_st_1_0_2 struct {
+	_    C.int
+	_    C.long
+	_    unsafe.Pointer
+	_    unsafe.Pointer
+	n    *C.BIGNUM
+	e    *C.BIGNUM
+	d    *C.BIGNUM
+	p    *C.BIGNUM
+	q    *C.BIGNUM
+	dmp1 *C.BIGNUM
+	dmq1 *C.BIGNUM
+	iqmp *C.BIGNUM
+	// It contains more fields, but we are not interesed on them.
+}
+
+func rsa_st_set_key(key *C.RSA, n, e, d *C.BIGNUM) {
+	if vMajor == 1 && vMinor == 0 {
+		key1_0_2 := (*rsa_st_1_0_2)(unsafe.Pointer(key))
+		key1_0_2.n = n
+		key1_0_2.e = e
+		key1_0_2.d = d
+	} else {
+		C.go_openssl_RSA_set0_key(key, n, e, d)
+	}
+}
+
 func evpKeyGen(name string, bits int, curve string) (*C.EVP_PKEY, error) {
 	if (bits == 0 && curve == "") || (bits != 0 && curve != "") {
 		panic("openssl: incorrect evpKeyGen parameters")
@@ -77,9 +105,21 @@ func GenerateKeyRSA(bits int) (N, E, D, P, Q, Dp, Dq, Qinv *big.Int, err error) 
 	defer C.go_openssl_RSA_free(key)
 
 	var n, e, d, p, q, dp, dq, qinv *C.BIGNUM
-	C.go_openssl_RSA_get0_key(key, &n, &e, &d)
-	C.go_openssl_RSA_get0_factors(key, &p, &q)
-	C.go_openssl_RSA_get0_crt_params(key, &dp, &dq, &qinv)
+	if vMajor == 1 && vMinor == 0 {
+		key1_0_2 := (*rsa_st_1_0_2)(unsafe.Pointer(key))
+		n = key1_0_2.n
+		e = key1_0_2.e
+		d = key1_0_2.d
+		p = key1_0_2.p
+		q = key1_0_2.q
+		dp = key1_0_2.dmp1
+		dq = key1_0_2.dmq1
+		qinv = key1_0_2.iqmp
+	} else {
+		C.go_openssl_RSA_get0_key(key, &n, &e, &d)
+		C.go_openssl_RSA_get0_factors(key, &p, &q)
+		C.go_openssl_RSA_get0_crt_params(key, &dp, &dq, &qinv)
+	}
 	return bnToBig(n), bnToBig(e), bnToBig(d), bnToBig(p), bnToBig(q), bnToBig(dp), bnToBig(dq), bnToBig(qinv), nil
 }
 
@@ -96,7 +136,7 @@ func NewPublicKeyRSA(N, E *big.Int) (*PublicKeyRSA, error) {
 	var n, e *C.BIGNUM
 	n = bigToBN(N)
 	e = bigToBN(E)
-	C.go_openssl_RSA_set0_key(key, n, e, nil)
+	rsa_st_set_key(key, n, e, nil)
 	pkey := C.go_openssl_EVP_PKEY_new()
 	if pkey == nil {
 		C.go_openssl_RSA_free(key)
@@ -138,17 +178,30 @@ func NewPrivateKeyRSA(N, E, D, P, Q, Dp, Dq, Qinv *big.Int) (*PrivateKeyRSA, err
 	n = bigToBN(N)
 	e = bigToBN(E)
 	d = bigToBN(D)
-	C.go_openssl_RSA_set0_key(key, n, e, d)
+	rsa_st_set_key(key, n, e, d)
 	if P != nil && Q != nil {
 		p = bigToBN(P)
 		q = bigToBN(Q)
-		C.go_openssl_RSA_set0_factors(key, p, q)
+		if vMajor == 1 && vMinor == 0 {
+			key1_0_2 := (*rsa_st_1_0_2)(unsafe.Pointer(key))
+			key1_0_2.p = p
+			key1_0_2.q = q
+		} else {
+			C.go_openssl_RSA_set0_factors(key, p, q)
+		}
 	}
 	if Dp != nil && Dq != nil && Qinv != nil {
 		dp = bigToBN(Dp)
 		dq = bigToBN(Dq)
 		qinv = bigToBN(Qinv)
-		C.go_openssl_RSA_set0_crt_params(key, dp, dq, qinv)
+		if vMajor == 1 && vMinor == 0 {
+			key1_0_2 := (*rsa_st_1_0_2)(unsafe.Pointer(key))
+			key1_0_2.dmp1 = dq
+			key1_0_2.dmq1 = dq
+			key1_0_2.iqmp = qinv
+		} else {
+			C.go_openssl_RSA_set0_crt_params(key, dp, dq, qinv)
+		}
 	}
 	pkey := C.go_openssl_EVP_PKEY_new()
 	if pkey == nil {
