@@ -72,6 +72,7 @@ DEFINEFUNC(const EVP_MD *, EVP_sha384, (void), ()) \
 DEFINEFUNC(const EVP_MD *, EVP_sha512, (void), ()) \
 DEFINEFUNC_RENAMED(int, EVP_MD_get_type, EVP_MD_type, (const EVP_MD *arg0), (arg0)) \
 DEFINEFUNC_RENAMED(size_t, EVP_MD_get_size, EVP_MD_size, (const EVP_MD *arg0), (arg0)) \
+DEFINEFUNC_3_0(const char*, EVP_MD_get0_name, (const EVP_MD *md), (md)) \
 DEFINEFUNC_1_1(const EVP_MD*, EVP_md5_sha1, (void), ()) \
 DEFINEFUNC_LEGACY_1_0(void, HMAC_CTX_init, (HMAC_CTX * arg0), (arg0)) \
 DEFINEFUNC_LEGACY_1_0(void, HMAC_CTX_cleanup, (HMAC_CTX * arg0), (arg0)) \
@@ -179,4 +180,15 @@ DEFINEFUNC(int, EVP_PKEY_sign_init, (EVP_PKEY_CTX * arg0), (arg0)) \
 DEFINEFUNC(int, EVP_PKEY_verify_init, (EVP_PKEY_CTX * arg0), (arg0)) \
 DEFINEFUNC(int, EVP_PKEY_sign, \
     (EVP_PKEY_CTX * arg0, uint8_t *arg1, unsigned int *arg2, const uint8_t *arg3, unsigned int arg4), \
-    (arg0, arg1, arg2, arg3, arg4))
+    (arg0, arg1, arg2, arg3, arg4)) \
+DEFINEFUNC_3_0(EVP_MAC_CTX*, EVP_MAC_CTX_new, (EVP_MAC *mac), (mac)) \
+DEFINEFUNC_3_0(void*, EVP_MAC_CTX_free, (EVP_MAC_CTX *ctx), (ctx)) \
+DEFINEFUNC_3_0(EVP_MAC_CTX*, EVP_MAC_CTX_dup, (EVP_MAC_CTX *ctx), (ctx)) \
+DEFINEFUNC_3_0(int, EVP_MAC_CTX_set_params, (EVP_MAC_CTX *ctx, const OSSL_PARAM params[]), (ctx, params)) \
+DEFINEFUNC_3_0(EVP_MAC*, EVP_MAC_fetch, (void* libctx, const char *algorithm, const char *properties), (libctx, algorithm, properties)) \
+DEFINEFUNC_3_0(int, EVP_MAC_init, (EVP_MAC_CTX *ctx, const unsigned char *key, size_t keylen, const OSSL_PARAM params[]), (ctx, key, keylen, params)) \
+DEFINEFUNC_3_0(int, EVP_MAC_update, (EVP_MAC_CTX *ctx, const unsigned char *data, size_t datalen), (ctx, data, datalen)) \
+DEFINEFUNC_3_0(int, EVP_MAC_final, (EVP_MAC_CTX *ctx, unsigned char *out, size_t *outl, size_t outsize), (ctx, out, outl, outsize)) \
+DEFINEFUNC_3_0(OSSL_PARAM, OSSL_PARAM_construct_octet_string, (const char *key, void *buf, size_t bsize), (key, buf, bsize)) \
+DEFINEFUNC_3_0(OSSL_PARAM, OSSL_PARAM_construct_utf8_string, (const char *key, char *buf, size_t bsize), (key, buf, bsize)) \
+DEFINEFUNC_3_0(OSSL_PARAM, OSSL_PARAM_construct_end, (void), ())

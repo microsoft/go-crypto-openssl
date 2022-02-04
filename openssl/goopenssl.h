@@ -7,8 +7,6 @@
 #include <stdint.h> // uint8_t, getenv
 #include <string.h> // strnlen
 
-#include "openssl_funcs.h"
-
 #include <openssl/ossl_typ.h>
 #include <openssl/opensslv.h>
 #include <openssl/crypto.h>
@@ -36,6 +34,21 @@ void go_openssl_load_functions(void* handle, const void* v1_0_sentinel, const vo
 #define OPENSSL_VERSION_1_0_2_RTM 0x10002000L
 
 #define API_EXISTS(func) (_g_##func != NULL)
+
+
+#if OPENSSL_VERSION_NUMBER < OPENSSL_VERSION_3_0_RTM
+typedef void* EVP_MAC;
+typedef void* EVP_MAC_CTX;
+typedef struct ossl_param_st {
+    const char *key;     
+    unsigned int data_type; 
+    void *data;
+    size_t data_size;
+    size_t return_size;
+} OSSL_PARAM;
+#endif
+
+#include "openssl_funcs.h"
 
 // Define pointers to all the used OpenSSL functions.
 // Calling C function pointers from Go is currently not supported.

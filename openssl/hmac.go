@@ -15,6 +15,11 @@ import (
 	"unsafe"
 )
 
+var (
+	macNameHMAC    = C.CString("HMAC")
+	macParamDigest = C.CString("digest")
+)
+
 // hashToMD converts a hash.Hash implementation from this package
 // to an OpenSSL *C.EVP_MD.
 func hashToMD(h hash.Hash) *C.EVP_MD {
@@ -87,19 +92,108 @@ func NewHMAC(h func() hash.Hash, key []byte) hash.Hash {
 		// we pass an "empty" key.
 		hkey = make([]byte, C.EVP_MAX_MD_SIZE)
 	}
-	hmac := &opensslHMAC{
-		md:        md,
-		size:      ch.Size(),
-		blockSize: ch.BlockSize(),
-		key:       hkey,
-		ctx:       hmac_ctx_new(),
+	switch vMajor {
+	case 1:
+		hmac := &openssl1HMAC{
+			md:        md,
+			size:      ch.Size(),
+			blockSize: ch.BlockSize(),
+			key:       hkey,
+			ctx:       hmac_ctx_new(),
+		}
+		runtime.SetFinalizer(hmac, (*openssl1HMAC).finalize)
+		hmac.Reset()
+		return hmac
+	case 3:
+		mac := C.go_openssl_EVP_MAC_fetch(nil, macNameHMAC, nil)
+		if mac == nil {
+			panic("openssl: EVP_MAC_fetch failed")
+		}
+		ctx := C.go_openssl_EVP_MAC_CTX_new(mac)
+		if ctx == nil {
+			panic("openssl: EVP_MAC_CTX_new failed")
+		}
+		var params [2]C.OSSL_PARAM
+		params[0] = C.go_openssl_OSSL_PARAM_construct_utf8_string(macParamDigest, C.go_openssl_EVP_MD_get0_name(md), 0)
+		params[1] = C.go_openssl_OSSL_PARAM_construct_end()
+		if C.go_openssl_EVP_MAC_CTX_set_params(ctx, &params[0]) != 1 {
+			panic("openssl: EVP_MAC_CTX_set_params failed")
+		}
+		hmac := &openssl3HMAC{
+			size:      ch.Size(),
+			blockSize: ch.BlockSize(),
+			key:       hkey,
+			ctx:       ctx,
+		}
+		runtime.SetFinalizer(hmac, (*openssl3HMAC).finalize)
+		hmac.Reset()
+		return hmac
+	default:
+		panic(errUnsuportedVersion())
 	}
-	runtime.SetFinalizer(hmac, (*opensslHMAC).finalize)
-	hmac.Reset()
-	return hmac
 }
 
-type opensslHMAC struct {
+// openssl3HMAC implements HMAC using EVP_MAC_CTX.
+// It should not be used with OpenSSL 1 as it was added in
+// OpenSSL 3.
+type openssl3HMAC struct {
+	ctx       *C.EVP_MAC_CTX
+	size      int
+	blockSize int
+	key       []byte
+	sum       []byte
+}
+
+func (h *openssl3HMAC) Reset() {
+	if C.go_openssl_EVP_MAC_init(h.ctx, base(h.key), C.size_t(len(h.key)), nil) == 0 {
+		panic("openssl: EVP_MAC_init failed")
+	}
+	runtime.KeepAlive(h) // Next line will keep h alive too; just making doubly sure.
+	h.sum = nil
+}
+
+func (h *openssl3HMAC) finalize() {
+	C.go_openssl_EVP_MAC_CTX_free(h.ctx)
+}
+
+func (h *openssl3HMAC) Write(p []byte) (int, error) {
+	if len(p) > 0 {
+		C.go_openssl_EVP_MAC_update(h.ctx, (*C.uint8_t)(unsafe.Pointer(&p[0])), C.size_t(len(p)))
+	}
+	runtime.KeepAlive(h)
+	return len(p), nil
+}
+
+func (h *openssl3HMAC) Size() int {
+	return h.size
+}
+
+func (h *openssl3HMAC) BlockSize() int {
+	return h.blockSize
+}
+
+func (h *openssl3HMAC) Sum(in []byte) []byte {
+	if h.sum == nil {
+		size := h.Size()
+		h.sum = make([]byte, size)
+	}
+	// Make copy of context because Go hash.Hash mandates
+	// that Sum has no effect on the underlying stream.
+	// In particular it is OK to Sum, then Write more, then Sum again,
+	// and the second Sum acts as if the first didn't happen.
+	ctx2 := C.go_openssl_EVP_MAC_CTX_dup(h.ctx)
+	if ctx2 == nil {
+		panic("openssl: EVP_MAC_CTX_dup failed")
+	}
+	C.go_openssl_EVP_MAC_final(ctx2, (*C.uint8_t)(unsafe.Pointer(&h.sum[0])), nil, C.size_t(len(h.sum)))
+	C.go_openssl_EVP_MAC_CTX_free(ctx2)
+	return append(in, h.sum...)
+}
+
+// openssl1HMAC implements HMAC using HMAC_CTX.
+// It should only be used with OpenSSL 1 as it
+// is deprecated since OpenSSL 3.
+type openssl1HMAC struct {
 	md        *C.EVP_MD
 	ctx       *C.HMAC_CTX
 	size      int
@@ -108,7 +202,7 @@ type opensslHMAC struct {
 	sum       []byte
 }
 
-func (h *opensslHMAC) Reset() {
+func (h *openssl1HMAC) Reset() {
 	hmac_ctx_reset(h.ctx)
 
 	if C.go_openssl_HMAC_Init_ex(h.ctx, unsafe.Pointer(base(h.key)), C.int(len(h.key)), h.md, nil) == 0 {
@@ -122,11 +216,11 @@ func (h *opensslHMAC) Reset() {
 	h.sum = nil
 }
 
-func (h *opensslHMAC) finalize() {
+func (h *openssl1HMAC) finalize() {
 	hmac_ctx_free(h.ctx)
 }
 
-func (h *opensslHMAC) Write(p []byte) (int, error) {
+func (h *openssl1HMAC) Write(p []byte) (int, error) {
 	if len(p) > 0 {
 		C.go_openssl_HMAC_Update(h.ctx, (*C.uint8_t)(unsafe.Pointer(&p[0])), C.size_t(len(p)))
 	}
@@ -134,15 +228,15 @@ func (h *opensslHMAC) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-func (h *opensslHMAC) Size() int {
+func (h *openssl1HMAC) Size() int {
 	return h.size
 }
 
-func (h *opensslHMAC) BlockSize() int {
+func (h *openssl1HMAC) BlockSize() int {
 	return h.blockSize
 }
 
-func (h *opensslHMAC) Sum(in []byte) []byte {
+func (h *openssl1HMAC) Sum(in []byte) []byte {
 	if h.sum == nil {
 		size := h.Size()
 		h.sum = make([]byte, size)
