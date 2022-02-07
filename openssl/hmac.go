@@ -9,7 +9,6 @@ package openssl
 // #include "goopenssl.h"
 import "C"
 import (
-	"crypto"
 	"hash"
 	"runtime"
 	"unsafe"
@@ -19,54 +18,6 @@ var (
 	macNameHMAC    = C.CString("HMAC")
 	macParamDigest = C.CString("digest")
 )
-
-// hashToMD converts a hash.Hash implementation from this package
-// to an OpenSSL *C.EVP_MD.
-func hashToMD(h hash.Hash) *C.EVP_MD {
-	switch h.(type) {
-	case *sha1Hash:
-		return C.go_openssl_EVP_sha1()
-	case *sha224Hash:
-		return C.go_openssl_EVP_sha224()
-	case *sha256Hash:
-		return C.go_openssl_EVP_sha256()
-	case *sha384Hash:
-		return C.go_openssl_EVP_sha384()
-	case *sha512Hash:
-		return C.go_openssl_EVP_sha512()
-	}
-	return nil
-}
-
-// cryptoHashToMD converts a crypto.Hash
-// to an OpenSSL *C.EVP_MD.
-func cryptoHashToMD(ch crypto.Hash) *C.EVP_MD {
-	switch ch {
-	case crypto.MD5:
-		return C.go_openssl_EVP_md5()
-	case crypto.MD5SHA1:
-		if vMajor == 1 && vMinor == 0 {
-			// MD5SHA1 is not implemented in OpenSSL 1.0.2.
-			// It is implemented in higher versions but without FIPS support.
-			// It is considered a deprecated digest, not approved by FIPS 140-2
-			// and only used in pre-TLS 1.2, so we would rather not support it
-			// if using 1.0.2 than than implement something that is not properly validated.
-			return nil
-		}
-		return C.go_openssl_EVP_md5_sha1()
-	case crypto.SHA1:
-		return C.go_openssl_EVP_sha1()
-	case crypto.SHA224:
-		return C.go_openssl_EVP_sha224()
-	case crypto.SHA256:
-		return C.go_openssl_EVP_sha256()
-	case crypto.SHA384:
-		return C.go_openssl_EVP_sha384()
-	case crypto.SHA512:
-		return C.go_openssl_EVP_sha512()
-	}
-	return nil
-}
 
 // NewHMAC returns a new HMAC using OpenSSL.
 // The function h must return a hash implemented by
