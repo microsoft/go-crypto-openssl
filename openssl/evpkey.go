@@ -15,6 +15,46 @@ import (
 	"unsafe"
 )
 
+// hashToMD converts a hash.Hash implementation from this package
+// to an OpenSSL *C.EVP_MD.
+func hashToMD(h hash.Hash) *C.EVP_MD {
+	switch h.(type) {
+	case *sha1Hash:
+		return C.go_openssl_EVP_sha1()
+	case *sha224Hash:
+		return C.go_openssl_EVP_sha224()
+	case *sha256Hash:
+		return C.go_openssl_EVP_sha256()
+	case *sha384Hash:
+		return C.go_openssl_EVP_sha384()
+	case *sha512Hash:
+		return C.go_openssl_EVP_sha512()
+	}
+	return nil
+}
+
+// cryptoHashToMD converts a crypto.Hash
+// to an OpenSSL *C.EVP_MD.
+func cryptoHashToMD(ch crypto.Hash) *C.EVP_MD {
+	switch ch {
+	case crypto.MD5:
+		return C.go_openssl_EVP_md5()
+	case crypto.MD5SHA1:
+		return C.go_openssl_EVP_md5_sha1()
+	case crypto.SHA1:
+		return C.go_openssl_EVP_sha1()
+	case crypto.SHA224:
+		return C.go_openssl_EVP_sha224()
+	case crypto.SHA256:
+		return C.go_openssl_EVP_sha256()
+	case crypto.SHA384:
+		return C.go_openssl_EVP_sha384()
+	case crypto.SHA512:
+		return C.go_openssl_EVP_sha512()
+	}
+	return nil
+}
+
 func generateEVPPKey(id C.int, bits int, curve string) (*C.EVP_PKEY, error) {
 	if (bits == 0 && curve == "") || (bits != 0 && curve != "") {
 		panic("openssl: incorrect generateEVPPKey parameters")
