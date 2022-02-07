@@ -192,11 +192,9 @@ DEFINEFUNC_3_0(EVP_MAC*, EVP_MAC_fetch, (void* libctx, const char *algorithm, co
 DEFINEFUNC_3_0(int, EVP_MAC_init, (EVP_MAC_CTX *ctx, const unsigned char *key, size_t keylen, const OSSL_PARAM params[]), (ctx, key, keylen, params)) \
 DEFINEFUNC_3_0(int, EVP_MAC_update, (EVP_MAC_CTX *ctx, const unsigned char *data, size_t datalen), (ctx, data, datalen)) \
 DEFINEFUNC_3_0(int, EVP_MAC_final, (EVP_MAC_CTX *ctx, unsigned char *out, size_t *outl, size_t outsize), (ctx, out, outl, outsize)) \
-DEFINEFUNC_3_0(OSSL_PARAM, OSSL_PARAM_construct_octet_string, (const char *key, void *buf, size_t bsize), (key, buf, bsize)) \
-DEFINEFUNC_3_0(OSSL_PARAM, OSSL_PARAM_construct_utf8_string, (const char *key, char *buf, size_t bsize), (key, buf, bsize)) \
-DEFINEFUNC_3_0(OSSL_PARAM, OSSL_PARAM_construct_end, (void), ()) \
 DEFINEFUNC_3_0(void, OSSL_PARAM_free, (OSSL_PARAM* p), (p)) \
 DEFINEFUNC_3_0(OSSL_PARAM_BLD*, OSSL_PARAM_BLD_new, (void), ()) \
 DEFINEFUNC_3_0(void, OSSL_PARAM_BLD_free, (OSSL_PARAM_BLD *bld), (bld)) \
 DEFINEFUNC_3_0(int, OSSL_PARAM_BLD_push_BN, (OSSL_PARAM_BLD *bld, const char *key, const BIGNUM *bn), (bld, key, bn)) \
+DEFINEFUNC_3_0(int, OSSL_PARAM_BLD_push_utf8_string, (OSSL_PARAM_BLD *bld, const char *key, const char *buf, size_t bsize), (bld, key, buf, bsize)) \
 DEFINEFUNC_3_0(OSSL_PARAM*, OSSL_PARAM_BLD_to_param, (OSSL_PARAM_BLD *bld), (bld))
