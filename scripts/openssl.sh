@@ -44,6 +44,8 @@ make build_libs
 
 rm -rf /usr/include/openssl
 rm -rf /usr/include/crypto
+
 cp -r -L ./include/openssl /usr/include
-cp -r -L ./include/crypto /usr/include
+# include/crypto only exists in some OpenSSL versions
+if [[-e ./include/crypto]] && cp -r -L ./include/crypto /usr/include
 cp -H ./libcrypto.so "/usr/lib/libcrypto.so.${version}"
