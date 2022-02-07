@@ -30,18 +30,18 @@ case "$version" in
 esac
 
 cd /usr/local/src
-wget -O $tag.tar.gz https://github.com/openssl/openssl/archive/refs/tags/$tag.tar.gz
+wget -O "$tag.tar.gz" "https://github.com/openssl/openssl/archive/refs/tags/$tag.tar.gz"
 echo "$sha256 $tag.tar.gz" | sha256sum -c -
-rm -rf openssl-$tag
-tar -xzf $tag.tar.gz
+rm -rf "openssl-$tag"
+tar -xzf "$tag.tar.gz"
 
-rm -rf openssl-$version
-mv openssl-$tag openssl-$version
+rm -rf "openssl-$version"
+mv "openssl-$tag" "openssl-$version"
 
-cd openssl-$version
+cd "openssl-$version"
 ./config shared
 make build_libs
 
 rm -rf /usr/include/openssl
 cp -r -L ./include/openssl /usr/include
-cp -H ./libcrypto.so /usr/lib/libcrypto.so.${version}
+cp -H ./libcrypto.so "/usr/lib/libcrypto.so.${version}"
