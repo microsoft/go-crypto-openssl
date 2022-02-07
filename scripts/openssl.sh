@@ -47,5 +47,7 @@ rm -rf /usr/include/crypto
 
 cp -r -L ./include/openssl /usr/include
 # include/crypto only exists in some OpenSSL versions
-if [[-e ./include/crypto]] && cp -r -L ./include/crypto /usr/include
+if [ -e ./include/crypto ] then
+    cp -r -L ./include/crypto /usr/include
+fi
 cp -H ./libcrypto.so "/usr/lib/libcrypto.so.${version}"
