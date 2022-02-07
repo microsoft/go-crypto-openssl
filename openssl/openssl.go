@@ -19,6 +19,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
 	"unsafe"
 )
 
@@ -47,8 +48,8 @@ var vMajor, vMinor int
 // If GO_OPENSSL_VERSION_OVERRIDE enviornment variable is empty, Init will try to load the OpenSSL shared library
 // using a list if supported and well-known version suffixes, going from higher to lower versions.
 func Init() error {
-	// version, _ := syscall.Getenv("GO_OPENSSL_VERSION_OVERRIDE")
-	handle, err := loadLibrary("3.0.1")
+	version, _ := syscall.Getenv("GO_OPENSSL_VERSION_OVERRIDE")
+	handle, err := loadLibrary(version)
 	if err != nil {
 		return err
 	}

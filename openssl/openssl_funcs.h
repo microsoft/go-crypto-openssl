@@ -100,7 +100,13 @@ DEFINEFUNC(int, BN_set_word, (BIGNUM *a, BN_ULONG w), (a, w)) \
 DEFINEFUNC(unsigned int, BN_num_bits, (const BIGNUM *arg0), (arg0)) \
 DEFINEFUNC(BIGNUM *, BN_bin2bn, (const uint8_t *arg0, size_t arg1, BIGNUM *arg2), (arg0, arg1, arg2)) \
 DEFINEFUNC(size_t, BN_bn2bin, (const BIGNUM *arg0, uint8_t *arg1), (arg0, arg1)) \
+DEFINEFUNC_3_0(const char *, OSSL_EC_curve_nid2name, (int nid), (nid)) \
+DEFINEFUNC_3_0(EC_GROUP*, EC_GROUP_new_by_curve_name, (int nid), (nid)) \
 DEFINEFUNC(void, EC_GROUP_free, (EC_GROUP * arg0), (arg0)) \
+DEFINEFUNC_3_0(EC_POINT*, EC_POINT_new, (const EC_GROUP *group), (group)) \
+DEFINEFUNC_3_0(void, EC_POINT_free, (EC_POINT *point), (point)) \
+DEFINEFUNC_3_0(int, EC_POINT_set_affine_coordinates, (const EC_GROUP *group, EC_POINT *p, const BIGNUM *x, const BIGNUM *y, BN_CTX *ctx), (group, p, x, y, ctx)) \
+DEFINEFUNC_3_0(size_t, EC_POINT_point2oct, (const EC_GROUP *group, const EC_POINT *point, int form, unsigned char *buf, size_t len, BN_CTX *ctx), (group, point, form, buf, len, ctx)) \
 DEFINEFUNC(int, EC_POINT_get_affine_coordinates_GFp, \
            (const EC_GROUP *arg0, const EC_POINT *arg1, BIGNUM *arg2, BIGNUM *arg3, BN_CTX *arg4), \
            (arg0, arg1, arg2, arg3, arg4)) \
@@ -196,5 +202,6 @@ DEFINEFUNC_3_0(void, OSSL_PARAM_free, (OSSL_PARAM* p), (p)) \
 DEFINEFUNC_3_0(OSSL_PARAM_BLD*, OSSL_PARAM_BLD_new, (void), ()) \
 DEFINEFUNC_3_0(void, OSSL_PARAM_BLD_free, (OSSL_PARAM_BLD *bld), (bld)) \
 DEFINEFUNC_3_0(int, OSSL_PARAM_BLD_push_BN, (OSSL_PARAM_BLD *bld, const char *key, const BIGNUM *bn), (bld, key, bn)) \
+DEFINEFUNC_3_0(int, OSSL_PARAM_BLD_push_octet_string, (OSSL_PARAM_BLD *bld, const char *key, const char *buf, size_t bsize), (bld, key, buf, bsize)) \
 DEFINEFUNC_3_0(int, OSSL_PARAM_BLD_push_utf8_string, (OSSL_PARAM_BLD *bld, const char *key, const char *buf, size_t bsize), (bld, key, buf, bsize)) \
 DEFINEFUNC_3_0(OSSL_PARAM*, OSSL_PARAM_BLD_to_param, (OSSL_PARAM_BLD *bld), (bld))

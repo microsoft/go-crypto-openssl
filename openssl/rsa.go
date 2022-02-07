@@ -127,7 +127,6 @@ func GenerateKeyRSA(bits int) (N, E, D, P, Q, Dp, Dq, Qinv *big.Int, err error) 
 			C.go_openssl_RSA_get0_crt_params(key, &dp, &dq, &qinv)
 		}
 	case 3:
-		// EVP_PKEY_get_bn_param allocates a copy of the BIGNUMBER.
 		params := [...]struct {
 			key *C.char
 			bn  **C.BIGNUM
@@ -141,6 +140,7 @@ func GenerateKeyRSA(bits int) (N, E, D, P, Q, Dp, Dq, Qinv *big.Int, err error) 
 			if C.go_openssl_EVP_PKEY_get_bn_param(pkey, p.key, p.bn) != 1 {
 				return bad(newOpenSSLError("EVP_PKEY_get_bn_param failed"))
 			}
+			// EVP_PKEY_get_bn_param allocates a copy of the BIGNUMBER.
 			defer C.go_openssl_BN_free(*p.bn)
 		}
 	default:
@@ -149,7 +149,7 @@ func GenerateKeyRSA(bits int) (N, E, D, P, Q, Dp, Dq, Qinv *big.Int, err error) 
 	return bnToBig(n), bnToBig(e), bnToBig(d), bnToBig(p), bnToBig(q), bnToBig(dp), bnToBig(dq), bnToBig(qinv), nil
 }
 
-func buildBNParams(bns map[*C.char]*big.Int) (*C.OSSL_PARAM, error) {
+func buildBNParams(str map[*C.char]*C.char, oct map[*C.char][]byte, bns map[*C.char]*big.Int) (*C.OSSL_PARAM, error) {
 	bld := C.go_openssl_OSSL_PARAM_BLD_new()
 	if bld == nil {
 		return nil, newOpenSSLError("OSSL_PARAM_BLD_new failed")
@@ -168,20 +168,39 @@ func buildBNParams(bns map[*C.char]*big.Int) (*C.OSSL_PARAM, error) {
 			return nil, newOpenSSLError("OSSL_PARAM_BLD_push_BN failed")
 		}
 	}
+	for name, b := range oct {
+		if len(b) == 0 {
+			continue
+		}
+		if C.go_openssl_OSSL_PARAM_BLD_push_octet_string(bld, name, (*C.char)(unsafe.Pointer(&b[0])), C.size_t(len(b))) != 1 {
+			return nil, newOpenSSLError("OSSL_PARAM_BLD_push_octet_string failed")
+		}
+	}
+	for name, b := range str {
+		if b == nil {
+			continue
+		}
+		if C.go_openssl_OSSL_PARAM_BLD_push_utf8_string(bld, name, b, 0) != 1 {
+			return nil, newOpenSSLError("OSSL_PARAM_BLD_push_utf8_string failed")
+		}
+	}
 	params := C.go_openssl_OSSL_PARAM_BLD_to_param(bld)
 	if params == nil {
 		return nil, newOpenSSLError("OSSL_PARAM_BLD_to_param failed")
 	}
+	runtime.KeepAlive(str)
+	runtime.KeepAlive(oct)
+	runtime.KeepAlive(bns)
 	return params, nil
 }
 
-func newRSAPKEY(bns map[*C.char]*big.Int) (*C.EVP_PKEY, error) {
-	params, err := buildBNParams(bns)
+func newEVPPKEY(id C.int, str map[*C.char]*C.char, oct map[*C.char][]byte, bns map[*C.char]*big.Int) (*C.EVP_PKEY, error) {
+	params, err := buildBNParams(str, oct, bns)
 	if err != nil {
 		return nil, err
 	}
 	defer C.go_openssl_OSSL_PARAM_free(params)
-	ctx := C.go_openssl_EVP_PKEY_CTX_new_id(C.EVP_PKEY_RSA, nil)
+	ctx := C.go_openssl_EVP_PKEY_CTX_new_id(id, nil)
 	if ctx == nil {
 		return nil, newOpenSSLError("EVP_PKEY_CTX_new_id failed")
 	}
@@ -224,7 +243,7 @@ func NewPublicKeyRSA(N, E *big.Int) (*PublicKeyRSA, error) {
 		}
 	case 3:
 		var err error
-		pkey, err = newRSAPKEY(map[*C.char]*big.Int{
+		pkey, err = newEVPPKEY(C.EVP_PKEY_RSA, nil, nil, map[*C.char]*big.Int{
 			ossl_PKEY_PARAM_RSA_N: N,
 			ossl_PKEY_PARAM_RSA_E: E,
 		})
@@ -305,7 +324,7 @@ func NewPrivateKeyRSA(N, E, D, P, Q, Dp, Dq, Qinv *big.Int) (*PrivateKeyRSA, err
 		}
 	case 3:
 		var err error
-		pkey, err = newRSAPKEY(map[*C.char]*big.Int{
+		pkey, err = newEVPPKEY(C.EVP_PKEY_RSA, nil, nil, map[*C.char]*big.Int{
 			ossl_PKEY_PARAM_RSA_N:           N,
 			ossl_PKEY_PARAM_RSA_E:           E,
 			ossl_PKEY_PARAM_RSA_D:           D,

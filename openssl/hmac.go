@@ -113,17 +113,11 @@ func NewHMAC(h func() hash.Hash, key []byte) hash.Hash {
 		if ctx == nil {
 			panic("openssl: EVP_MAC_CTX_new failed")
 		}
-		bld := C.go_openssl_OSSL_PARAM_BLD_new()
-		if bld == nil {
-			panic(newOpenSSLError("OSSL_PARAM_BLD_new failed"))
-		}
-		defer C.go_openssl_OSSL_PARAM_BLD_free(bld)
-		if C.go_openssl_OSSL_PARAM_BLD_push_utf8_string(bld, macParamDigest, C.go_openssl_EVP_MD_get0_name(md), 0) != 1 {
-			panic(newOpenSSLError("OSSL_PARAM_BLD_push_utf8_string failed"))
-		}
-		params := C.go_openssl_OSSL_PARAM_BLD_to_param(bld)
-		if params == nil {
-			panic(newOpenSSLError("OSSL_PARAM_BLD_to_param failed"))
+		params, err := buildBNParams(map[*C.char]*C.char{
+			macParamDigest: C.go_openssl_EVP_MD_get0_name(md),
+		}, nil, nil)
+		if err != nil {
+			panic(err)
 		}
 		defer C.go_openssl_OSSL_PARAM_free(params)
 		if C.go_openssl_EVP_MAC_CTX_set_params(ctx, params) != 1 {
