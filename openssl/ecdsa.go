@@ -117,7 +117,7 @@ func newECKey(curve string, X, Y, D *big.Int) (pkey *C.EVP_PKEY, err error) {
 			if bd == nil {
 				return nil, newOpenSSLError("BN_bin2bn failed")
 			}
-			defer C.go_openssl_BN_free(by)
+			defer C.go_openssl_BN_free(bd)
 			if C.go_openssl_EC_KEY_set_private_key(key, bd) != 1 {
 				return nil, newOpenSSLError("EC_KEY_set_private_key failed")
 			}
@@ -151,7 +151,7 @@ func newECKey(curve string, X, Y, D *big.Int) (pkey *C.EVP_PKEY, err error) {
 		if C.go_openssl_EC_POINT_point2oct(group, point, C.POINT_CONVERSION_UNCOMPRESSED, (*C.uchar)(unsafe.Pointer(&rawpub[0])), plen, nil) == 0 {
 			return nil, newOpenSSLError("EC_POINT_point2oct failed")
 		}
-		return newEVPPKEY(C.EVP_PKEY_EC, map[*C.char]*C.char{
+		return newEVPPKey(C.EVP_PKEY_EC, map[*C.char]*C.char{
 			ossl_PKEY_PARAM_GROUP_NAME: C.go_openssl_OSSL_EC_curve_nid2name(nid),
 		}, map[*C.char][]byte{
 			ossl_PKEY_PARAM_PUB_KEY: rawpub,
@@ -223,7 +223,7 @@ func VerifyECDSA(pub *PublicKeyECDSA, hash []byte, r, s *big.Int) bool {
 }
 
 func GenerateKeyECDSA(curve string) (X, Y, D *big.Int, err error) {
-	pkey, err := evpKeyGen(C.EVP_PKEY_EC, 0, curve)
+	pkey, err := generateEVPPKey(C.EVP_PKEY_EC, 0, curve)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -238,16 +238,16 @@ func GenerateKeyECDSA(curve string) (X, Y, D *big.Int, err error) {
 		defer C.go_openssl_EC_KEY_free(key)
 		group := C.go_openssl_EC_KEY_get0_group(key)
 		pt := C.go_openssl_EC_KEY_get0_public_key(key)
-		bd := C.go_openssl_EC_KEY_get0_private_key(key)
+		bd = C.go_openssl_EC_KEY_get0_private_key(key)
 		if pt == nil || bd == nil {
 			return nil, nil, nil, newOpenSSLError("EC_KEY_get0_private_key failed")
 		}
-		bx := C.go_openssl_BN_new()
+		bx = C.go_openssl_BN_new()
 		if bx == nil {
 			return nil, nil, nil, newOpenSSLError("BN_new failed")
 		}
 		defer C.go_openssl_BN_free(bx)
-		by := C.go_openssl_BN_new()
+		by = C.go_openssl_BN_new()
 		if by == nil {
 			return nil, nil, nil, newOpenSSLError("BN_new failed")
 		}
