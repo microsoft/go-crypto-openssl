@@ -49,27 +49,22 @@ DEFINEFUNC(int, RAND_bytes, (uint8_t * arg0, size_t arg1), (arg0, arg1)) \
 DEFINEFUNC(int, SHA1_Init, (SHA_CTX * arg0), (arg0)) \
 DEFINEFUNC(int, SHA1_Update, (SHA_CTX * arg0, const void *arg1, size_t arg2), (arg0, arg1, arg2)) \
 DEFINEFUNC(int, SHA1_Final, (uint8_t * arg0, SHA_CTX *arg1), (arg0, arg1)) \
-DEFINEFUNC(int, SHA224_Init, (SHA256_CTX * arg0), (arg0)) \
-DEFINEFUNC(int, SHA224_Update, (SHA256_CTX * arg0, const void *arg1, size_t arg2), (arg0, arg1, arg2)) \
-DEFINEFUNC(int, SHA224_Final, (uint8_t * arg0, SHA256_CTX *arg1), (arg0, arg1)) \
-DEFINEFUNC(int, SHA256_Init, (SHA256_CTX * arg0), (arg0)) \
-DEFINEFUNC(int, SHA256_Update, (SHA256_CTX * arg0, const void *arg1, size_t arg2), (arg0, arg1, arg2)) \
-DEFINEFUNC(int, SHA256_Final, (uint8_t * arg0, SHA256_CTX *arg1), (arg0, arg1)) \
-DEFINEFUNC(int, SHA384_Init, (SHA512_CTX * arg0), (arg0)) \
-DEFINEFUNC(int, SHA384_Update, (SHA512_CTX * arg0, const void *arg1, size_t arg2), (arg0, arg1, arg2)) \
-DEFINEFUNC(int, SHA384_Final, (uint8_t * arg0, SHA512_CTX *arg1), (arg0, arg1)) \
-DEFINEFUNC(int, SHA512_Init, (SHA512_CTX * arg0), (arg0)) \
-DEFINEFUNC(int, SHA512_Update, (SHA512_CTX * arg0, const void *arg1, size_t arg2), (arg0, arg1, arg2)) \
-DEFINEFUNC(int, SHA512_Final, (uint8_t * arg0, SHA512_CTX *arg1), (arg0, arg1)) \
+DEFINEFUNC(int, EVP_DigestInit_ex, (EVP_MD_CTX *ctx, const EVP_MD *type, ENGINE *impl), (ctx, type, impl)) \
+DEFINEFUNC(int, EVP_DigestUpdate, (EVP_MD_CTX *ctx, const void *d, size_t cnt), (ctx, d, cnt)) \
+DEFINEFUNC(int, EVP_DigestFinal_ex, (EVP_MD_CTX *ctx, unsigned char *md, unsigned int *s), (ctx, md, s)) \
+DEFINEFUNC_RENAMED(EVP_MD_CTX *, EVP_MD_CTX_new, EVP_MD_CTX_create, (), ()) \
+DEFINEFUNC_RENAMED(void, EVP_MD_CTX_free, EVP_MD_CTX_destroy, (EVP_MD_CTX *ctx), (ctx)) \
+DEFINEFUNC(int, EVP_MD_CTX_copy_ex, (EVP_MD_CTX *out, const EVP_MD_CTX *in), (out, in)) \
+DEFINEFUNC_RENAMED(int, EVP_MD_CTX_reset, EVP_MD_CTX_cleanup, (EVP_MD_CTX *ctx), (ctx)) \
 DEFINEFUNC(const EVP_MD *, EVP_md5, (void), ()) \
 DEFINEFUNC(const EVP_MD *, EVP_sha1, (void), ()) \
 DEFINEFUNC(const EVP_MD *, EVP_sha224, (void), ()) \
 DEFINEFUNC(const EVP_MD *, EVP_sha256, (void), ()) \
 DEFINEFUNC(const EVP_MD *, EVP_sha384, (void), ()) \
 DEFINEFUNC(const EVP_MD *, EVP_sha512, (void), ()) \
+DEFINEFUNC_FALLBACK(const EVP_MD*, EVP_md5_sha1, (void), ()) \
 DEFINEFUNC_RENAMED(int, EVP_MD_get_type, EVP_MD_type, (const EVP_MD *arg0), (arg0)) \
 DEFINEFUNC_RENAMED(size_t, EVP_MD_get_size, EVP_MD_size, (const EVP_MD *arg0), (arg0)) \
-DEFINEFUNC_FALLBACK(const EVP_MD*, EVP_md5_sha1, (void), ()) \
 DEFINEFUNC_FALLBACK(void*, EVP_MD_CTX_md_data, (EVP_MD_CTX *ctx), (ctx)) \
 DEFINEFUNC(int, MD5_Init, (MD5_CTX *c), (c)) \
 DEFINEFUNC(int, MD5_Update, (MD5_CTX *c, const void *data, size_t len), (c, data, len)) \
