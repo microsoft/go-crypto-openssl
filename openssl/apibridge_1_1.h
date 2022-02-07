@@ -7,7 +7,6 @@
 // Functions based on OpenSSL 1.1 API, used when building against/running with OpenSSL 1.0.x
 
 void local_HMAC_CTX_free(HMAC_CTX * ctx);
-void* local_EVP_MD_CTX_md_data(EVP_MD_CTX *ctx);
 HMAC_CTX* local_HMAC_CTX_new();
 void local_HMAC_CTX_reset(HMAC_CTX *ctx);
 const EVP_MD* local_EVP_md5_sha1(void);
