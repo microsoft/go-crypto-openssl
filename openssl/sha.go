@@ -9,21 +9,115 @@ package openssl
 // #include "goopenssl.h"
 import "C"
 import (
+	"crypto"
 	"errors"
 	"hash"
+	"runtime"
+	"strconv"
 	"unsafe"
 )
 
-// NewSHA1 returns a new SHA1 hash.
-func NewSHA1() hash.Hash {
-	h := new(sha1Hash)
+type evpHash struct {
+	md        *C.EVP_MD
+	ctx       *C.EVP_MD_CTX
+	ctx2      *C.EVP_MD_CTX
+	size      int
+	blockSize int
+}
+
+func newEvpHash(ch crypto.Hash, size, blockSize int) *evpHash {
+	md := cryptoHashToMD(ch)
+	if md == nil {
+		panic("openssl: unsupported hash function: " + strconv.Itoa(int(ch)))
+	}
+	ctx := C.go_openssl_EVP_MD_CTX_new()
+	ctx2 := C.go_openssl_EVP_MD_CTX_new()
+	h := &evpHash{
+		md:        md,
+		ctx:       ctx,
+		ctx2:      ctx2,
+		size:      size,
+		blockSize: blockSize,
+	}
+	runtime.SetFinalizer(h, (*evpHash).finalize)
 	h.Reset()
 	return h
 }
 
+func (h *evpHash) finalize() {
+	C.go_openssl_EVP_MD_CTX_free(h.ctx)
+	C.go_openssl_EVP_MD_CTX_free(h.ctx2)
+}
+
+func (h *evpHash) Reset() {
+	C.go_openssl_EVP_MD_CTX_reset(h.ctx)
+
+	if C.go_openssl_EVP_DigestInit_ex(h.ctx, h.md, nil) != 1 {
+		panic("openssl: EVP_DigestInit_ex failed")
+	}
+	runtime.KeepAlive(h)
+}
+
+func (h *evpHash) Write(p []byte) (int, error) {
+	if len(p) > 0 && C.go_openssl_EVP_DigestUpdate(h.ctx, unsafe.Pointer(&p[0]), C.size_t(len(p))) != 1 {
+		panic("openssl: EVP_DigestUpdate failed")
+	}
+	runtime.KeepAlive(h)
+	return len(p), nil
+}
+
+func (h *evpHash) Size() int {
+	return h.size
+}
+
+func (h *evpHash) BlockSize() int {
+	return h.blockSize
+}
+
+func (h *evpHash) sum(out []byte) {
+	// Make copy of context because Go hash.Hash mandates
+	// that Sum has no effect on the underlying stream.
+	// In particular it is OK to Sum, then Write more, then Sum again,
+	// and the second Sum acts as if the first didn't happen.
+	C.go_openssl_EVP_DigestInit_ex(h.ctx2, h.md, nil)
+	if C.go_openssl_EVP_MD_CTX_copy_ex(h.ctx2, h.ctx) != 1 {
+		panic("openssl: EVP_MD_CTX_copy_ex failed")
+	}
+	if C.go_openssl_EVP_DigestFinal_ex(h.ctx2, (*C.uint8_t)(unsafe.Pointer(&out[0])), nil) != 1 {
+		panic("openssl: EVP_DigestFinal_ex failed")
+	}
+	C.go_openssl_EVP_MD_CTX_reset(h.ctx2)
+	runtime.KeepAlive(h)
+}
+
+// shaCtx returns a pointer to the internal sha structure.
+//
+// The EVP_MD_CTX memory layout has changed in OpenSSL 3
+// and the property holding the internal structure is no longer md_data but algctx.
+func (h *evpHash) shaCtx() unsafe.Pointer {
+	type mdCtx struct {
+		_       [2]unsafe.Pointer
+		_       C.ulong
+		md_data unsafe.Pointer
+	}
+	return (*mdCtx)(unsafe.Pointer(h.ctx)).md_data
+}
+
+// NewSHA1 returns a new SHA1 hash.
+func NewSHA1() hash.Hash {
+	return &sha1Hash{
+		evpHash: newEvpHash(crypto.SHA1, 20, 64),
+	}
+}
+
 type sha1Hash struct {
-	ctx C.SHA_CTX
+	*evpHash
 	out [20]byte
+}
+
+func (h *sha1Hash) Sum(in []byte) []byte {
+	h.sum(h.out[:])
+	return append(in, h.out[:]...)
 }
 
 type sha1Ctx struct {
@@ -33,33 +127,13 @@ type sha1Ctx struct {
 	nx     uint32
 }
 
-func (h *sha1Hash) Reset()               { C.go_openssl_SHA1_Init(&h.ctx) }
-func (h *sha1Hash) Size() int            { return 20 }
-func (h *sha1Hash) BlockSize() int       { return 64 }
-func (h *sha1Hash) Sum(in []byte) []byte { return append(in, h.sum()...) }
-
-func (h *sha1Hash) Write(p []byte) (int, error) {
-	if len(p) > 0 && C.go_openssl_SHA1_Update(&h.ctx, unsafe.Pointer(&p[0]), C.size_t(len(p))) == 0 {
-		panic("openssl: SHA1_Update failed")
-	}
-	return len(p), nil
-}
-
-func (h0 *sha1Hash) sum() []byte {
-	h := *h0 // make copy so future Write+Sum is valid
-	if C.go_openssl_SHA1_Final((*C.uint8_t)(unsafe.Pointer(&h.out[0])), &h.ctx) == 0 {
-		panic("openssl: SHA1_Final failed")
-	}
-	return h.out[:]
-}
-
 const (
 	sha1Magic         = "sha\x01"
 	sha1MarshaledSize = len(sha1Magic) + 5*4 + 64 + 8
 )
 
 func (h *sha1Hash) MarshalBinary() ([]byte, error) {
-	d := (*sha1Ctx)(unsafe.Pointer(&h.ctx))
+	d := (*sha1Ctx)(h.shaCtx())
 	b := make([]byte, 0, sha1MarshaledSize)
 	b = append(b, sha1Magic...)
 	b = appendUint32(b, d.h[0])
@@ -80,7 +154,7 @@ func (h *sha1Hash) UnmarshalBinary(b []byte) error {
 	if len(b) != sha1MarshaledSize {
 		return errors.New("crypto/sha1: invalid hash state size")
 	}
-	d := (*sha1Ctx)(unsafe.Pointer(&h.ctx))
+	d := (*sha1Ctx)(h.shaCtx())
 	b = b[len(sha1Magic):]
 	b, d.h[0] = consumeUint32(b)
 	b, d.h[1] = consumeUint32(b)
@@ -88,7 +162,7 @@ func (h *sha1Hash) UnmarshalBinary(b []byte) error {
 	b, d.h[3] = consumeUint32(b)
 	b, d.h[4] = consumeUint32(b)
 	b = b[copy(d.x[:], b):]
-	b, n := consumeUint64(b)
+	_, n := consumeUint64(b)
 	d.nl = uint32(n << 3)
 	d.nh = uint32(n >> 29)
 	d.nx = uint32(n) % 64
@@ -97,66 +171,36 @@ func (h *sha1Hash) UnmarshalBinary(b []byte) error {
 
 // NewSHA224 returns a new SHA224 hash.
 func NewSHA224() hash.Hash {
-	h := new(sha224Hash)
-	h.Reset()
-	return h
+	return &sha224Hash{
+		evpHash: newEvpHash(crypto.SHA224, 224/8, 64),
+	}
 }
 
 type sha224Hash struct {
-	ctx C.SHA256_CTX
+	*evpHash
 	out [224 / 8]byte
 }
 
-func (h *sha224Hash) Reset()               { C.go_openssl_SHA224_Init(&h.ctx) }
-func (h *sha224Hash) Size() int            { return 224 / 8 }
-func (h *sha224Hash) BlockSize() int       { return 64 }
-func (h *sha224Hash) Sum(in []byte) []byte { return append(in, h.sum()...) }
-
-func (h *sha224Hash) Write(p []byte) (int, error) {
-	if len(p) > 0 && C.go_openssl_SHA224_Update(&h.ctx, unsafe.Pointer(&p[0]), C.size_t(len(p))) == 0 {
-		panic("openssl: SHA224_Update failed")
-	}
-	return len(p), nil
-}
-
-func (h0 *sha224Hash) sum() []byte {
-	h := *h0 // make copy so future Write+Sum is valid
-	if C.go_openssl_SHA224_Final((*C.uint8_t)(unsafe.Pointer(&h.out[0])), &h.ctx) == 0 {
-		panic("openssl: SHA224_Final failed")
-	}
-	return h.out[:]
+func (h *sha224Hash) Sum(in []byte) []byte {
+	h.sum(h.out[:])
+	return append(in, h.out[:]...)
 }
 
 // NewSHA256 returns a new SHA256 hash.
 func NewSHA256() hash.Hash {
-	h := new(sha256Hash)
-	h.Reset()
-	return h
+	return &sha256Hash{
+		evpHash: newEvpHash(crypto.SHA256, 256/8, 64),
+	}
 }
 
 type sha256Hash struct {
-	ctx C.SHA256_CTX
+	*evpHash
 	out [256 / 8]byte
 }
 
-func (h *sha256Hash) Reset()               { C.go_openssl_SHA256_Init(&h.ctx) }
-func (h *sha256Hash) Size() int            { return 256 / 8 }
-func (h *sha256Hash) BlockSize() int       { return 64 }
-func (h *sha256Hash) Sum(in []byte) []byte { return append(in, h.sum()...) }
-
-func (h *sha256Hash) Write(p []byte) (int, error) {
-	if len(p) > 0 && C.go_openssl_SHA256_Update(&h.ctx, unsafe.Pointer(&p[0]), C.size_t(len(p))) == 0 {
-		panic("openssl: SHA256_Update failed")
-	}
-	return len(p), nil
-}
-
-func (h0 *sha256Hash) sum() []byte {
-	h := *h0 // make copy so future Write+Sum is valid
-	if C.go_openssl_SHA256_Final((*C.uint8_t)(unsafe.Pointer(&h.out[0])), &h.ctx) == 0 {
-		panic("openssl: SHA256_Final failed")
-	}
-	return h.out[:]
+func (h *sha256Hash) Sum(in []byte) []byte {
+	h.sum(h.out[:])
+	return append(in, h.out[:]...)
 }
 
 const (
@@ -173,7 +217,7 @@ type sha256Ctx struct {
 }
 
 func (h *sha224Hash) MarshalBinary() ([]byte, error) {
-	d := (*sha256Ctx)(unsafe.Pointer(&h.ctx))
+	d := (*sha256Ctx)(h.shaCtx())
 	b := make([]byte, 0, marshaledSize256)
 	b = append(b, magic224...)
 	b = appendUint32(b, d.h[0])
@@ -191,7 +235,7 @@ func (h *sha224Hash) MarshalBinary() ([]byte, error) {
 }
 
 func (h *sha256Hash) MarshalBinary() ([]byte, error) {
-	d := (*sha256Ctx)(unsafe.Pointer(&h.ctx))
+	d := (*sha256Ctx)(h.shaCtx())
 	b := make([]byte, 0, marshaledSize256)
 	b = append(b, magic256...)
 	b = appendUint32(b, d.h[0])
@@ -215,7 +259,7 @@ func (h *sha224Hash) UnmarshalBinary(b []byte) error {
 	if len(b) != marshaledSize256 {
 		return errors.New("crypto/sha256: invalid hash state size")
 	}
-	d := (*sha256Ctx)(unsafe.Pointer(&h.ctx))
+	d := (*sha256Ctx)(h.shaCtx())
 	b = b[len(magic224):]
 	b, d.h[0] = consumeUint32(b)
 	b, d.h[1] = consumeUint32(b)
@@ -226,7 +270,7 @@ func (h *sha224Hash) UnmarshalBinary(b []byte) error {
 	b, d.h[6] = consumeUint32(b)
 	b, d.h[7] = consumeUint32(b)
 	b = b[copy(d.x[:], b):]
-	b, n := consumeUint64(b)
+	_, n := consumeUint64(b)
 	d.nl = uint32(n << 3)
 	d.nh = uint32(n >> 29)
 	d.nx = uint32(n) % 64
@@ -240,7 +284,7 @@ func (h *sha256Hash) UnmarshalBinary(b []byte) error {
 	if len(b) != marshaledSize256 {
 		return errors.New("crypto/sha256: invalid hash state size")
 	}
-	d := (*sha256Ctx)(unsafe.Pointer(&h.ctx))
+	d := (*sha256Ctx)(h.shaCtx())
 	b = b[len(magic256):]
 	b, d.h[0] = consumeUint32(b)
 	b, d.h[1] = consumeUint32(b)
@@ -251,7 +295,7 @@ func (h *sha256Hash) UnmarshalBinary(b []byte) error {
 	b, d.h[6] = consumeUint32(b)
 	b, d.h[7] = consumeUint32(b)
 	b = b[copy(d.x[:], b):]
-	b, n := consumeUint64(b)
+	_, n := consumeUint64(b)
 	d.nl = uint32(n << 3)
 	d.nh = uint32(n >> 29)
 	d.nx = uint32(n) % 64
@@ -260,66 +304,36 @@ func (h *sha256Hash) UnmarshalBinary(b []byte) error {
 
 // NewSHA384 returns a new SHA384 hash.
 func NewSHA384() hash.Hash {
-	h := new(sha384Hash)
-	h.Reset()
-	return h
+	return &sha384Hash{
+		evpHash: newEvpHash(crypto.SHA384, 384/8, 128),
+	}
 }
 
 type sha384Hash struct {
-	ctx C.SHA512_CTX
+	*evpHash
 	out [384 / 8]byte
 }
 
-func (h *sha384Hash) Reset()               { C.go_openssl_SHA384_Init(&h.ctx) }
-func (h *sha384Hash) Size() int            { return 384 / 8 }
-func (h *sha384Hash) BlockSize() int       { return 128 }
-func (h *sha384Hash) Sum(in []byte) []byte { return append(in, h.sum()...) }
-
-func (h *sha384Hash) Write(p []byte) (int, error) {
-	if len(p) > 0 && C.go_openssl_SHA384_Update(&h.ctx, unsafe.Pointer(&p[0]), C.size_t(len(p))) == 0 {
-		panic("openssl: SHA384_Update failed")
-	}
-	return len(p), nil
-}
-
-func (h0 *sha384Hash) sum() []byte {
-	h := *h0 // make copy so future Write+Sum is valid
-	if C.go_openssl_SHA384_Final((*C.uint8_t)(unsafe.Pointer(&h.out[0])), &h.ctx) == 0 {
-		panic("openssl: SHA384_Final failed")
-	}
-	return h.out[:]
+func (h *sha384Hash) Sum(in []byte) []byte {
+	h.sum(h.out[:])
+	return append(in, h.out[:]...)
 }
 
 // NewSHA512 returns a new SHA512 hash.
 func NewSHA512() hash.Hash {
-	h := new(sha512Hash)
-	h.Reset()
-	return h
+	return &sha512Hash{
+		evpHash: newEvpHash(crypto.SHA512, 512/8, 128),
+	}
 }
 
 type sha512Hash struct {
-	ctx C.SHA512_CTX
+	*evpHash
 	out [512 / 8]byte
 }
 
-func (h *sha512Hash) Reset()               { C.go_openssl_SHA512_Init(&h.ctx) }
-func (h *sha512Hash) Size() int            { return 512 / 8 }
-func (h *sha512Hash) BlockSize() int       { return 128 }
-func (h *sha512Hash) Sum(in []byte) []byte { return append(in, h.sum()...) }
-
-func (h *sha512Hash) Write(p []byte) (int, error) {
-	if len(p) > 0 && C.go_openssl_SHA512_Update(&h.ctx, unsafe.Pointer(&p[0]), C.size_t(len(p))) == 0 {
-		panic("openssl: SHA512_Update failed")
-	}
-	return len(p), nil
-}
-
-func (h0 *sha512Hash) sum() []byte {
-	h := *h0 // make copy so future Write+Sum is valid
-	if C.go_openssl_SHA512_Final((*C.uint8_t)(unsafe.Pointer(&h.out[0])), &h.ctx) == 0 {
-		panic("openssl: SHA512_Final failed")
-	}
-	return h.out[:]
+func (h *sha512Hash) Sum(in []byte) []byte {
+	h.sum(h.out[:])
+	return append(in, h.out[:]...)
 }
 
 type sha512Ctx struct {
@@ -340,7 +354,7 @@ const (
 var zero [128]byte
 
 func (h *sha384Hash) MarshalBinary() ([]byte, error) {
-	d := (*sha512Ctx)(unsafe.Pointer(&h.ctx))
+	d := (*sha512Ctx)(h.shaCtx())
 	b := make([]byte, 0, marshaledSize512)
 	b = append(b, magic384...)
 	b = appendUint64(b, d.h[0])
@@ -358,7 +372,7 @@ func (h *sha384Hash) MarshalBinary() ([]byte, error) {
 }
 
 func (h *sha512Hash) MarshalBinary() ([]byte, error) {
-	d := (*sha512Ctx)(unsafe.Pointer(&h.ctx))
+	d := (*sha512Ctx)(h.shaCtx())
 	b := make([]byte, 0, marshaledSize512)
 	b = append(b, magic512...)
 	b = appendUint64(b, d.h[0])
@@ -385,7 +399,7 @@ func (h *sha384Hash) UnmarshalBinary(b []byte) error {
 	if len(b) != marshaledSize512 {
 		return errors.New("crypto/sha512: invalid hash state size")
 	}
-	d := (*sha512Ctx)(unsafe.Pointer(&h.ctx))
+	d := (*sha512Ctx)(h.shaCtx())
 	b = b[len(magic512):]
 	b, d.h[0] = consumeUint64(b)
 	b, d.h[1] = consumeUint64(b)
@@ -396,7 +410,7 @@ func (h *sha384Hash) UnmarshalBinary(b []byte) error {
 	b, d.h[6] = consumeUint64(b)
 	b, d.h[7] = consumeUint64(b)
 	b = b[copy(d.x[:], b):]
-	b, n := consumeUint64(b)
+	_, n := consumeUint64(b)
 	d.nl = n << 3
 	d.nh = n >> 61
 	d.nx = uint32(n) % 128
@@ -413,7 +427,7 @@ func (h *sha512Hash) UnmarshalBinary(b []byte) error {
 	if len(b) != marshaledSize512 {
 		return errors.New("crypto/sha512: invalid hash state size")
 	}
-	d := (*sha512Ctx)(unsafe.Pointer(&h.ctx))
+	d := (*sha512Ctx)(h.shaCtx())
 	b = b[len(magic512):]
 	b, d.h[0] = consumeUint64(b)
 	b, d.h[1] = consumeUint64(b)
@@ -424,7 +438,7 @@ func (h *sha512Hash) UnmarshalBinary(b []byte) error {
 	b, d.h[6] = consumeUint64(b)
 	b, d.h[7] = consumeUint64(b)
 	b = b[copy(d.x[:], b):]
-	b, n := consumeUint64(b)
+	_, n := consumeUint64(b)
 	d.nl = n << 3
 	d.nh = n >> 61
 	d.nx = uint32(n) % 128
