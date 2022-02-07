@@ -162,6 +162,8 @@ DEFINEFUNC(int, EVP_PKEY_verify, \
     (ctx, sig, siglen, tbs, tbslen)) \
 DEFINEFUNC(EVP_PKEY_CTX *, EVP_PKEY_CTX_new, (EVP_PKEY * arg0, ENGINE *arg1), (arg0, arg1)) \
 DEFINEFUNC(EVP_PKEY_CTX *, EVP_PKEY_CTX_new_id, (int id, ENGINE *e), (id, e)) \
+DEFINEFUNC_3_0(int, EVP_PKEY_fromdata_init, (EVP_PKEY_CTX *ctx), (ctx)) \
+DEFINEFUNC_3_0(int, EVP_PKEY_fromdata, (EVP_PKEY_CTX *ctx, EVP_PKEY **ppkey, int selection, OSSL_PARAM param[]), (ctx, ppkey, selection, param)) \
 DEFINEFUNC(int, EVP_PKEY_keygen_init, (EVP_PKEY_CTX *ctx), (ctx)) \
 DEFINEFUNC(int, EVP_PKEY_keygen, (EVP_PKEY_CTX *ctx, EVP_PKEY **ppkey), (ctx, ppkey)) \
 DEFINEFUNC(void, EVP_PKEY_CTX_free, (EVP_PKEY_CTX * arg0), (arg0)) \
@@ -181,6 +183,7 @@ DEFINEFUNC(int, EVP_PKEY_verify_init, (EVP_PKEY_CTX * arg0), (arg0)) \
 DEFINEFUNC(int, EVP_PKEY_sign, \
     (EVP_PKEY_CTX * arg0, uint8_t *arg1, unsigned int *arg2, const uint8_t *arg3, unsigned int arg4), \
     (arg0, arg1, arg2, arg3, arg4)) \
+DEFINEFUNC_3_0(int, EVP_PKEY_get_bn_param, (const EVP_PKEY *pkey, const char *key_name, BIGNUM **bn), (pkey, key_name, bn)) \
 DEFINEFUNC_3_0(EVP_MAC_CTX*, EVP_MAC_CTX_new, (EVP_MAC *mac), (mac)) \
 DEFINEFUNC_3_0(void*, EVP_MAC_CTX_free, (EVP_MAC_CTX *ctx), (ctx)) \
 DEFINEFUNC_3_0(EVP_MAC_CTX*, EVP_MAC_CTX_dup, (EVP_MAC_CTX *ctx), (ctx)) \
@@ -191,4 +194,9 @@ DEFINEFUNC_3_0(int, EVP_MAC_update, (EVP_MAC_CTX *ctx, const unsigned char *data
 DEFINEFUNC_3_0(int, EVP_MAC_final, (EVP_MAC_CTX *ctx, unsigned char *out, size_t *outl, size_t outsize), (ctx, out, outl, outsize)) \
 DEFINEFUNC_3_0(OSSL_PARAM, OSSL_PARAM_construct_octet_string, (const char *key, void *buf, size_t bsize), (key, buf, bsize)) \
 DEFINEFUNC_3_0(OSSL_PARAM, OSSL_PARAM_construct_utf8_string, (const char *key, char *buf, size_t bsize), (key, buf, bsize)) \
-DEFINEFUNC_3_0(OSSL_PARAM, OSSL_PARAM_construct_end, (void), ())
+DEFINEFUNC_3_0(OSSL_PARAM, OSSL_PARAM_construct_end, (void), ()) \
+DEFINEFUNC_3_0(void, OSSL_PARAM_free, (OSSL_PARAM* p), (p)) \
+DEFINEFUNC_3_0(OSSL_PARAM_BLD*, OSSL_PARAM_BLD_new, (void), ()) \
+DEFINEFUNC_3_0(void, OSSL_PARAM_BLD_free, (OSSL_PARAM_BLD *bld), (bld)) \
+DEFINEFUNC_3_0(int, OSSL_PARAM_BLD_push_BN, (OSSL_PARAM_BLD *bld, const char *key, const BIGNUM *bn), (bld, key, bn)) \
+DEFINEFUNC_3_0(OSSL_PARAM*, OSSL_PARAM_BLD_to_param, (OSSL_PARAM_BLD *bld), (bld))

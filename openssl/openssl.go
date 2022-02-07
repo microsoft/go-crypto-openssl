@@ -153,11 +153,16 @@ func initV3() error {
 		return newOpenSSLError("openssl: load default provider")
 	}
 	// Try to load the FIPS provider in case it is enabled later on.
-	// The last parameter is set to 1 in order to allow
-	// loading fallback providers.
-	// The error can be skipped as we still don't know if it is required,
-	// and if so we will use OSSL_PROVIDER_available(NULL, "fips") when necessary.
-	C.go_openssl_OSSL_PROVIDER_try_load(nil, providerNameFips, 1)
+	// The last parameter is set to 1 in order to allow loading fallback providers.
+	if C.go_openssl_OSSL_PROVIDER_try_load(nil, providerNameFips, 1) == nil {
+		// The error can be skipped as we still don't know if FIPS is required.
+		// If it is we will use OSSL_PROVIDER_available(NULL, "fips") to check if the FIPS provider is available.
+		for {
+			if C.go_openssl_ERR_get_error() == 0 {
+				break
+			}
+		}
+	}
 	return nil
 }
 

@@ -180,7 +180,7 @@ func VerifyECDSA(pub *PublicKeyECDSA, hash []byte, r, s *big.Int) bool {
 }
 
 func GenerateKeyECDSA(curve string) (X, Y, D *big.Int, err error) {
-	pkey, err := evpKeyGen("EC", 0, curve)
+	pkey, err := evpKeyGen(C.EVP_PKEY_EC, 0, curve)
 	if err != nil {
 		return nil, nil, nil, err
 	}

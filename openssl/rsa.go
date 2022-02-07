@@ -18,6 +18,17 @@ import (
 	"unsafe"
 )
 
+var (
+	ossl_PKEY_PARAM_RSA_N           = C.CString("n")
+	ossl_PKEY_PARAM_RSA_E           = C.CString("e")
+	ossl_PKEY_PARAM_RSA_D           = C.CString("d")
+	ossl_PKEY_PARAM_RSA_FACTOR1     = C.CString("rsa-factor1")
+	ossl_PKEY_PARAM_RSA_FACTOR2     = C.CString("rsa-factor2")
+	ossl_PKEY_PARAM_RSA_EXPONENT1   = C.CString("rsa-exponent1")
+	ossl_PKEY_PARAM_RSA_EXPONENT2   = C.CString("rsa-exponent2")
+	osl_PKEY_PARAM_RSA_COEFFICIENT1 = C.CString("rsa-coefficient1")
+)
+
 // rsa_st_1_0_2 is rsa_st memory layout in OpenSSL 1.0.2.
 type rsa_st_1_0_2 struct {
 	_    C.int
@@ -36,7 +47,10 @@ type rsa_st_1_0_2 struct {
 }
 
 func rsa_st_set_key(key *C.RSA, n, e, d *C.BIGNUM) {
-	if vMajor == 1 && vMinor == 0 {
+	if vMajor != 1 {
+		panic("openssl: rsa_st_set_key should only be used with OpenSSL 1.x")
+	}
+	if vMinor == 0 {
 		key1_0_2 := (*rsa_st_1_0_2)(unsafe.Pointer(key))
 		key1_0_2.n = n
 		key1_0_2.e = e
@@ -46,18 +60,9 @@ func rsa_st_set_key(key *C.RSA, n, e, d *C.BIGNUM) {
 	}
 }
 
-func evpKeyGen(name string, bits int, curve string) (*C.EVP_PKEY, error) {
+func evpKeyGen(id C.int, bits int, curve string) (*C.EVP_PKEY, error) {
 	if (bits == 0 && curve == "") || (bits != 0 && curve != "") {
 		panic("openssl: incorrect evpKeyGen parameters")
-	}
-	var id C.int
-	switch name {
-	case "RSA":
-		id = C.EVP_PKEY_RSA
-	case "EC":
-		id = C.EVP_PKEY_EC
-	default:
-		panic("openssl: unknown pkey name: " + name)
 	}
 	ctx := C.go_openssl_EVP_PKEY_CTX_new_id(id, nil)
 	if ctx == nil {
@@ -92,35 +97,103 @@ func GenerateKeyRSA(bits int) (N, E, D, P, Q, Dp, Dq, Qinv *big.Int, err error) 
 	bad := func(e error) (N, E, D, P, Q, Dp, Dq, Qinv *big.Int, err error) {
 		return nil, nil, nil, nil, nil, nil, nil, nil, e
 	}
-	pkey, err := evpKeyGen("RSA", bits, "")
+	pkey, err := evpKeyGen(C.EVP_PKEY_RSA, bits, "")
 	if err != nil {
 		return bad(err)
 	}
 	defer C.go_openssl_EVP_PKEY_free(pkey)
 
-	key := C.go_openssl_EVP_PKEY_get1_RSA(pkey)
-	if key == nil {
-		return bad(newOpenSSLError("EVP_PKEY_get1_RSA failed"))
-	}
-	defer C.go_openssl_RSA_free(key)
-
 	var n, e, d, p, q, dp, dq, qinv *C.BIGNUM
-	if vMajor == 1 && vMinor == 0 {
-		key1_0_2 := (*rsa_st_1_0_2)(unsafe.Pointer(key))
-		n = key1_0_2.n
-		e = key1_0_2.e
-		d = key1_0_2.d
-		p = key1_0_2.p
-		q = key1_0_2.q
-		dp = key1_0_2.dmp1
-		dq = key1_0_2.dmq1
-		qinv = key1_0_2.iqmp
-	} else {
-		C.go_openssl_RSA_get0_key(key, &n, &e, &d)
-		C.go_openssl_RSA_get0_factors(key, &p, &q)
-		C.go_openssl_RSA_get0_crt_params(key, &dp, &dq, &qinv)
+	switch vMajor {
+	case 1:
+		key := C.go_openssl_EVP_PKEY_get1_RSA(pkey)
+		if key == nil {
+			return bad(newOpenSSLError("EVP_PKEY_get1_RSA failed"))
+		}
+		defer C.go_openssl_RSA_free(key)
+		if vMinor == 0 {
+			key1_0_2 := (*rsa_st_1_0_2)(unsafe.Pointer(key))
+			n = key1_0_2.n
+			e = key1_0_2.e
+			d = key1_0_2.d
+			p = key1_0_2.p
+			q = key1_0_2.q
+			dp = key1_0_2.dmp1
+			dq = key1_0_2.dmq1
+			qinv = key1_0_2.iqmp
+		} else {
+			C.go_openssl_RSA_get0_key(key, &n, &e, &d)
+			C.go_openssl_RSA_get0_factors(key, &p, &q)
+			C.go_openssl_RSA_get0_crt_params(key, &dp, &dq, &qinv)
+		}
+	case 3:
+		// EVP_PKEY_get_bn_param allocates a copy of the BIGNUMBER.
+		params := [...]struct {
+			key *C.char
+			bn  **C.BIGNUM
+		}{
+			{ossl_PKEY_PARAM_RSA_N, &n}, {ossl_PKEY_PARAM_RSA_E, &e}, {ossl_PKEY_PARAM_RSA_D, &d},
+			{ossl_PKEY_PARAM_RSA_FACTOR1, &p}, {ossl_PKEY_PARAM_RSA_FACTOR2, &q},
+			{ossl_PKEY_PARAM_RSA_EXPONENT1, &dp}, {ossl_PKEY_PARAM_RSA_EXPONENT2, &dq},
+			{osl_PKEY_PARAM_RSA_COEFFICIENT1, &qinv},
+		}
+		for _, p := range params {
+			if C.go_openssl_EVP_PKEY_get_bn_param(pkey, p.key, p.bn) != 1 {
+				return bad(newOpenSSLError("EVP_PKEY_get_bn_param failed"))
+			}
+			defer C.go_openssl_BN_free(*p.bn)
+		}
+	default:
+		panic(errUnsuportedVersion())
 	}
 	return bnToBig(n), bnToBig(e), bnToBig(d), bnToBig(p), bnToBig(q), bnToBig(dp), bnToBig(dq), bnToBig(qinv), nil
+}
+
+func buildBNParams(bns map[*C.char]*big.Int) (*C.OSSL_PARAM, error) {
+	bld := C.go_openssl_OSSL_PARAM_BLD_new()
+	if bld == nil {
+		return nil, newOpenSSLError("OSSL_PARAM_BLD_new failed")
+	}
+	defer C.go_openssl_OSSL_PARAM_BLD_free(bld)
+	for name, b := range bns {
+		if b == nil {
+			continue
+		}
+		v := bigToBN(b)
+		if v == nil {
+			return nil, newOpenSSLError("BN_bin2bn failed")
+		}
+		defer C.go_openssl_BN_free(v)
+		if C.go_openssl_OSSL_PARAM_BLD_push_BN(bld, name, v) != 1 {
+			return nil, newOpenSSLError("OSSL_PARAM_BLD_push_BN failed")
+		}
+	}
+	params := C.go_openssl_OSSL_PARAM_BLD_to_param(bld)
+	if params == nil {
+		return nil, newOpenSSLError("OSSL_PARAM_BLD_to_param failed")
+	}
+	return params, nil
+}
+
+func newRSAPKEY(bns map[*C.char]*big.Int) (*C.EVP_PKEY, error) {
+	params, err := buildBNParams(bns)
+	if err != nil {
+		return nil, err
+	}
+	defer C.go_openssl_OSSL_PARAM_free(params)
+	ctx := C.go_openssl_EVP_PKEY_CTX_new_id(C.EVP_PKEY_RSA, nil)
+	if ctx == nil {
+		return nil, newOpenSSLError("EVP_PKEY_CTX_new_id failed")
+	}
+	defer C.go_openssl_EVP_PKEY_CTX_free(ctx)
+	if C.go_openssl_EVP_PKEY_fromdata_init(ctx) != 1 {
+		return nil, newOpenSSLError("EVP_PKEY_fromdata_init failed")
+	}
+	var pkey *C.EVP_PKEY
+	if C.go_openssl_EVP_PKEY_fromdata(ctx, &pkey, C.EVP_PKEY_KEYPAIR, params) != 1 {
+		return nil, newOpenSSLError("EVP_PKEY_fromdata failed")
+	}
+	return pkey, nil
 }
 
 type PublicKeyRSA struct {
@@ -129,23 +202,37 @@ type PublicKeyRSA struct {
 }
 
 func NewPublicKeyRSA(N, E *big.Int) (*PublicKeyRSA, error) {
-	key := C.go_openssl_RSA_new()
-	if key == nil {
-		return nil, newOpenSSLError("RSA_new failed")
-	}
-	var n, e *C.BIGNUM
-	n = bigToBN(N)
-	e = bigToBN(E)
-	rsa_st_set_key(key, n, e, nil)
-	pkey := C.go_openssl_EVP_PKEY_new()
-	if pkey == nil {
-		C.go_openssl_RSA_free(key)
-		return nil, newOpenSSLError("EVP_PKEY_new failed")
-	}
-	if C.go_openssl_EVP_PKEY_assign(pkey, C.EVP_PKEY_RSA, (unsafe.Pointer)(key)) != 1 {
-		C.go_openssl_RSA_free(key)
-		C.go_openssl_EVP_PKEY_free(pkey)
-		return nil, newOpenSSLError("EVP_PKEY_assign failed")
+	var pkey *C.EVP_PKEY
+	switch vMajor {
+	case 1:
+		key := C.go_openssl_RSA_new()
+		if key == nil {
+			return nil, newOpenSSLError("RSA_new failed")
+		}
+		n := bigToBN(N)
+		e := bigToBN(E)
+		rsa_st_set_key(key, n, e, nil)
+		pkey = C.go_openssl_EVP_PKEY_new()
+		if pkey == nil {
+			C.go_openssl_RSA_free(key)
+			return nil, newOpenSSLError("EVP_PKEY_new failed")
+		}
+		if C.go_openssl_EVP_PKEY_assign(pkey, C.EVP_PKEY_RSA, (unsafe.Pointer)(key)) != 1 {
+			C.go_openssl_RSA_free(key)
+			C.go_openssl_EVP_PKEY_free(pkey)
+			return nil, newOpenSSLError("EVP_PKEY_assign failed")
+		}
+	case 3:
+		var err error
+		pkey, err = newRSAPKEY(map[*C.char]*big.Int{
+			ossl_PKEY_PARAM_RSA_N: N,
+			ossl_PKEY_PARAM_RSA_E: E,
+		})
+		if err != nil {
+			return nil, err
+		}
+	default:
+		panic(errUnsuportedVersion())
 	}
 	k := &PublicKeyRSA{_pkey: pkey}
 	runtime.SetFinalizer(k, (*PublicKeyRSA).finalize)
@@ -170,48 +257,69 @@ type PrivateKeyRSA struct {
 }
 
 func NewPrivateKeyRSA(N, E, D, P, Q, Dp, Dq, Qinv *big.Int) (*PrivateKeyRSA, error) {
-	key := C.go_openssl_RSA_new()
-	if key == nil {
-		return nil, newOpenSSLError("RSA_new failed")
-	}
-	var n, e, d, p, q, dp, dq, qinv *C.BIGNUM
-	n = bigToBN(N)
-	e = bigToBN(E)
-	d = bigToBN(D)
-	rsa_st_set_key(key, n, e, d)
-	if P != nil && Q != nil {
-		p = bigToBN(P)
-		q = bigToBN(Q)
-		if vMajor == 1 && vMinor == 0 {
-			key1_0_2 := (*rsa_st_1_0_2)(unsafe.Pointer(key))
-			key1_0_2.p = p
-			key1_0_2.q = q
-		} else {
-			C.go_openssl_RSA_set0_factors(key, p, q)
+	var pkey *C.EVP_PKEY
+	switch vMajor {
+	case 1:
+		key := C.go_openssl_RSA_new()
+		if key == nil {
+			return nil, newOpenSSLError("RSA_new failed")
 		}
-	}
-	if Dp != nil && Dq != nil && Qinv != nil {
-		dp = bigToBN(Dp)
-		dq = bigToBN(Dq)
-		qinv = bigToBN(Qinv)
-		if vMajor == 1 && vMinor == 0 {
-			key1_0_2 := (*rsa_st_1_0_2)(unsafe.Pointer(key))
-			key1_0_2.dmp1 = dq
-			key1_0_2.dmq1 = dq
-			key1_0_2.iqmp = qinv
-		} else {
-			C.go_openssl_RSA_set0_crt_params(key, dp, dq, qinv)
+		var n, e, d, p, q, dp, dq, qinv *C.BIGNUM
+		n = bigToBN(N)
+		e = bigToBN(E)
+		d = bigToBN(D)
+		rsa_st_set_key(key, n, e, d)
+		if P != nil && Q != nil {
+			p = bigToBN(P)
+			q = bigToBN(Q)
+			if vMinor == 0 {
+				key1_0_2 := (*rsa_st_1_0_2)(unsafe.Pointer(key))
+				key1_0_2.p = p
+				key1_0_2.q = q
+			} else {
+				C.go_openssl_RSA_set0_factors(key, p, q)
+			}
 		}
-	}
-	pkey := C.go_openssl_EVP_PKEY_new()
-	if pkey == nil {
-		C.go_openssl_RSA_free(key)
-		return nil, newOpenSSLError("EVP_PKEY_new failed")
-	}
-	if C.go_openssl_EVP_PKEY_assign(pkey, C.EVP_PKEY_RSA, (unsafe.Pointer)(key)) != 1 {
-		C.go_openssl_RSA_free(key)
-		C.go_openssl_EVP_PKEY_free(pkey)
-		return nil, newOpenSSLError("EVP_PKEY_assign failed")
+		if Dp != nil && Dq != nil && Qinv != nil {
+			dp = bigToBN(Dp)
+			dq = bigToBN(Dq)
+			qinv = bigToBN(Qinv)
+			if vMinor == 0 {
+				key1_0_2 := (*rsa_st_1_0_2)(unsafe.Pointer(key))
+				key1_0_2.dmp1 = dq
+				key1_0_2.dmq1 = dq
+				key1_0_2.iqmp = qinv
+			} else {
+				C.go_openssl_RSA_set0_crt_params(key, dp, dq, qinv)
+			}
+		}
+		pkey = C.go_openssl_EVP_PKEY_new()
+		if pkey == nil {
+			C.go_openssl_RSA_free(key)
+			return nil, newOpenSSLError("EVP_PKEY_new failed")
+		}
+		if C.go_openssl_EVP_PKEY_assign(pkey, C.EVP_PKEY_RSA, (unsafe.Pointer)(key)) != 1 {
+			C.go_openssl_RSA_free(key)
+			C.go_openssl_EVP_PKEY_free(pkey)
+			return nil, newOpenSSLError("EVP_PKEY_assign failed")
+		}
+	case 3:
+		var err error
+		pkey, err = newRSAPKEY(map[*C.char]*big.Int{
+			ossl_PKEY_PARAM_RSA_N:           N,
+			ossl_PKEY_PARAM_RSA_E:           E,
+			ossl_PKEY_PARAM_RSA_D:           D,
+			ossl_PKEY_PARAM_RSA_FACTOR1:     P,
+			ossl_PKEY_PARAM_RSA_FACTOR2:     Q,
+			ossl_PKEY_PARAM_RSA_EXPONENT1:   Dp,
+			ossl_PKEY_PARAM_RSA_EXPONENT2:   Dq,
+			osl_PKEY_PARAM_RSA_COEFFICIENT1: Qinv,
+		})
+		if err != nil {
+			return nil, err
+		}
+	default:
+		panic(errUnsuportedVersion())
 	}
 	k := &PrivateKeyRSA{_pkey: pkey}
 	runtime.SetFinalizer(k, (*PrivateKeyRSA).finalize)

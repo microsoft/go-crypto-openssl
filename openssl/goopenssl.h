@@ -39,6 +39,7 @@ void go_openssl_load_functions(void* handle, const void* v1_0_sentinel, const vo
 #if OPENSSL_VERSION_NUMBER < OPENSSL_VERSION_3_0_RTM
 typedef void* EVP_MAC;
 typedef void* EVP_MAC_CTX;
+typedef void* OSSL_PARAM_BLD;
 typedef struct ossl_param_st {
     const char *key;     
     unsigned int data_type; 
@@ -46,6 +47,7 @@ typedef struct ossl_param_st {
     size_t data_size;
     size_t return_size;
 } OSSL_PARAM;
+#define EVP_PKEY_KEYPAIR
 #endif
 
 #include "openssl_funcs.h"
