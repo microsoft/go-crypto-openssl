@@ -93,24 +93,13 @@ DEFINEFUNC(void, EC_POINT_free, (EC_POINT * arg0), (arg0)) \
 DEFINEFUNC(int, EC_POINT_get_affine_coordinates_GFp, \
            (const EC_GROUP *arg0, const EC_POINT *arg1, BIGNUM *arg2, BIGNUM *arg3, BN_CTX *arg4), \
            (arg0, arg1, arg2, arg3, arg4)) \
-DEFINEFUNC(int, EC_POINT_set_affine_coordinates_GFp, \
-           (const EC_GROUP *arg0, EC_POINT *arg1, const BIGNUM *arg2, const BIGNUM *arg3, BN_CTX *arg4), \
-           (arg0, arg1, arg2, arg3, arg4)) \
 DEFINEFUNC(EC_KEY *, EC_KEY_new_by_curve_name, (int arg0), (arg0)) \
+DEFINEFUNC(int, EC_KEY_set_public_key_affine_coordinates, (EC_KEY *key, BIGNUM *x, BIGNUM *y), (key, x, y)) \
 DEFINEFUNC(void, EC_KEY_free, (EC_KEY * arg0), (arg0)) \
 DEFINEFUNC(const EC_GROUP *, EC_KEY_get0_group, (const EC_KEY *arg0), (arg0)) \
-DEFINEFUNC(int, EC_KEY_generate_key, (EC_KEY * arg0), (arg0)) \
 DEFINEFUNC(int, EC_KEY_set_private_key, (EC_KEY * arg0, const BIGNUM *arg1), (arg0, arg1)) \
-DEFINEFUNC(int, EC_KEY_set_public_key, (EC_KEY * arg0, const EC_POINT *arg1), (arg0, arg1)) \
 DEFINEFUNC(const BIGNUM *, EC_KEY_get0_private_key, (const EC_KEY *arg0), (arg0)) \
 DEFINEFUNC(const EC_POINT *, EC_KEY_get0_public_key, (const EC_KEY *arg0), (arg0)) \
-DEFINEFUNC(size_t, ECDSA_size, (const EC_KEY *arg0), (arg0)) \
-DEFINEFUNC(int, ECDSA_sign,  \
-    (int type, const unsigned char *dgst, size_t dgstlen, unsigned char *sig, unsigned int *siglen, EC_KEY *eckey), \
-    (type, dgst, dgstlen, sig, siglen, eckey)) \
-DEFINEFUNC(int, ECDSA_verify,  \
-    (int type, const unsigned char *dgst, size_t dgstlen, const unsigned char *sig, unsigned int siglen, EC_KEY *eckey), \
-    (type, dgst, dgstlen, sig, siglen, eckey)) \
 DEFINEFUNC(RSA *, RSA_new, (void), ()) \
 DEFINEFUNC(void, RSA_free, (RSA * arg0), (arg0)) \
 DEFINEFUNC_FALLBACK(int, RSA_set0_factors, (RSA * rsa, BIGNUM *p, BIGNUM *q), (rsa, p, q)) \

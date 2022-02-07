@@ -21,19 +21,31 @@ type ecdsaSignature struct {
 }
 
 type PrivateKeyECDSA struct {
-	key *C.EC_KEY
+	// _pkey MUST NOT be accessed directly. Instead, use the withKey method.
+	_pkey *C.EVP_PKEY
 }
 
 func (k *PrivateKeyECDSA) finalize() {
-	C.go_openssl_EC_KEY_free(k.key)
+	C.go_openssl_EVP_PKEY_free(k._pkey)
+}
+
+func (k *PrivateKeyECDSA) withKey(f func(*C.EVP_PKEY) C.int) C.int {
+	defer runtime.KeepAlive(k)
+	return f(k._pkey)
 }
 
 type PublicKeyECDSA struct {
-	key *C.EC_KEY
+	// _pkey MUST NOT be accessed directly. Instead, use the withKey method.
+	_pkey *C.EVP_PKEY
 }
 
 func (k *PublicKeyECDSA) finalize() {
-	C.go_openssl_EC_KEY_free(k.key)
+	C.go_openssl_EVP_PKEY_free(k._pkey)
+}
+
+func (k *PublicKeyECDSA) withKey(f func(*C.EVP_PKEY) C.int) C.int {
+	defer runtime.KeepAlive(k)
+	return f(k._pkey)
 }
 
 var errUnknownCurve = errors.New("openssl: unknown elliptic curve")
@@ -54,11 +66,11 @@ func curveNID(curve string) (C.int, error) {
 }
 
 func NewPublicKeyECDSA(curve string, X, Y *big.Int) (*PublicKeyECDSA, error) {
-	key, err := newECKey(curve, X, Y)
+	pkey, err := newECKey(curve, X, Y, nil)
 	if err != nil {
 		return nil, err
 	}
-	k := &PublicKeyECDSA{key}
+	k := &PublicKeyECDSA{_pkey: pkey}
 	// Note: Because of the finalizer, any time k.key is passed to cgo,
 	// that call must be followed by a call to runtime.KeepAlive(k),
 	// to make sure k is not collected (and finalized) before the cgo
@@ -67,54 +79,66 @@ func NewPublicKeyECDSA(curve string, X, Y *big.Int) (*PublicKeyECDSA, error) {
 	return k, nil
 }
 
-func newECKey(curve string, X, Y *big.Int) (*C.EC_KEY, error) {
-	nid, err := curveNID(curve)
-	if err != nil {
+func newECKey(curve string, X, Y, D *big.Int) (pkey *C.EVP_PKEY, err error) {
+	var nid C.int
+	if nid, err = curveNID(curve); err != nil {
 		return nil, err
 	}
-	key := C.go_openssl_EC_KEY_new_by_curve_name(nid)
-	if key == nil {
+	var bx, by *C.BIGNUM
+	var key *C.EC_KEY
+	defer func() {
+		if bx != nil {
+			C.go_openssl_BN_free(bx)
+		}
+		if by != nil {
+			C.go_openssl_BN_free(by)
+		}
+		if err != nil {
+			if key != nil {
+				C.go_openssl_EC_KEY_free(key)
+			}
+			if pkey != nil {
+				C.go_openssl_EVP_PKEY_free(pkey)
+				pkey = nil
+			}
+		}
+	}()
+	bx = bigToBN(X)
+	by = bigToBN(Y)
+	if bx == nil || by == nil {
+		return nil, newOpenSSLError("BN_bin2bn failed")
+	}
+	if key = C.go_openssl_EC_KEY_new_by_curve_name(nid); key == nil {
 		return nil, newOpenSSLError("EC_KEY_new_by_curve_name failed")
 	}
-	group := C.go_openssl_EC_KEY_get0_group(key)
-	pt := C.go_openssl_EC_POINT_new(group)
-	if pt == nil {
-		C.go_openssl_EC_KEY_free(key)
-		return nil, newOpenSSLError("EC_POINT_new failed")
+	if C.go_openssl_EC_KEY_set_public_key_affine_coordinates(key, bx, by) != 1 {
+		return nil, newOpenSSLError("EC_KEY_set_public_key_affine_coordinates failed")
 	}
-	bx := bigToBN(X)
-	by := bigToBN(Y)
-	ok := bx != nil && by != nil && C.go_openssl_EC_POINT_set_affine_coordinates_GFp(group, pt, bx, by, nil) != 0 &&
-		C.go_openssl_EC_KEY_set_public_key(key, pt) != 0
-	if bx != nil {
-		C.go_openssl_BN_free(bx)
+	if D != nil {
+		bd := bigToBN(D)
+		if bd == nil {
+			return nil, newOpenSSLError("BN_bin2bn failed")
+		}
+		defer C.go_openssl_BN_free(bd)
+		if C.go_openssl_EC_KEY_set_private_key(key, bd) != 1 {
+			return nil, newOpenSSLError("EC_KEY_set_private_key failed")
+		}
 	}
-	if by != nil {
-		C.go_openssl_BN_free(by)
+	if pkey = C.go_openssl_EVP_PKEY_new(); pkey == nil {
+		return nil, newOpenSSLError("EVP_PKEY_new failed")
 	}
-	C.go_openssl_EC_POINT_free(pt)
-	if !ok {
-		C.go_openssl_EC_KEY_free(key)
-		return nil, newOpenSSLError("EC_POINT_free failed")
+	if C.go_openssl_EVP_PKEY_assign(pkey, C.EVP_PKEY_EC, (unsafe.Pointer)(key)) != 1 {
+		return nil, newOpenSSLError("EVP_PKEY_assign failed")
 	}
-	return key, nil
+	return pkey, nil
 }
 
 func NewPrivateKeyECDSA(curve string, X, Y *big.Int, D *big.Int) (*PrivateKeyECDSA, error) {
-	key, err := newECKey(curve, X, Y)
+	pkey, err := newECKey(curve, X, Y, D)
 	if err != nil {
 		return nil, err
 	}
-	bd := bigToBN(D)
-	ok := bd != nil && C.go_openssl_EC_KEY_set_private_key(key, bd) != 0
-	if bd != nil {
-		C.go_openssl_BN_free(bd)
-	}
-	if !ok {
-		C.go_openssl_EC_KEY_free(key)
-		return nil, newOpenSSLError("EC_KEY_set_private_key failed")
-	}
-	k := &PrivateKeyECDSA{key}
+	k := &PrivateKeyECDSA{_pkey: pkey}
 	// Note: Because of the finalizer, any time k.key is passed to cgo,
 	// that call must be followed by a call to runtime.KeepAlive(k),
 	// to make sure k is not collected (and finalized) before the cgo
@@ -140,14 +164,7 @@ func SignECDSA(priv *PrivateKeyECDSA, hash []byte) (r, s *big.Int, err error) {
 }
 
 func SignMarshalECDSA(priv *PrivateKeyECDSA, hash []byte) ([]byte, error) {
-	size := C.go_openssl_ECDSA_size(priv.key)
-	sig := make([]byte, size)
-	var sigLen C.uint
-	if C.go_openssl_ECDSA_sign(0, base(hash), C.size_t(len(hash)), (*C.uint8_t)(unsafe.Pointer(&sig[0])), &sigLen, priv.key) == 0 {
-		return nil, newOpenSSLError("ECDSA_sign failed")
-	}
-	runtime.KeepAlive(priv)
-	return sig[:sigLen], nil
+	return evpSign(priv.withKey, 0, 0, 0, hash)
 }
 
 func VerifyECDSA(pub *PublicKeyECDSA, hash []byte, r, s *big.Int) bool {
@@ -158,24 +175,20 @@ func VerifyECDSA(pub *PublicKeyECDSA, hash []byte, r, s *big.Int) bool {
 	if err != nil {
 		return false
 	}
-	ok := C.go_openssl_ECDSA_verify(0, base(hash), C.size_t(len(hash)), (*C.uint8_t)(unsafe.Pointer(&sig[0])), C.uint(len(sig)), pub.key) > 0
-	runtime.KeepAlive(pub)
-	return ok
+	return evpVerify(pub.withKey, 0, 0, 0, sig, hash) == nil
 }
 
 func GenerateKeyECDSA(curve string) (X, Y, D *big.Int, err error) {
-	nid, err := curveNID(curve)
+	pkey, err := generateEVPPKey(C.EVP_PKEY_EC, 0, curve)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	key := C.go_openssl_EC_KEY_new_by_curve_name(nid)
+	defer C.go_openssl_EVP_PKEY_free(pkey)
+	key := C.go_openssl_EVP_PKEY_get1_EC_KEY(pkey)
 	if key == nil {
-		return nil, nil, nil, newOpenSSLError("EC_KEY_new_by_curve_name failed")
+		return nil, nil, nil, newOpenSSLError("EVP_PKEY_get1_EC_KEY failed")
 	}
 	defer C.go_openssl_EC_KEY_free(key)
-	if C.go_openssl_EC_KEY_generate_key(key) == 0 {
-		return nil, nil, nil, newOpenSSLError("EC_KEY_generate_key failed")
-	}
 	group := C.go_openssl_EC_KEY_get0_group(key)
 	pt := C.go_openssl_EC_KEY_get0_public_key(key)
 	bd := C.go_openssl_EC_KEY_get0_private_key(key)
