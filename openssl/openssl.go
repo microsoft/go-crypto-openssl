@@ -21,6 +21,8 @@ import (
 
 var (
 	providerNameFips = C.CString("fips")
+	propFipsYes      = C.CString("fips=yes")
+	propFipsNo       = C.CString("fips=no")
 )
 
 // Init loads and initializes OpenSSL.
@@ -55,14 +57,14 @@ func FIPS() bool {
 
 // SetFIPS enables or disables FIPS mode.
 func SetFIPS(enabled bool) error {
-	var mode C.int
-	if enabled {
-		mode = C.int(1)
-	} else {
-		mode = C.int(0)
-	}
 	// FIPS_mode_set is only defined in OpenSSL 1.
 	if C._g_FIPS_mode_set != nil {
+		var mode C.int
+		if enabled {
+			mode = C.int(1)
+		} else {
+			mode = C.int(0)
+		}
 		if C.go_openssl_FIPS_mode_set(mode) != 1 {
 			return newOpenSSLError("openssl: FIPS_mode_set")
 		}
@@ -76,8 +78,15 @@ func SetFIPS(enabled bool) error {
 			}
 		}
 	}
-	if C.go_openssl_EVP_default_properties_enable_fips(nil, mode) != 1 {
-		return newOpenSSLError("openssl: EVP_default_properties_enable_fips")
+
+	var prop *C.char
+	if enabled {
+		prop = propFipsYes
+	} else {
+		prop = propFipsNo
+	}
+	if C.go_openssl_EVP_set_default_properties(nil, prop) != 1 {
+		return newOpenSSLError("openssl: EVP_set_default_properties")
 	}
 	return nil
 }
