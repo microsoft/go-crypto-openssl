@@ -50,8 +50,13 @@ DEFINEFUNC_LEGACY_1_0(void, CRYPTO_set_locking_callback, \
     (locking_function)) \
 DEFINEFUNC_LEGACY_1_0(void, OPENSSL_add_all_algorithms_conf, (void), ()) \
 DEFINEFUNC_1_1(int, OPENSSL_init_crypto, (uint64_t ops, const void *settings), (ops, settings)) \
-DEFINEFUNC(int, FIPS_mode, (void), ()) \
-DEFINEFUNC(int, FIPS_mode_set, (int r), (r)) \
+DEFINEFUNC_LEGACY_1(int, FIPS_mode, (void), ()) \
+DEFINEFUNC_LEGACY_1(int, FIPS_mode_set, (int r), (r)) \
+DEFINEFUNC_3_0(int, EVP_default_properties_is_fips_enabled, (void* libctx), (libctx)) \
+DEFINEFUNC_3_0(int, EVP_default_properties_enable_fips, (void* libctx, int enabled), (libctx, enabled)) \
+DEFINEFUNC_3_0(void*, OSSL_PROVIDER_try_load, (void* libctx, const char *name, int retain_fallbacks), (libctx, name, retain_fallbacks)) \
+DEFINEFUNC_3_0(void*, OSSL_PROVIDER_load, (void* libctx, const char *name), (libctx, name)) \
+DEFINEFUNC_3_0(int, OSSL_PROVIDER_available, (void* libctx, const char *name), (libctx, name)) \
 DEFINEFUNC(int, RAND_bytes, (uint8_t * arg0, size_t arg1), (arg0, arg1)) \
 DEFINEFUNC(int, SHA1_Init, (SHA_CTX * arg0), (arg0)) \
 DEFINEFUNC(int, SHA1_Update, (SHA_CTX * arg0, const void *arg1, size_t arg2), (arg0, arg1, arg2)) \

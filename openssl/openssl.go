@@ -19,6 +19,10 @@ import (
 	"strings"
 )
 
+var (
+	providerNameFips = C.CString("fips")
+)
+
 // Init loads and initializes OpenSSL.
 // It must be called before any other OpenSSL call.
 func Init() error {
@@ -37,7 +41,16 @@ func Init() error {
 
 // FIPS returns true if OpenSSL is running in FIPS mode, else returns false.
 func FIPS() bool {
-	return C.go_openssl_FIPS_mode() == 1
+	// FIPS_mode is only defined in OpenSSL 1.
+	if C._g_FIPS_mode != nil {
+		return C.go_openssl_FIPS_mode() == 1
+	}
+	if C.go_openssl_EVP_default_properties_is_fips_enabled(nil) == 0 {
+		return false
+	}
+	// EVP_default_properties_is_fips_enabled can return true even if the FIPS provider isn't loaded,
+	// it is only based on the default properties.
+	return C.go_openssl_OSSL_PROVIDER_available(nil, providerNameFips) == 1
 }
 
 // SetFIPS enables or disables FIPS mode.
@@ -48,8 +61,23 @@ func SetFIPS(enabled bool) error {
 	} else {
 		mode = C.int(0)
 	}
-	if C.go_openssl_FIPS_mode_set(mode) != 1 {
-		return newOpenSSLError("openssl: set FIPS mode")
+	// FIPS_mode_set is only defined in OpenSSL 1.
+	if C._g_FIPS_mode_set != nil {
+		if C.go_openssl_FIPS_mode_set(mode) != 1 {
+			return newOpenSSLError("openssl: FIPS_mode_set")
+		}
+		return nil
+	}
+	if enabled {
+		if C.go_openssl_OSSL_PROVIDER_available(nil, providerNameFips) == 0 {
+			// The last parameter is set to 1 in order to allow loading fallback providers.
+			if C.go_openssl_OSSL_PROVIDER_try_load(nil, providerNameFips, 1) == nil {
+				return newOpenSSLError("openssl: OSSL_PROVIDER_try_load")
+			}
+		}
+	}
+	if C.go_openssl_EVP_default_properties_enable_fips(nil, mode) != 1 {
+		return newOpenSSLError("openssl: EVP_default_properties_enable_fips")
 	}
 	return nil
 }
