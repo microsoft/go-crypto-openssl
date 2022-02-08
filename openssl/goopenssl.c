@@ -16,6 +16,7 @@
 #define DEFINEFUNC_LEGACY_1_0(ret, func, args, argscall)       DEFINEFUNC(ret, func, args, argscall)
 #define DEFINEFUNC_LEGACY_1(ret, func, args, argscall)         DEFINEFUNC(ret, func, args, argscall)
 #define DEFINEFUNC_1_1(ret, func, args, argscall)              DEFINEFUNC(ret, func, args, argscall)
+#define DEFINEFUNC_3_0(ret, func, args, argscall)              DEFINEFUNC(ret, func, args, argscall)
 #define DEFINEFUNC_RENAMED(ret, func, oldfunc, args, argscall) DEFINEFUNC(ret, func, args, argscall)
 #define DEFINEFUNC_FALLBACK(ret, func, args, argscall)         DEFINEFUNC(ret, func, args, argscall)
 
@@ -25,6 +26,7 @@ FOR_ALL_OPENSSL_FUNCTIONS
 #undef DEFINEFUNC_LEGACY_1_0
 #undef DEFINEFUNC_LEGACY_1
 #undef DEFINEFUNC_1_1
+#undef DEFINEFUNC_3_0
 #undef DEFINEFUNC_RENAMED
 #undef DEFINEFUNC_FALLBACK
 
@@ -61,6 +63,11 @@ go_openssl_load_functions(const void* v1_0_sentinel, const void* v1_sentinel)
     {                                                 \
         DEFINEFUNC(ret, func, args, argscall) \
     }
+#define DEFINEFUNC_3_0(ret, func, args, argscall)     \
+    if (v1_sentinel == NULL)                        \
+    {                                                 \
+        DEFINEFUNC(ret, func, args, argscall) \
+    }
 #define DEFINEFUNC_RENAMED(ret, func, oldfunc, args, argscall)                                              \
     tmp_ptr = dlsym(handle, #func);                                                                         \
     if (tmp_ptr == NULL)                                                                                    \
@@ -84,6 +91,7 @@ FOR_ALL_OPENSSL_FUNCTIONS
 #undef DEFINEFUNC_LEGACY_1_0
 #undef DEFINEFUNC_LEGACY_1
 #undef DEFINEFUNC_1_1
+#undef DEFINEFUNC_3_0
 #undef DEFINEFUNC_RENAMED
 #undef DEFINEFUNC_FALLBACK
 }

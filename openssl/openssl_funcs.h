@@ -30,6 +30,9 @@
 // DEFINEFUNC_1_1 acts like DEFINEFUNC but only aborts the process if function can't be loaded
 // when using 1.1.0 or higher.
 //
+// DEFINEFUNC_3_0 acts like DEFINEFUNC but only aborts the process if function can't be loaded
+// when using 3.0.0 or higher.
+//
 // DEFINEFUNC_RENAMED acts like DEFINEFUNC but if the function can't be loaded it will try with another
 // function name, as in some version jumps openssl has renamed functions without changing the signature.
 // The process will be aborted if neither function can be loaded.
