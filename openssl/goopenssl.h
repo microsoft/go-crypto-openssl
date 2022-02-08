@@ -11,7 +11,6 @@
 
 #include <openssl/ossl_typ.h>
 #include <openssl/opensslv.h>
-#include <openssl/ssl.h>
 #include <openssl/crypto.h>
 #include <openssl/err.h>
 #include <openssl/rand.h>
@@ -48,9 +47,11 @@ int go_openssl_setup(void);
     {                                              \
         return _g_##func argscall;                 \
     }
-#define DEFINEFUNC_LEGACY(ret, func, args, argscall)  \
+#define DEFINEFUNC_LEGACY_1_0(ret, func, args, argscall)  \
     DEFINEFUNC(ret, func, args, argscall)
-#define DEFINEFUNC_110(ret, func, args, argscall)     \
+#define DEFINEFUNC_LEGACY_1(ret, func, args, argscall)  \
+    DEFINEFUNC(ret, func, args, argscall)
+#define DEFINEFUNC_1_1(ret, func, args, argscall)     \
     DEFINEFUNC(ret, func, args, argscall)
 #define DEFINEFUNC_RENAMED(ret, func, oldfunc, args, argscall)     \
     DEFINEFUNC(ret, func, args, argscall)
@@ -60,8 +61,9 @@ int go_openssl_setup(void);
 FOR_ALL_OPENSSL_FUNCTIONS
 
 #undef DEFINEFUNC
-#undef DEFINEFUNC_LEGACY
-#undef DEFINEFUNC_110
+#undef DEFINEFUNC_LEGACY_1_0
+#undef DEFINEFUNC_LEGACY_1
+#undef DEFINEFUNC_1_1
 #undef DEFINEFUNC_RENAMED
 #undef DEFINEFUNC_FALLBACK
 
