@@ -19,11 +19,15 @@
 // the OpenSSL API and do not require special logic.
 // The process will be aborted if the function can't be loaded.
 //
-// DEFINEFUNC_LEGACY acts like DEFINEFUNC but only aborts the process if the function can't be loaded
+// DEFINEFUNC_LEGACY_1_0 acts like DEFINEFUNC but only aborts the process if the function can't be loaded
 // when using 1.0.x. This indicates the function is required when using 1.0.x, but is unused when using later versions.
 // It also might not exist in later versions.
 //
-// DEFINEFUNC_110 acts like DEFINEFUNC but only aborts the process if function can't be loaded
+// DEFINEFUNC_LEGACY_1 acts like DEFINEFUNC but only aborts the process if the function can't be loaded
+// when using 1.x. This indicates the function is required when using 1.x, but is unused when using later versions.
+// It also might not exist in later versions.
+//
+// DEFINEFUNC_1_1 acts like DEFINEFUNC but only aborts the process if function can't be loaded
 // when using 1.1.0 or higher.
 //
 // DEFINEFUNC_RENAMED acts like DEFINEFUNC but if the function can't be loaded it will try with another
@@ -35,14 +39,14 @@ DEFINEFUNC(unsigned long, ERR_get_error, (void), ()) \
 DEFINEFUNC(void, ERR_error_string_n, (unsigned long e, unsigned char *buf, size_t len), (e, buf, len)) \
 DEFINEFUNC_RENAMED(const char *, OpenSSL_version, SSLeay_version, (int type), (type)) \
 DEFINEFUNC(void, OPENSSL_init, (void), ()) \
-DEFINEFUNC_LEGACY(void, ERR_load_crypto_strings, (void), ()) \
-DEFINEFUNC_LEGACY(int, CRYPTO_num_locks, (void), ()) \
-DEFINEFUNC_LEGACY(void, CRYPTO_set_id_callback, (unsigned long (*id_function)(void)), (id_function)) \
-DEFINEFUNC_LEGACY(void, CRYPTO_set_locking_callback, \
+DEFINEFUNC_LEGACY_1_0(void, ERR_load_crypto_strings, (void), ()) \
+DEFINEFUNC_LEGACY_1_0(int, CRYPTO_num_locks, (void), ()) \
+DEFINEFUNC_LEGACY_1_0(void, CRYPTO_set_id_callback, (unsigned long (*id_function)(void)), (id_function)) \
+DEFINEFUNC_LEGACY_1_0(void, CRYPTO_set_locking_callback, \
     (void (*locking_function)(int mode, int n, const char *file, int line)),  \
     (locking_function)) \
-DEFINEFUNC_LEGACY(void, OPENSSL_add_all_algorithms_conf, (void), ()) \
-DEFINEFUNC_110(int, OPENSSL_init_crypto, (uint64_t ops, const void *settings), (ops, settings)) \
+DEFINEFUNC_LEGACY_1_0(void, OPENSSL_add_all_algorithms_conf, (void), ()) \
+DEFINEFUNC_1_1(int, OPENSSL_init_crypto, (uint64_t ops, const void *settings), (ops, settings)) \
 DEFINEFUNC(int, FIPS_mode, (void), ()) \
 DEFINEFUNC(int, FIPS_mode_set, (int r), (r)) \
 DEFINEFUNC(int, RAND_bytes, (uint8_t * arg0, size_t arg1), (arg0, arg1)) \
@@ -62,8 +66,8 @@ DEFINEFUNC(const EVP_MD *, EVP_sha512, (void), ()) \
 DEFINEFUNC_FALLBACK(const EVP_MD*, EVP_md5_sha1, (void), ()) \
 DEFINEFUNC_RENAMED(int, EVP_MD_get_type, EVP_MD_type, (const EVP_MD *arg0), (arg0)) \
 DEFINEFUNC_RENAMED(size_t, EVP_MD_get_size, EVP_MD_size, (const EVP_MD *arg0), (arg0)) \
-DEFINEFUNC_LEGACY(void, HMAC_CTX_init, (HMAC_CTX * arg0), (arg0)) \
-DEFINEFUNC_LEGACY(void, HMAC_CTX_cleanup, (HMAC_CTX * arg0), (arg0)) \
+DEFINEFUNC_LEGACY_1_0(void, HMAC_CTX_init, (HMAC_CTX * arg0), (arg0)) \
+DEFINEFUNC_LEGACY_1_0(void, HMAC_CTX_cleanup, (HMAC_CTX * arg0), (arg0)) \
 DEFINEFUNC(int, HMAC_Init_ex, \
            (HMAC_CTX * arg0, const void *arg1, int arg2, const EVP_MD *arg3, ENGINE *arg4), \
            (arg0, arg1, arg2, arg3, arg4)) \
