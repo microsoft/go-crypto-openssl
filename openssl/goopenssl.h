@@ -53,6 +53,8 @@ int go_openssl_setup(void);
     DEFINEFUNC(ret, func, args, argscall)
 #define DEFINEFUNC_1_1(ret, func, args, argscall)     \
     DEFINEFUNC(ret, func, args, argscall)
+#define DEFINEFUNC_3_0(ret, func, args, argscall)     \
+    DEFINEFUNC(ret, func, args, argscall)
 #define DEFINEFUNC_RENAMED(ret, func, oldfunc, args, argscall)     \
     DEFINEFUNC(ret, func, args, argscall)
 #define DEFINEFUNC_FALLBACK(ret, func, args, argscall)     \
@@ -64,6 +66,7 @@ FOR_ALL_OPENSSL_FUNCTIONS
 #undef DEFINEFUNC_LEGACY_1_0
 #undef DEFINEFUNC_LEGACY_1
 #undef DEFINEFUNC_1_1
+#undef DEFINEFUNC_3_0
 #undef DEFINEFUNC_RENAMED
 #undef DEFINEFUNC_FALLBACK
 
