@@ -53,7 +53,7 @@ DEFINEFUNC_1_1(int, OPENSSL_init_crypto, (uint64_t ops, const void *settings), (
 DEFINEFUNC_LEGACY_1(int, FIPS_mode, (void), ()) \
 DEFINEFUNC_LEGACY_1(int, FIPS_mode_set, (int r), (r)) \
 DEFINEFUNC_3_0(int, EVP_default_properties_is_fips_enabled, (void* libctx), (libctx)) \
-DEFINEFUNC_3_0(int, EVP_default_properties_enable_fips, (void* libctx, int enabled), (libctx, enabled)) \
+DEFINEFUNC_3_0(int, EVP_set_default_properties, (void *libctx, const char *propq), (libctx, propq)) \
 DEFINEFUNC_3_0(void*, OSSL_PROVIDER_try_load, (void* libctx, const char *name, int retain_fallbacks), (libctx, name, retain_fallbacks)) \
 DEFINEFUNC_3_0(void*, OSSL_PROVIDER_load, (void* libctx, const char *name), (libctx, name)) \
 DEFINEFUNC_3_0(int, OSSL_PROVIDER_available, (void* libctx, const char *name), (libctx, name)) \
