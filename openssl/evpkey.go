@@ -114,10 +114,8 @@ func setupEVP(withKey withKeyFunc, padding C.int,
 	if init(ctx) != 1 {
 		return nil, newOpenSSLError("EVP_PKEY_operation_init failed")
 	}
-	if padding != 0 {
-		if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, C.EVP_PKEY_RSA, -1, C.EVP_PKEY_CTRL_RSA_PADDING, padding, nil) != 1 {
-			return nil, newOpenSSLError("go_openssl_EVP_PKEY_CTX_ctrl failed")
-		}
+	if padding == 0 {
+		return ctx, nil
 	}
 	switch padding {
 	case C.RSA_PKCS1_OAEP_PADDING:
@@ -135,20 +133,15 @@ func setupEVP(withKey withKeyFunc, padding C.int,
 		}
 		copy((*[1 << 30]byte)(unsafe.Pointer(clabel))[:len(label)], label)
 		if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, C.EVP_PKEY_RSA, -1, C.EVP_PKEY_CTRL_RSA_OAEP_LABEL, C.int(len(label)), unsafe.Pointer(clabel)) != 1 {
-			return nil, newOpenSSLError("go_openssl_EVP_PKEY_CTX_ctrl failed")
+			return nil, newOpenSSLError("EVP_PKEY_CTX_ctrl failed")
 		}
 	case C.RSA_PKCS1_PSS_PADDING:
-		if saltLen != 0 {
-			if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, C.EVP_PKEY_RSA, -1, C.EVP_PKEY_CTRL_RSA_PSS_SALTLEN, C.int(saltLen), nil) != 1 {
-				return nil, newOpenSSLError("EVP_PKEY_set_rsa_pss_saltlen failed")
-			}
-		}
 		md := cryptoHashToMD(ch)
 		if md == nil {
 			return nil, errors.New("crypto/rsa: unsupported hash function")
 		}
 		if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, C.EVP_PKEY_RSA, -1, C.EVP_PKEY_CTRL_MD, 0, unsafe.Pointer(md)) != 1 {
-			return nil, newOpenSSLError("go_openssl_EVP_PKEY_CTX_ctrl failed")
+			return nil, newOpenSSLError("EVP_PKEY_CTX_ctrl failed")
 		}
 	case C.RSA_PKCS1_PADDING:
 		if ch != 0 {
@@ -158,8 +151,18 @@ func setupEVP(withKey withKeyFunc, padding C.int,
 				return nil, errors.New("crypto/rsa: unsupported hash function")
 			}
 			if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, -1, -1, C.EVP_PKEY_CTRL_MD, 0, unsafe.Pointer(md)) != 1 {
-				return nil, newOpenSSLError("go_openssl_EVP_PKEY_CTX_ctrl failed")
+				return nil, newOpenSSLError("EVP_PKEY_CTX_ctrl failed")
 			}
+		}
+	}
+	// OpenSSL 3 FIPS provider validates that the ctx digest is allowed when calling the following function,
+	// so don't move it before the previous switch case.
+	if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, C.EVP_PKEY_RSA, -1, C.EVP_PKEY_CTRL_RSA_PADDING, padding, nil) != 1 {
+		return nil, newOpenSSLError("EVP_PKEY_CTX_ctrl failed")
+	}
+	if saltLen != 0 && padding == C.RSA_PKCS1_PSS_PADDING {
+		if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, C.EVP_PKEY_RSA, -1, C.EVP_PKEY_CTRL_RSA_PSS_SALTLEN, C.int(saltLen), nil) != 1 {
+			return nil, newOpenSSLError("EVP_PKEY_CTX_ctrl failed")
 		}
 	}
 
