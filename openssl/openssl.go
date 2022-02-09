@@ -93,20 +93,3 @@ func bnToBig(bn *C.BIGNUM) *big.Int {
 	n := C.go_openssl_BN_bn2bin(bn, base(raw))
 	return new(big.Int).SetBytes(raw[:n])
 }
-
-func bigToBn(bnp **C.BIGNUM, b *big.Int) bool {
-	if *bnp != nil {
-		C.go_openssl_BN_free(*bnp)
-		*bnp = nil
-	}
-	if b == nil {
-		return true
-	}
-	raw := b.Bytes()
-	bn := C.go_openssl_BN_bin2bn(base(raw), C.size_t(len(raw)), nil)
-	if bn == nil {
-		return false
-	}
-	*bnp = bn
-	return true
-}
