@@ -38,6 +38,8 @@
 // The process will be aborted if neither function can be loaded.
 //
 #define FOR_ALL_OPENSSL_FUNCTIONS \
+DEFINEFUNC(int, ERR_set_mark, (void), ()) \
+DEFINEFUNC(int, ERR_pop_to_mark, (void), ()) \
 DEFINEFUNC(unsigned long, ERR_get_error, (void), ()) \
 DEFINEFUNC(void, ERR_error_string_n, (unsigned long e, unsigned char *buf, size_t len), (e, buf, len)) \
 DEFINEFUNC_RENAMED(const char *, OpenSSL_version, SSLeay_version, (int type), (type)) \
@@ -54,9 +56,7 @@ DEFINEFUNC_LEGACY_1(int, FIPS_mode, (void), ()) \
 DEFINEFUNC_LEGACY_1(int, FIPS_mode_set, (int r), (r)) \
 DEFINEFUNC_3_0(int, EVP_default_properties_is_fips_enabled, (void* libctx), (libctx)) \
 DEFINEFUNC_3_0(int, EVP_set_default_properties, (void *libctx, const char *propq), (libctx, propq)) \
-DEFINEFUNC_3_0(void*, OSSL_PROVIDER_try_load, (void* libctx, const char *name, int retain_fallbacks), (libctx, name, retain_fallbacks)) \
 DEFINEFUNC_3_0(void*, OSSL_PROVIDER_load, (void* libctx, const char *name), (libctx, name)) \
-DEFINEFUNC_3_0(int, OSSL_PROVIDER_available, (void* libctx, const char *name), (libctx, name)) \
 DEFINEFUNC(int, RAND_bytes, (uint8_t * arg0, size_t arg1), (arg0, arg1)) \
 DEFINEFUNC(int, EVP_DigestInit_ex, (EVP_MD_CTX *ctx, const EVP_MD *type, ENGINE *impl), (ctx, type, impl)) \
 DEFINEFUNC(int, EVP_DigestUpdate, (EVP_MD_CTX *ctx, const void *d, size_t cnt), (ctx, d, cnt)) \
@@ -72,6 +72,8 @@ DEFINEFUNC(const EVP_MD *, EVP_sha256, (void), ()) \
 DEFINEFUNC(const EVP_MD *, EVP_sha384, (void), ()) \
 DEFINEFUNC(const EVP_MD *, EVP_sha512, (void), ()) \
 DEFINEFUNC_FALLBACK(const EVP_MD*, EVP_md5_sha1, (void), ()) \
+DEFINEFUNC_3_0(EVP_MD *, EVP_MD_fetch, (void *ctx, const char *algorithm, const char *properties), (ctx, algorithm, properties)) \
+DEFINEFUNC_3_0(void, EVP_MD_free, (EVP_MD* md), (md)) \
 DEFINEFUNC_RENAMED(int, EVP_MD_get_type, EVP_MD_type, (const EVP_MD *arg0), (arg0)) \
 DEFINEFUNC_RENAMED(size_t, EVP_MD_get_size, EVP_MD_size, (const EVP_MD *arg0), (arg0)) \
 DEFINEFUNC_LEGACY_1_0(void, HMAC_CTX_init, (HMAC_CTX * arg0), (arg0)) \

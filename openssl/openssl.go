@@ -4,9 +4,7 @@
 //go:build linux && !android
 // +build linux,!android
 
-// Package openssl provides access to OpenSSLCrypto implementation functions.
-// Check the constant Enabled to find out whether OpenSSLCrypto is available.
-// If OpenSSLCrypto is not available, the functions in this package all panic.
+// Package openssl provides access to OpenSSL cryptographic functions.
 package openssl
 
 // #include "goopenssl.h"
@@ -16,13 +14,16 @@ import (
 	"errors"
 	"math/big"
 	"runtime"
+	"strconv"
 	"strings"
 )
 
 var (
-	providerNameFips = C.CString("fips")
-	propFipsYes      = C.CString("fips=yes")
-	propFipsNo       = C.CString("fips=no")
+	providerNameFips    = C.CString("fips")
+	providerNameDefault = C.CString("default")
+	propFipsYes         = C.CString("fips=yes")
+	propFipsNo          = C.CString("fips=no")
+	algProve            = C.CString("SHA2-256")
 )
 
 // Init loads and initializes OpenSSL.
@@ -41,6 +42,19 @@ func Init() error {
 	return nil
 }
 
+// providerAvailable looks through provider's digests
+// checking if there is any that matches the pprog query.
+func providerAvailable(pprog *C.char) bool {
+	C.go_openssl_ERR_set_mark()
+	md := C.go_openssl_EVP_MD_fetch(nil, algProve, pprog)
+	C.go_openssl_ERR_pop_to_mark()
+	if md == nil {
+		return false
+	}
+	C.go_openssl_EVP_MD_free(md)
+	return true
+}
+
 // FIPS returns true if OpenSSL is running in FIPS mode, else returns false.
 func FIPS() bool {
 	// FIPS_mode is only defined in OpenSSL 1.
@@ -52,10 +66,15 @@ func FIPS() bool {
 	}
 	// EVP_default_properties_is_fips_enabled can return true even if the FIPS provider isn't loaded,
 	// it is only based on the default properties.
-	return C.go_openssl_OSSL_PROVIDER_available(nil, providerNameFips) == 1
+	return providerAvailable(propFipsYes)
 }
 
 // SetFIPS enables or disables FIPS mode.
+//
+// It implements the following provider fallback logic for OpenSSL 3:
+//    - The "fips" provider is loaded if enabled=true and no loaded provider matches "fips=yes".
+//    - The "default" provider is loaded if enabled=false and no loaded provider matches "fips=no".
+// This logic allows advanced users to define their own providers that match "fips=yes" and "fips=no" using the OpenSSL config file.
 func SetFIPS(enabled bool) error {
 	// FIPS_mode_set is only defined in OpenSSL 1.
 	if C._g_FIPS_mode_set != nil {
@@ -70,22 +89,26 @@ func SetFIPS(enabled bool) error {
 		}
 		return nil
 	}
+	var pprop, provName *C.char
 	if enabled {
-		if C.go_openssl_OSSL_PROVIDER_available(nil, providerNameFips) == 0 {
-			// The last parameter is set to 1 in order to allow loading fallback providers.
-			if C.go_openssl_OSSL_PROVIDER_try_load(nil, providerNameFips, 1) == nil {
-				return newOpenSSLError("openssl: OSSL_PROVIDER_try_load")
-			}
+		pprop = propFipsYes
+		provName = providerNameFips
+	} else {
+		pprop = propFipsNo
+		provName = providerNameDefault
+	}
+	// Check if there is any provided that matches pprop.
+	if !providerAvailable(pprop) {
+		// If not, fallback to provName provider.
+		if C.go_openssl_OSSL_PROVIDER_load(nil, provName) == nil {
+			return newOpenSSLError("openssl: OSSL_PROVIDER_try_load")
+		}
+		// Make sure we now have a provider available.
+		if !providerAvailable(pprop) {
+			return fail("SetFIPS(" + strconv.FormatBool(enabled) + ") not supported")
 		}
 	}
-
-	var prop *C.char
-	if enabled {
-		prop = propFipsYes
-	} else {
-		prop = propFipsNo
-	}
-	if C.go_openssl_EVP_set_default_properties(nil, prop) != 1 {
+	if C.go_openssl_EVP_set_default_properties(nil, pprop) != 1 {
 		return newOpenSSLError("openssl: EVP_set_default_properties")
 	}
 	return nil
