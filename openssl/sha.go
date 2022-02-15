@@ -18,8 +18,11 @@ import (
 )
 
 type evpHash struct {
-	md        *C.EVP_MD
-	ctx       *C.EVP_MD_CTX
+	md  *C.EVP_MD
+	ctx *C.EVP_MD_CTX
+	// ctx2 is used in evpHash.sum to avoid changing
+	// the state of ctx. Having it here allows reusing the
+	// same allocated object multiple times.
 	ctx2      *C.EVP_MD_CTX
 	size      int
 	blockSize int
@@ -50,6 +53,8 @@ func (h *evpHash) finalize() {
 }
 
 func (h *evpHash) Reset() {
+	// There is no need to reset h.ctx2 because it is always reset after
+	// use in evpHash.sum.
 	C.go_openssl_EVP_MD_CTX_reset(h.ctx)
 
 	if C.go_openssl_EVP_DigestInit_ex(h.ctx, h.md, nil) != 1 {
