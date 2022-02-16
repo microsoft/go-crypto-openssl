@@ -1,5 +1,7 @@
 # go-crypto-openssl
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/microsoft/go-crypto-openssl/openssl.svg)](https://pkg.go.dev/github.com/microsoft/go-crypto-openssl/openssl)
+
 The `openssl` package implements Go crypto primitives using OpenSSL shared libraries and cgo. When configured correctly, OpenSSL can be executed in FIPS mode, making the `openssl` package FIPS compliant.
 
 The `openssl` package is designed to be used as a drop-in replacement for the [boring](https://pkg.go.dev/crypto/internal/boring) package in order to facilitate integrating `openssl` inside a forked Go toolchain.
