@@ -1,0 +1,18 @@
+// For format details, see https://aka.ms/devcontainer.json.
+
+{
+	"name": "Go",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"args": {
+			"VARIANT": "1.17-bullseye",
+		}
+	},
+	"containerEnv": {
+		"GO_OPENSSL_VERSION_OVERRIDE": "1.1.0",
+	},
+	"onCreateCommand": "sh ${containerWorkspaceFolder}/scripts/openssl.sh ${GO_OPENSSL_VERSION_OVERRIDE}",
+	"extensions": [
+		"golang.go"
+	]
+}
