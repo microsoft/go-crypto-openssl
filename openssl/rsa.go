@@ -196,8 +196,8 @@ func SignRSAPKCS1v15(priv *PrivateKeyRSA, h crypto.Hash, hashed []byte) ([]byte,
 
 func VerifyRSAPKCS1v15(pub *PublicKeyRSA, h crypto.Hash, hashed, sig []byte) error {
 	if pub.withKey(func(pkey *C.EVP_PKEY) C.int {
-		size := int(C.go_openssl_EVP_PKEY_get_size(pkey))
-		if len(sig) < size {
+		size := C.go_openssl_EVP_PKEY_get_size(pkey)
+		if len(sig) < int(size) {
 			return 0
 		}
 		return 1
