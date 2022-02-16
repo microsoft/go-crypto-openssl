@@ -64,7 +64,7 @@ func (h *opensslHMAC) Reset() {
 	if C.go_openssl_HMAC_Init_ex(h.ctx, unsafe.Pointer(base(h.key)), C.int(len(h.key)), h.md, nil) == 0 {
 		panic("openssl: HMAC_Init failed")
 	}
-	if size := int(C.go_openssl_EVP_MD_get_size(h.md)); size != h.size {
+	if size := C.go_openssl_EVP_MD_get_size(h.md); size != C.size_t(h.size) {
 		println("openssl: HMAC size:", size, "!=", h.size)
 		panic("openssl: HMAC size mismatch")
 	}
