@@ -150,16 +150,19 @@ func providerAvailable(props *C.char) bool {
 
 // FIPS returns true if OpenSSL is running in FIPS mode, else returns false.
 func FIPS() bool {
-	// FIPS_mode is only defined in OpenSSL 1.
-	if C._g_FIPS_mode != nil {
+	switch vMajor {
+	case 1:
 		return C.go_openssl_FIPS_mode() == 1
+	case 3:
+		if C.go_openssl_EVP_default_properties_is_fips_enabled(nil) == 0 {
+			return false
+		}
+		// EVP_default_properties_is_fips_enabled can return true even if the FIPS provider isn't loaded,
+		// it is only based on the default properties.
+		return providerAvailable(propFipsYes)
+	default:
+		panic(errUnsuportedVersion())
 	}
-	if C.go_openssl_EVP_default_properties_is_fips_enabled(nil) == 0 {
-		return false
-	}
-	// EVP_default_properties_is_fips_enabled can return true even if the FIPS provider isn't loaded,
-	// it is only based on the default properties.
-	return providerAvailable(propFipsYes)
 }
 
 // SetFIPS enables or disables FIPS mode.
@@ -169,8 +172,8 @@ func FIPS() bool {
 //    - The "default" provider is loaded if enabled=false and no loaded provider matches "fips=no".
 // This logic allows advanced users to define their own providers that match "fips=yes" and "fips=no" using the OpenSSL config file.
 func SetFIPS(enabled bool) error {
-	// FIPS_mode_set is only defined in OpenSSL 1.
-	if C._g_FIPS_mode_set != nil {
+	switch vMajor {
+	case 1:
 		var mode C.int
 		if enabled {
 			mode = C.int(1)
@@ -181,30 +184,33 @@ func SetFIPS(enabled bool) error {
 			return newOpenSSLError("openssl: FIPS_mode_set")
 		}
 		return nil
-	}
-	var props, provName *C.char
-	if enabled {
-		props = propFipsYes
-		provName = providerNameFips
-	} else {
-		props = propFipsNo
-		provName = providerNameDefault
-	}
-	// Check if there is any provider that matches props.
-	if !providerAvailable(props) {
-		// If not, fallback to provName provider.
-		if C.go_openssl_OSSL_PROVIDER_load(nil, provName) == nil {
-			return newOpenSSLError("openssl: OSSL_PROVIDER_try_load")
+	case 3:
+		var props, provName *C.char
+		if enabled {
+			props = propFipsYes
+			provName = providerNameFips
+		} else {
+			props = propFipsNo
+			provName = providerNameDefault
 		}
-		// Make sure we now have a provider available.
+		// Check if there is any provided that matches props.
 		if !providerAvailable(props) {
-			return fail("SetFIPS(" + strconv.FormatBool(enabled) + ") not supported")
+			// If not, fallback to provName provider.
+			if C.go_openssl_OSSL_PROVIDER_load(nil, provName) == nil {
+				return newOpenSSLError("openssl: OSSL_PROVIDER_try_load")
+			}
+			// Make sure we now have a provider available.
+			if !providerAvailable(props) {
+				return fail("SetFIPS(" + strconv.FormatBool(enabled) + ") not supported")
+			}
 		}
+		if C.go_openssl_EVP_set_default_properties(nil, props) != 1 {
+			return newOpenSSLError("openssl: EVP_set_default_properties")
+		}
+		return nil
+	default:
+		panic(errUnsuportedVersion())
 	}
-	if C.go_openssl_EVP_set_default_properties(nil, props) != 1 {
-		return newOpenSSLError("openssl: EVP_set_default_properties")
-	}
-	return nil
 }
 
 // VersionText returns the version text of the OpenSSL currently loaded.
