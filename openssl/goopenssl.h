@@ -25,8 +25,8 @@
 #include <openssl/ecdsa.h>
 #include <openssl/rsa.h>
 
-void* go_openssl_load(void);
-int go_openssl_setup(void);
+int go_openssl_thread_setup(void);
+void go_openssl_load_functions(void* handle, const void* v1_0_sentinel, const void* v1_sentinel);
 
 // x.x.x, considering the max number of decimal digits for each component
 #define MaxVersionStringLength 32
