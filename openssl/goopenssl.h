@@ -28,14 +28,12 @@
 int go_openssl_thread_setup(void);
 void go_openssl_load_functions(void* handle, const void* v1_0_sentinel, const void* v1_sentinel);
 
-// x.x.x, considering the max number of decimal digits for each component
-#define MaxVersionStringLength 32
-#define OPENSSL_VERSION_3_0_RTM 0x30000000L
-#define OPENSSL_VERSION_1_1_1_RTM 0x10101000L
-#define OPENSSL_VERSION_1_1_0_RTM 0x10100000L
-#define OPENSSL_VERSION_1_0_2_RTM 0x10002000L
-
-#include "apibridge_1_1.h"
+#define GO_OPENSSL_INIT_LOAD_CRYPTO_STRINGS 0x00000002L
+#define GO_OPENSSL_INIT_ADD_ALL_CIPHERS 0x00000004L
+#define GO_OPENSSL_INIT_ADD_ALL_DIGESTS 0x00000008L
+#define GO_OPENSSL_INIT_LOAD_CONFIG 0x00000040L
+#define GO_AES_ENCRYPT 1
+#define GO_AES_DECRYPT 0
 
 // Define pointers to all the used OpenSSL functions.
 // Calling C function pointers from Go is currently not supported.
@@ -57,8 +55,6 @@ void go_openssl_load_functions(void* handle, const void* v1_0_sentinel, const vo
     DEFINEFUNC(ret, func, args, argscall)
 #define DEFINEFUNC_RENAMED(ret, func, oldfunc, args, argscall)     \
     DEFINEFUNC(ret, func, args, argscall)
-#define DEFINEFUNC_FALLBACK(ret, func, args, argscall)     \
-    DEFINEFUNC(ret, func, args, argscall)
 
 FOR_ALL_OPENSSL_FUNCTIONS
 
@@ -68,7 +64,6 @@ FOR_ALL_OPENSSL_FUNCTIONS
 #undef DEFINEFUNC_1_1
 #undef DEFINEFUNC_3_0
 #undef DEFINEFUNC_RENAMED
-#undef DEFINEFUNC_FALLBACK
 
 // This wrapper allocate out_len on the C stack, and check that it matches the expected
 // value, to avoid having to pass a pointer from Go, which would escape to the heap.

@@ -100,7 +100,7 @@ func Init() error {
 			C.go_openssl_OPENSSL_add_all_algorithms_conf()
 			C.go_openssl_ERR_load_crypto_strings()
 		} else {
-			flags := C.uint64_t(C.OPENSSL_INIT_ADD_ALL_CIPHERS | C.OPENSSL_INIT_ADD_ALL_DIGESTS | C.OPENSSL_INIT_LOAD_CONFIG | C.OPENSSL_INIT_LOAD_CRYPTO_STRINGS)
+			flags := C.uint64_t(C.GO_OPENSSL_INIT_ADD_ALL_CIPHERS | C.GO_OPENSSL_INIT_ADD_ALL_DIGESTS | C.GO_OPENSSL_INIT_LOAD_CONFIG | C.GO_OPENSSL_INIT_LOAD_CRYPTO_STRINGS)
 			if C.go_openssl_OPENSSL_init_crypto(flags, nil) != 1 {
 				errInit = newOpenSSLError("openssl: init crypto")
 				return
