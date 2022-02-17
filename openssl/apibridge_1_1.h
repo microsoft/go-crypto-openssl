@@ -9,7 +9,6 @@
 void local_HMAC_CTX_free(HMAC_CTX * ctx);
 HMAC_CTX* local_HMAC_CTX_new();
 void local_HMAC_CTX_reset(HMAC_CTX *ctx);
-const EVP_MD* local_EVP_md5_sha1(void);
 
 #if OPENSSL_VERSION_NUMBER < OPENSSL_VERSION_1_1_0_RTM
 #define OPENSSL_INIT_LOAD_CRYPTO_STRINGS 0x00000002L

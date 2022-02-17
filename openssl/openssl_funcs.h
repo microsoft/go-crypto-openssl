@@ -71,7 +71,7 @@ DEFINEFUNC(const EVP_MD *, EVP_sha224, (void), ()) \
 DEFINEFUNC(const EVP_MD *, EVP_sha256, (void), ()) \
 DEFINEFUNC(const EVP_MD *, EVP_sha384, (void), ()) \
 DEFINEFUNC(const EVP_MD *, EVP_sha512, (void), ()) \
-DEFINEFUNC_FALLBACK(const EVP_MD*, EVP_md5_sha1, (void), ()) \
+DEFINEFUNC_1_1(const EVP_MD*, EVP_md5_sha1, (void), ()) \
 DEFINEFUNC_3_0(EVP_MD *, EVP_MD_fetch, (void *ctx, const char *algorithm, const char *properties), (ctx, algorithm, properties)) \
 DEFINEFUNC_3_0(void, EVP_MD_free, (EVP_MD* md), (md)) \
 DEFINEFUNC_RENAMED(int, EVP_MD_get_type, EVP_MD_type, (const EVP_MD *arg0), (arg0)) \
