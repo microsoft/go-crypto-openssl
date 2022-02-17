@@ -100,21 +100,27 @@ func (h *evpHash) sum(out []byte) {
 // The EVP_MD_CTX memory layout has changed in OpenSSL 3
 // and the property holding the internal structure is no longer md_data but algctx.
 func (h *evpHash) shaState() unsafe.Pointer {
-	type mdCtx struct {
-		_       [2]unsafe.Pointer
-		_       C.ulong
-		md_data unsafe.Pointer
+	switch vMajor {
+	case 1:
+		// https://github.com/openssl/openssl/blob/0418e993c717a6863f206feaa40673a261de7395/crypto/evp/evp_local.h#L12.
+		type mdCtx struct {
+			_       [2]unsafe.Pointer
+			_       C.ulong
+			md_data unsafe.Pointer
+		}
+		return (*mdCtx)(unsafe.Pointer(h.ctx)).md_data
+	case 3:
+		// https://github.com/openssl/openssl/blob/5675a5aaf6a2e489022bcfc18330dae9263e598e/crypto/evp/evp_local.h#L16.
+		type mdCtx struct {
+			_      [3]unsafe.Pointer
+			_      C.ulong
+			_      [3]unsafe.Pointer
+			algctx unsafe.Pointer
+		}
+		return (*mdCtx)(unsafe.Pointer(h.ctx)).algctx
+	default:
+		panic(errUnsuportedVersion())
 	}
-	if data := (*mdCtx)(unsafe.Pointer(h.ctx)).md_data; data != nil {
-		return data
-	}
-	type algCtx struct {
-		_      [3]unsafe.Pointer
-		_      C.ulong
-		_      [3]unsafe.Pointer
-		algctx unsafe.Pointer
-	}
-	return (*algCtx)(unsafe.Pointer(h.ctx)).algctx
 }
 
 // NewSHA1 returns a new SHA1 hash.
@@ -134,7 +140,9 @@ func (h *sha1Hash) Sum(in []byte) []byte {
 	return append(in, h.out[:]...)
 }
 
-type sha1Ctx struct {
+// sha1State layout is taken from
+// https://github.com/openssl/openssl/blob/0418e993c717a6863f206feaa40673a261de7395/include/openssl/sha.h#L34.
+type sha1State struct {
 	h      [5]uint32
 	nl, nh uint32
 	x      [64]byte
@@ -147,7 +155,7 @@ const (
 )
 
 func (h *sha1Hash) MarshalBinary() ([]byte, error) {
-	d := (*sha1Ctx)(h.shaState())
+	d := (*sha1State)(h.shaState())
 	if d == nil {
 		return nil, errors.New("crypto/sha1: can't retrieve hash state")
 	}
@@ -171,7 +179,7 @@ func (h *sha1Hash) UnmarshalBinary(b []byte) error {
 	if len(b) != sha1MarshaledSize {
 		return errors.New("crypto/sha1: invalid hash state size")
 	}
-	d := (*sha1Ctx)(h.shaState())
+	d := (*sha1State)(h.shaState())
 	if d == nil {
 		return errors.New("crypto/sha1: can't retrieve hash state")
 	}
@@ -229,7 +237,9 @@ const (
 	marshaledSize256 = len(magic256) + 8*4 + 64 + 8
 )
 
-type sha256Ctx struct {
+// sha256State layout is taken from
+// https://github.com/openssl/openssl/blob/0418e993c717a6863f206feaa40673a261de7395/include/openssl/sha.h#L51.
+type sha256State struct {
 	h      [8]uint32
 	nl, nh uint32
 	x      [64]byte
@@ -237,7 +247,7 @@ type sha256Ctx struct {
 }
 
 func (h *sha224Hash) MarshalBinary() ([]byte, error) {
-	d := (*sha256Ctx)(h.shaState())
+	d := (*sha256State)(h.shaState())
 	if d == nil {
 		return nil, errors.New("crypto/sha256: can't retrieve hash state")
 	}
@@ -258,7 +268,7 @@ func (h *sha224Hash) MarshalBinary() ([]byte, error) {
 }
 
 func (h *sha256Hash) MarshalBinary() ([]byte, error) {
-	d := (*sha256Ctx)(h.shaState())
+	d := (*sha256State)(h.shaState())
 	if d == nil {
 		return nil, errors.New("crypto/sha256: can't retrieve hash state")
 	}
@@ -285,7 +295,7 @@ func (h *sha224Hash) UnmarshalBinary(b []byte) error {
 	if len(b) != marshaledSize256 {
 		return errors.New("crypto/sha256: invalid hash state size")
 	}
-	d := (*sha256Ctx)(h.shaState())
+	d := (*sha256State)(h.shaState())
 	if d == nil {
 		return errors.New("crypto/sha256: can't retrieve hash state")
 	}
@@ -313,7 +323,7 @@ func (h *sha256Hash) UnmarshalBinary(b []byte) error {
 	if len(b) != marshaledSize256 {
 		return errors.New("crypto/sha256: invalid hash state size")
 	}
-	d := (*sha256Ctx)(h.shaState())
+	d := (*sha256State)(h.shaState())
 	if d == nil {
 		return errors.New("crypto/sha256: can't retrieve hash state")
 	}
@@ -368,7 +378,9 @@ func (h *sha512Hash) Sum(in []byte) []byte {
 	return append(in, h.out[:]...)
 }
 
-type sha512Ctx struct {
+// sha256State layout is taken from
+// https://github.com/openssl/openssl/blob/0418e993c717a6863f206feaa40673a261de7395/include/openssl/sha.h#L95.
+type sha512State struct {
 	h      [8]uint64
 	nl, nh uint64
 	x      [128]byte
@@ -383,10 +395,8 @@ const (
 	marshaledSize512 = len(magic512) + 8*8 + 128 + 8
 )
 
-var zero [128]byte
-
 func (h *sha384Hash) MarshalBinary() ([]byte, error) {
-	d := (*sha512Ctx)(h.shaState())
+	d := (*sha512State)(h.shaState())
 	if d == nil {
 		return nil, errors.New("crypto/sha512: can't retrieve hash state")
 	}
@@ -407,7 +417,7 @@ func (h *sha384Hash) MarshalBinary() ([]byte, error) {
 }
 
 func (h *sha512Hash) MarshalBinary() ([]byte, error) {
-	d := (*sha512Ctx)(h.shaState())
+	d := (*sha512State)(h.shaState())
 	if d == nil {
 		return nil, errors.New("crypto/sha512: can't retrieve hash state")
 	}
@@ -437,7 +447,7 @@ func (h *sha384Hash) UnmarshalBinary(b []byte) error {
 	if len(b) != marshaledSize512 {
 		return errors.New("crypto/sha512: invalid hash state size")
 	}
-	d := (*sha512Ctx)(h.shaState())
+	d := (*sha512State)(h.shaState())
 	if d == nil {
 		return errors.New("crypto/sha512: can't retrieve hash state")
 	}
@@ -468,7 +478,7 @@ func (h *sha512Hash) UnmarshalBinary(b []byte) error {
 	if len(b) != marshaledSize512 {
 		return errors.New("crypto/sha512: invalid hash state size")
 	}
-	d := (*sha512Ctx)(h.shaState())
+	d := (*sha512State)(h.shaState())
 	if d == nil {
 		return errors.New("crypto/sha512: can't retrieve hash state")
 	}
@@ -489,18 +499,26 @@ func (h *sha512Hash) UnmarshalBinary(b []byte) error {
 	return nil
 }
 
+// appendUint64 appends x into b as a big endian byte sequence.
 func appendUint64(b []byte, x uint64) []byte {
-	var a [8]byte
-	putUint64(a[:], x)
-	return append(b, a[:]...)
+	return append(b,
+		byte(x>>56),
+		byte(x>>48),
+		byte(x>>40),
+		byte(x>>32),
+		byte(x>>24),
+		byte(x>>16),
+		byte(x>>8),
+		byte(x),
+	)
 }
 
+// appendUint32 appends x into b as a big endian byte sequence.
 func appendUint32(b []byte, x uint32) []byte {
-	var a [4]byte
-	putUint32(a[:], x)
-	return append(b, a[:]...)
+	return append(b, byte(x>>24), byte(x>>16), byte(x>>8), byte(x))
 }
 
+// consumeUint64 reads a big endian uint64 number from b.
 func consumeUint64(b []byte) ([]byte, uint64) {
 	_ = b[7]
 	x := uint64(b[7]) | uint64(b[6])<<8 | uint64(b[5])<<16 | uint64(b[4])<<24 |
@@ -508,28 +526,9 @@ func consumeUint64(b []byte) ([]byte, uint64) {
 	return b[8:], x
 }
 
+// consumeUint32 reads a big endian uint32 number from b.
 func consumeUint32(b []byte) ([]byte, uint32) {
 	_ = b[3]
 	x := uint32(b[3]) | uint32(b[2])<<8 | uint32(b[1])<<16 | uint32(b[0])<<24
 	return b[4:], x
-}
-
-func putUint64(x []byte, s uint64) {
-	_ = x[7]
-	x[0] = byte(s >> 56)
-	x[1] = byte(s >> 48)
-	x[2] = byte(s >> 40)
-	x[3] = byte(s >> 32)
-	x[4] = byte(s >> 24)
-	x[5] = byte(s >> 16)
-	x[6] = byte(s >> 8)
-	x[7] = byte(s)
-}
-
-func putUint32(x []byte, s uint32) {
-	_ = x[3]
-	x[0] = byte(s >> 24)
-	x[1] = byte(s >> 16)
-	x[2] = byte(s >> 8)
-	x[3] = byte(s)
 }

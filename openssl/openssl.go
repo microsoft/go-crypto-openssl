@@ -50,6 +50,10 @@ var (
 // Fedora derived distros use different naming for the version 1.0.x.
 var knownVersions = [...]string{"3", "1.1", "11", "111", "1.0.2", "1.0.0", "10"}
 
+func errUnsuportedVersion() error {
+	return errors.New("openssl: OpenSSL version: " + strconv.Itoa(vMajor) + "." + strconv.Itoa(vMinor))
+}
+
 // Init loads and initializes OpenSSL.
 // It must be called before any other OpenSSL call.
 //
