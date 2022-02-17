@@ -116,16 +116,16 @@ DEFINEFUNC(const BIGNUM *, EC_KEY_get0_private_key, (const EC_KEY *arg0), (arg0)
 DEFINEFUNC(const EC_POINT *, EC_KEY_get0_public_key, (const EC_KEY *arg0), (arg0)) \
 DEFINEFUNC(RSA *, RSA_new, (void), ()) \
 DEFINEFUNC(void, RSA_free, (RSA * arg0), (arg0)) \
-DEFINEFUNC_FALLBACK(int, RSA_set0_factors, (RSA * rsa, BIGNUM *p, BIGNUM *q), (rsa, p, q)) \
-DEFINEFUNC_FALLBACK(int, RSA_set0_crt_params, \
+DEFINEFUNC_1_1(int, RSA_set0_factors, (RSA * rsa, BIGNUM *p, BIGNUM *q), (rsa, p, q)) \
+DEFINEFUNC_1_1(int, RSA_set0_crt_params, \
     (RSA * rsa, BIGNUM *dmp1, BIGNUM *dmp2, BIGNUM *iqmp), \
     (rsa, dmp1, dmp2, iqmp)) \
-DEFINEFUNC_FALLBACK(void, RSA_get0_crt_params, \
+DEFINEFUNC_1_1(void, RSA_get0_crt_params, \
     (const RSA *r, const BIGNUM **dmp1, const BIGNUM **dmq1, const BIGNUM **iqmp), \
     (r, dmp1, dmq1, iqmp)) \
-DEFINEFUNC_FALLBACK(int, RSA_set0_key, (RSA * r, BIGNUM *n, BIGNUM *e, BIGNUM *d), (r, n, e, d)) \
-DEFINEFUNC_FALLBACK(void, RSA_get0_factors, (const RSA *rsa, const BIGNUM **p, const BIGNUM **q), (rsa, p, q)) \
-DEFINEFUNC_FALLBACK(void, RSA_get0_key, \
+DEFINEFUNC_1_1(int, RSA_set0_key, (RSA * r, BIGNUM *n, BIGNUM *e, BIGNUM *d), (r, n, e, d)) \
+DEFINEFUNC_1_1(void, RSA_get0_factors, (const RSA *rsa, const BIGNUM **p, const BIGNUM **q), (rsa, p, q)) \
+DEFINEFUNC_1_1(void, RSA_get0_key, \
     (const RSA *rsa, const BIGNUM **n, const BIGNUM **e, const BIGNUM **d), \
     (rsa, n, e, d)) \
 DEFINEFUNC(int, EVP_EncryptInit_ex, \

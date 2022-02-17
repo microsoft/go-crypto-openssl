@@ -243,11 +243,17 @@ type fail string
 func (e fail) Error() string { return "openssl: " + string(e) + " failed" }
 
 func bigToBN(x *big.Int) *C.BIGNUM {
+	if x == nil {
+		return nil
+	}
 	raw := x.Bytes()
 	return C.go_openssl_BN_bin2bn(base(raw), C.size_t(len(raw)), nil)
 }
 
 func bnToBig(bn *C.BIGNUM) *big.Int {
+	if bn == nil {
+		return nil
+	}
 	raw := make([]byte, (C.go_openssl_BN_num_bits(bn)+7)/8)
 	n := C.go_openssl_BN_bn2bin(bn, base(raw))
 	return new(big.Int).SetBytes(raw[:n])
