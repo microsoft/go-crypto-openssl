@@ -43,7 +43,7 @@ func NewHMAC(h func() hash.Hash, key []byte) hash.Hash {
 		size:      ch.Size(),
 		blockSize: ch.BlockSize(),
 		key:       hkey,
-		ctx:       C.go_openssl_HMAC_CTX_new(),
+		ctx:       hmacCtxNew(),
 	}
 	hmac.Reset()
 	return hmac
@@ -59,7 +59,7 @@ type opensslHMAC struct {
 }
 
 func (h *opensslHMAC) Reset() {
-	C.go_openssl_HMAC_CTX_reset(h.ctx)
+	hmacCtxReset(h.ctx)
 
 	if C.go_openssl_HMAC_Init_ex(h.ctx, unsafe.Pointer(base(h.key)), C.int(len(h.key)), h.md, nil) == 0 {
 		panic("openssl: HMAC_Init failed")
@@ -73,7 +73,7 @@ func (h *opensslHMAC) Reset() {
 }
 
 func (h *opensslHMAC) finalize() {
-	C.go_openssl_HMAC_CTX_free(h.ctx)
+	hmacCtxFree(h.ctx)
 }
 
 func (h *opensslHMAC) Write(p []byte) (int, error) {
@@ -101,11 +101,47 @@ func (h *opensslHMAC) Sum(in []byte) []byte {
 	// that Sum has no effect on the underlying stream.
 	// In particular it is OK to Sum, then Write more, then Sum again,
 	// and the second Sum acts as if the first didn't happen.
-	ctx2 := C.go_openssl_HMAC_CTX_new()
-	defer C.go_openssl_HMAC_CTX_free(ctx2)
+	ctx2 := hmacCtxNew()
+	defer hmacCtxFree(ctx2)
 	if C.go_openssl_HMAC_CTX_copy(ctx2, h.ctx) == 0 {
 		panic("openssl: HMAC_CTX_copy failed")
 	}
 	C.go_openssl_HMAC_Final(ctx2, base(h.sum), nil)
 	return append(in, h.sum...)
+}
+
+func hmacCtxNew() *C.HMAC_CTX {
+	if vMajor == 1 && vMinor == 0 {
+		// 0x120 is the sizeof value when building against OpenSSL 1.0.2 on Ubuntu 16.04.
+		ctx := (*C.HMAC_CTX)(C.malloc(0x120))
+		if ctx != nil {
+			C.go_openssl_HMAC_CTX_init(ctx)
+		}
+		return ctx
+	}
+	return C.go_openssl_HMAC_CTX_new()
+}
+
+func hmacCtxReset(ctx *C.HMAC_CTX) {
+	if ctx == nil {
+		return
+	}
+	if vMajor == 1 && vMinor == 0 {
+		C.go_openssl_HMAC_CTX_cleanup(ctx)
+		C.go_openssl_HMAC_CTX_init(ctx)
+		return
+	}
+	C.go_openssl_HMAC_CTX_reset(ctx)
+}
+
+func hmacCtxFree(ctx *C.HMAC_CTX) {
+	if ctx == nil {
+		return
+	}
+	if vMajor == 1 && vMinor == 0 {
+		C.go_openssl_HMAC_CTX_cleanup(ctx)
+		C.free(unsafe.Pointer(ctx))
+		return
+	}
+	C.go_openssl_HMAC_CTX_free(ctx)
 }

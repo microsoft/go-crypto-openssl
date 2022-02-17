@@ -84,9 +84,9 @@ DEFINEFUNC(int, HMAC_Init_ex, \
 DEFINEFUNC(int, HMAC_Update, (HMAC_CTX * arg0, const uint8_t *arg1, size_t arg2), (arg0, arg1, arg2)) \
 DEFINEFUNC(int, HMAC_Final, (HMAC_CTX * arg0, uint8_t *arg1, unsigned int *arg2), (arg0, arg1, arg2)) \
 DEFINEFUNC(size_t, HMAC_CTX_copy, (HMAC_CTX *dest, HMAC_CTX *src), (dest, src)) \
-DEFINEFUNC_FALLBACK(void, HMAC_CTX_free, (HMAC_CTX * arg0), (arg0)) \
-DEFINEFUNC_FALLBACK(HMAC_CTX*, HMAC_CTX_new, (void), ()) \
-DEFINEFUNC_FALLBACK(void, HMAC_CTX_reset, (HMAC_CTX * arg0), (arg0)) \
+DEFINEFUNC_1_1(void, HMAC_CTX_free, (HMAC_CTX * arg0), (arg0)) \
+DEFINEFUNC_1_1(HMAC_CTX*, HMAC_CTX_new, (void), ()) \
+DEFINEFUNC_1_1(void, HMAC_CTX_reset, (HMAC_CTX * arg0), (arg0)) \
 DEFINEFUNC(EVP_CIPHER_CTX *, EVP_CIPHER_CTX_new, (void), ()) \
 DEFINEFUNC(int, EVP_CIPHER_CTX_set_padding, (EVP_CIPHER_CTX *x, int padding), (x, padding)) \
 DEFINEFUNC(int, EVP_CipherInit_ex, \
