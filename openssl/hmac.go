@@ -102,10 +102,10 @@ func (h *opensslHMAC) Sum(in []byte) []byte {
 	// In particular it is OK to Sum, then Write more, then Sum again,
 	// and the second Sum acts as if the first didn't happen.
 	ctx2 := C.go_openssl_HMAC_CTX_new()
+	defer C.go_openssl_HMAC_CTX_free(ctx2)
 	if C.go_openssl_HMAC_CTX_copy(ctx2, h.ctx) == 0 {
 		panic("openssl: HMAC_CTX_copy failed")
 	}
 	C.go_openssl_HMAC_Final(ctx2, base(h.sum), nil)
-	C.go_openssl_HMAC_CTX_free(ctx2)
 	return append(in, h.sum...)
 }
