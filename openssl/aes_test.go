@@ -35,7 +35,6 @@ func TestNewGCMNonce(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected no error for standard tag / nonce size, got: %#v", err)
 	}
-	c.finalize()
 }
 
 func TestSealAndOpen(t *testing.T) {
@@ -60,7 +59,6 @@ func TestSealAndOpen(t *testing.T) {
 	if !bytes.Equal(decrypted, plainText) {
 		t.Errorf("unexpected decrypted result\ngot: %#v\nexp: %#v", decrypted, plainText)
 	}
-	c.finalize()
 }
 
 func TestSealAndOpenAuthenticationError(t *testing.T) {
@@ -82,7 +80,6 @@ func TestSealAndOpenAuthenticationError(t *testing.T) {
 	if err != errOpen {
 		t.Errorf("expected authentication error, got: %#v", err)
 	}
-	c.finalize()
 }
 
 func assertPanic(t *testing.T, f func()) {
