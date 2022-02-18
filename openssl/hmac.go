@@ -9,51 +9,10 @@ package openssl
 // #include "goopenssl.h"
 import "C"
 import (
-	"crypto"
 	"hash"
 	"runtime"
 	"unsafe"
 )
-
-// hashToMD converts a hash.Hash implementation from this package
-// to an OpenSSL *C.EVP_MD.
-func hashToMD(h hash.Hash) *C.EVP_MD {
-	switch h.(type) {
-	case *sha1Hash:
-		return C.go_openssl_EVP_sha1()
-	case *sha224Hash:
-		return C.go_openssl_EVP_sha224()
-	case *sha256Hash:
-		return C.go_openssl_EVP_sha256()
-	case *sha384Hash:
-		return C.go_openssl_EVP_sha384()
-	case *sha512Hash:
-		return C.go_openssl_EVP_sha512()
-	}
-	return nil
-}
-
-// cryptoHashToMD converts a crypto.Hash
-// to an OpenSSL *C.EVP_MD.
-func cryptoHashToMD(ch crypto.Hash) *C.EVP_MD {
-	switch ch {
-	case crypto.MD5:
-		return C.go_openssl_EVP_md5()
-	case crypto.MD5SHA1:
-		return C.go_openssl_EVP_md5_sha1()
-	case crypto.SHA1:
-		return C.go_openssl_EVP_sha1()
-	case crypto.SHA224:
-		return C.go_openssl_EVP_sha224()
-	case crypto.SHA256:
-		return C.go_openssl_EVP_sha256()
-	case crypto.SHA384:
-		return C.go_openssl_EVP_sha384()
-	case crypto.SHA512:
-		return C.go_openssl_EVP_sha512()
-	}
-	return nil
-}
 
 // NewHMAC returns a new HMAC using OpenSSL.
 // The function h must return a hash implemented by
@@ -91,31 +50,21 @@ func NewHMAC(h func() hash.Hash, key []byte) hash.Hash {
 }
 
 type opensslHMAC struct {
-	md          *C.EVP_MD
-	ctx         *C.HMAC_CTX
-	ctx2        *C.HMAC_CTX
-	size        int
-	blockSize   int
-	key         []byte
-	sum         []byte
-	needCleanup bool
+	md        *C.EVP_MD
+	ctx       *C.HMAC_CTX
+	size      int
+	blockSize int
+	key       []byte
+	sum       []byte
 }
 
 func (h *opensslHMAC) Reset() {
-	if !h.needCleanup {
-		h.needCleanup = true
-		// Note: Because of the finalizer, any time h.ctx is passed to cgo,
-		// that call must be followed by a call to runtime.KeepAlive(h),
-		// to make sure h is not collected (and finalized) before the cgo
-		// call returns.
-		runtime.SetFinalizer(h, (*opensslHMAC).finalize)
-	}
 	C.go_openssl_HMAC_CTX_reset(h.ctx)
 
 	if C.go_openssl_HMAC_Init_ex(h.ctx, unsafe.Pointer(base(h.key)), C.int(len(h.key)), h.md, nil) == 0 {
 		panic("openssl: HMAC_Init failed")
 	}
-	if size := int(C.go_openssl_EVP_MD_get_size(h.md)); size != h.size {
+	if size := C.go_openssl_EVP_MD_get_size(h.md); size != C.size_t(h.size) {
 		println("openssl: HMAC size:", size, "!=", h.size)
 		panic("openssl: HMAC size mismatch")
 	}
@@ -129,7 +78,7 @@ func (h *opensslHMAC) finalize() {
 
 func (h *opensslHMAC) Write(p []byte) (int, error) {
 	if len(p) > 0 {
-		C.go_openssl_HMAC_Update(h.ctx, (*C.uint8_t)(unsafe.Pointer(&p[0])), C.size_t(len(p)))
+		C.go_openssl_HMAC_Update(h.ctx, base(p), C.size_t(len(p)))
 	}
 	runtime.KeepAlive(h)
 	return len(p), nil
@@ -152,11 +101,11 @@ func (h *opensslHMAC) Sum(in []byte) []byte {
 	// that Sum has no effect on the underlying stream.
 	// In particular it is OK to Sum, then Write more, then Sum again,
 	// and the second Sum acts as if the first didn't happen.
-	h.ctx2 = C.go_openssl_HMAC_CTX_new()
-	if C.go_openssl_HMAC_CTX_copy(h.ctx2, h.ctx) == 0 {
-		panic("openssl: HMAC_CTX_copy_ex failed")
+	ctx2 := C.go_openssl_HMAC_CTX_new()
+	defer C.go_openssl_HMAC_CTX_free(ctx2)
+	if C.go_openssl_HMAC_CTX_copy(ctx2, h.ctx) == 0 {
+		panic("openssl: HMAC_CTX_copy failed")
 	}
-	C.go_openssl_HMAC_Final(h.ctx2, (*C.uint8_t)(unsafe.Pointer(&h.sum[0])), nil)
-	C.go_openssl_HMAC_CTX_free(h.ctx2)
+	C.go_openssl_HMAC_Final(ctx2, base(h.sum), nil)
 	return append(in, h.sum...)
 }

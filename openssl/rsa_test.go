@@ -114,15 +114,15 @@ func TestSignVerifyPKCS1v15_Invalid(t *testing.T) {
 }
 
 func TestSignVerifyRSAPSS(t *testing.T) {
-	sha1 := NewSHA1()
+	sha256 := NewSHA256()
 	priv, pub := newRSAKey(t, 2048)
-	sha1.Write([]byte("testing"))
-	hashed := sha1.Sum(nil)
-	signed, err := SignRSAPSS(priv, crypto.SHA1, hashed, 0)
+	sha256.Write([]byte("testing"))
+	hashed := sha256.Sum(nil)
+	signed, err := SignRSAPSS(priv, crypto.SHA256, hashed, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = VerifyRSAPSS(pub, crypto.SHA1, hashed, signed, 0)
+	err = VerifyRSAPSS(pub, crypto.SHA256, hashed, signed, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
