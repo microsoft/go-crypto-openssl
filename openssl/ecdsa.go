@@ -99,6 +99,8 @@ func newECKey(curve string, X, Y, D *big.Int) (pkey *C.EVP_PKEY, err error) {
 			}
 			if pkey != nil {
 				C.go_openssl_EVP_PKEY_free(pkey)
+				// pkey is a named return, so in case of error
+				// it have to be cleared before returing.
 				pkey = nil
 			}
 		}
