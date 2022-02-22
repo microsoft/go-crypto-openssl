@@ -65,11 +65,25 @@ FOR_ALL_OPENSSL_FUNCTIONS
 #undef DEFINEFUNC_3_0
 #undef DEFINEFUNC_RENAMED
 
-// This wrapper allocate out_len on the C stack, and check that it matches the expected
+// These wrappers allocate out_len on the C stack, and check that it matches the expected
 // value, to avoid having to pass a pointer from Go, which would escape to the heap.
-static inline void
-go_openssl_EVP_EncryptUpdate_wrapper(EVP_CIPHER_CTX *ctx, uint8_t *out, const uint8_t *in, size_t in_len)
+static inline int
+go_openssl_EVP_EncryptUpdate_wrapper(EVP_CIPHER_CTX *ctx, uint8_t *out, const uint8_t *in, int in_len)
 {
     int len;
-    go_openssl_EVP_EncryptUpdate(ctx, out, &len, in, in_len);
+    return go_openssl_EVP_EncryptUpdate(ctx, out, &len, in, in_len);
+}
+
+static inline int
+go_openssl_EVP_DecryptUpdate_wrapper(EVP_CIPHER_CTX *ctx, uint8_t *out, const uint8_t *in, int in_len)
+{
+    int len;
+    return go_openssl_EVP_DecryptUpdate(ctx, out, &len, in, in_len);
+}
+
+static inline int
+go_openssl_EVP_CipherUpdate_wrapper(EVP_CIPHER_CTX *ctx, uint8_t *out, const uint8_t *in, int in_len)
+{
+    int len;
+    return go_openssl_EVP_CipherUpdate(ctx, out, &len, in, in_len);
 }
