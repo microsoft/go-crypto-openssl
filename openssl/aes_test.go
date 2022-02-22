@@ -9,6 +9,7 @@ package openssl
 import (
 	"bytes"
 	"crypto/cipher"
+	"strconv"
 	"testing"
 )
 
@@ -244,7 +245,7 @@ func testDecrypt(t *testing.T, resetNonce bool) {
 		111, 184, 94, 169, 188, 93, 38, 150,
 		3, 208, 185, 201, 212, 246, 238, 181,
 	}
-	if bytes.Compare(expectedCipherText, cipherText) != 0 {
+	if !bytes.Equal(expectedCipherText, cipherText) {
 		t.Fail()
 	}
 
@@ -257,7 +258,7 @@ func testDecrypt(t *testing.T, resetNonce bool) {
 		t.Fail()
 	}
 
-	if bytes.Compare(plainText, decrypted) != 0 {
+	if !bytes.Equal(plainText, decrypted) {
 		t.Errorf("decryption incorrect\nexp %v, got %v\n", plainText, decrypted)
 	}
 }
@@ -309,5 +310,52 @@ func BenchmarkAESDecrypt(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		c.Encrypt(out, src)
+	}
+}
+
+func benchmarkAESGCMSeal(b *testing.B, buf []byte, keySize int) {
+	b.ReportAllocs()
+	b.SetBytes(int64(len(buf)))
+
+	var key = make([]byte, keySize)
+	var nonce [12]byte
+	var ad [13]byte
+	c, _ := NewAESCipher(key)
+	aesgcm, _ := c.(extraModes).NewGCM(gcmStandardNonceSize, gcmTagSize)
+	var out []byte
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		out = aesgcm.Seal(out[:0], nonce[:], buf, ad[:])
+	}
+}
+
+func benchmarkAESGCMOpen(b *testing.B, buf []byte, keySize int) {
+	b.ReportAllocs()
+	b.SetBytes(int64(len(buf)))
+
+	var key = make([]byte, keySize)
+	var nonce [12]byte
+	var ad [13]byte
+	c, _ := NewAESCipher(key)
+	aesgcm, _ := c.(extraModes).NewGCM(gcmStandardNonceSize, gcmTagSize)
+	var out []byte
+
+	ct := aesgcm.Seal(nil, nonce[:], buf[:], ad[:])
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		out, _ = aesgcm.Open(out[:0], nonce[:], ct, ad[:])
+	}
+}
+
+func BenchmarkAESGCM(b *testing.B) {
+	for _, length := range []int{64, 1350} {
+		b.Run("Open-128-"+strconv.Itoa(length), func(b *testing.B) {
+			benchmarkAESGCMOpen(b, make([]byte, length), 128/8)
+		})
+		b.Run("Seal-128-"+strconv.Itoa(length), func(b *testing.B) {
+			benchmarkAESGCMSeal(b, make([]byte, length), 128/8)
+		})
 	}
 }
