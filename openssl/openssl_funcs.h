@@ -76,17 +76,17 @@ DEFINEFUNC_3_0(GO_EVP_MD_PTR, EVP_MD_fetch, (void *ctx, const char *algorithm, c
 DEFINEFUNC_3_0(void, EVP_MD_free, (GO_EVP_MD_PTR md), (md)) \
 DEFINEFUNC_RENAMED(int, EVP_MD_get_type, EVP_MD_type, (const GO_EVP_MD_PTR arg0), (arg0)) \
 DEFINEFUNC_RENAMED(size_t, EVP_MD_get_size, EVP_MD_size, (const GO_EVP_MD_PTR arg0), (arg0)) \
-DEFINEFUNC_LEGACY_1_0(void, HMAC_CTX_init, (HMAC_CTX * arg0), (arg0)) \
-DEFINEFUNC_LEGACY_1_0(void, HMAC_CTX_cleanup, (HMAC_CTX * arg0), (arg0)) \
+DEFINEFUNC_LEGACY_1_0(void, HMAC_CTX_init, (GO_HMAC_CTX_PTR arg0), (arg0)) \
+DEFINEFUNC_LEGACY_1_0(void, HMAC_CTX_cleanup, (GO_HMAC_CTX_PTR arg0), (arg0)) \
 DEFINEFUNC(int, HMAC_Init_ex, \
-           (HMAC_CTX * arg0, const void *arg1, int arg2, const GO_EVP_MD_PTR arg3, ENGINE *arg4), \
+           (GO_HMAC_CTX_PTR arg0, const void *arg1, int arg2, const GO_EVP_MD_PTR arg3, ENGINE *arg4), \
            (arg0, arg1, arg2, arg3, arg4)) \
-DEFINEFUNC(int, HMAC_Update, (HMAC_CTX * arg0, const uint8_t *arg1, size_t arg2), (arg0, arg1, arg2)) \
-DEFINEFUNC(int, HMAC_Final, (HMAC_CTX * arg0, uint8_t *arg1, unsigned int *arg2), (arg0, arg1, arg2)) \
-DEFINEFUNC(size_t, HMAC_CTX_copy, (HMAC_CTX *dest, HMAC_CTX *src), (dest, src)) \
-DEFINEFUNC_1_1(void, HMAC_CTX_free, (HMAC_CTX * arg0), (arg0)) \
-DEFINEFUNC_1_1(HMAC_CTX*, HMAC_CTX_new, (void), ()) \
-DEFINEFUNC_1_1(void, HMAC_CTX_reset, (HMAC_CTX * arg0), (arg0)) \
+DEFINEFUNC(int, HMAC_Update, (GO_HMAC_CTX_PTR arg0, const uint8_t *arg1, size_t arg2), (arg0, arg1, arg2)) \
+DEFINEFUNC(int, HMAC_Final, (GO_HMAC_CTX_PTR arg0, uint8_t *arg1, unsigned int *arg2), (arg0, arg1, arg2)) \
+DEFINEFUNC(size_t, HMAC_CTX_copy, (GO_HMAC_CTX_PTR dest, GO_HMAC_CTX_PTR src), (dest, src)) \
+DEFINEFUNC_1_1(void, HMAC_CTX_free, (GO_HMAC_CTX_PTR arg0), (arg0)) \
+DEFINEFUNC_1_1(GO_HMAC_CTX_PTR, HMAC_CTX_new, (void), ()) \
+DEFINEFUNC_1_1(void, HMAC_CTX_reset, (GO_HMAC_CTX_PTR arg0), (arg0)) \
 DEFINEFUNC(GO_EVP_CIPHER_CTX_PTR, EVP_CIPHER_CTX_new, (void), ()) \
 DEFINEFUNC(int, EVP_CIPHER_CTX_set_padding, (GO_EVP_CIPHER_CTX_PTR x, int padding), (x, padding)) \
 DEFINEFUNC(int, EVP_CipherInit_ex, \

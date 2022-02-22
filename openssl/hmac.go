@@ -51,7 +51,7 @@ func NewHMAC(h func() hash.Hash, key []byte) hash.Hash {
 
 type opensslHMAC struct {
 	md        C.GO_EVP_MD_PTR
-	ctx       *C.HMAC_CTX
+	ctx       C.GO_HMAC_CTX_PTR
 	size      int
 	blockSize int
 	key       []byte
@@ -110,10 +110,10 @@ func (h *opensslHMAC) Sum(in []byte) []byte {
 	return append(in, h.sum...)
 }
 
-func hmacCtxNew() *C.HMAC_CTX {
+func hmacCtxNew() C.GO_HMAC_CTX_PTR {
 	if vMajor == 1 && vMinor == 0 {
 		// 0x120 is the sizeof value when building against OpenSSL 1.0.2 on Ubuntu 16.04.
-		ctx := (*C.HMAC_CTX)(C.malloc(0x120))
+		ctx := (C.GO_HMAC_CTX_PTR)(C.malloc(0x120))
 		if ctx != nil {
 			C.go_openssl_HMAC_CTX_init(ctx)
 		}
@@ -122,7 +122,7 @@ func hmacCtxNew() *C.HMAC_CTX {
 	return C.go_openssl_HMAC_CTX_new()
 }
 
-func hmacCtxReset(ctx *C.HMAC_CTX) {
+func hmacCtxReset(ctx C.GO_HMAC_CTX_PTR) {
 	if ctx == nil {
 		return
 	}
@@ -134,7 +134,7 @@ func hmacCtxReset(ctx *C.HMAC_CTX) {
 	C.go_openssl_HMAC_CTX_reset(ctx)
 }
 
-func hmacCtxFree(ctx *C.HMAC_CTX) {
+func hmacCtxFree(ctx C.GO_HMAC_CTX_PTR) {
 	if ctx == nil {
 		return
 	}
