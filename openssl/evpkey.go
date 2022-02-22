@@ -63,7 +63,7 @@ func cryptoHashToMD(ch crypto.Hash) *C.EVP_MD {
 	return nil
 }
 
-func generateEVPPKey(id C.int, bits int, curve string) (*C.EVP_PKEY, error) {
+func generateEVPPKey(id C.int, bits int, curve string) (C.GO_EVP_PKEY_PTR, error) {
 	if (bits == 0 && curve == "") || (bits != 0 && curve != "") {
 		return nil, fail("incorrect generateEVPPKey parameters")
 	}
@@ -89,20 +89,20 @@ func generateEVPPKey(id C.int, bits int, curve string) (*C.EVP_PKEY, error) {
 			return nil, newOpenSSLError("EVP_PKEY_CTX_ctrl failed")
 		}
 	}
-	var pkey *C.EVP_PKEY
+	var pkey C.GO_EVP_PKEY_PTR
 	if C.go_openssl_EVP_PKEY_keygen(ctx, &pkey) != 1 {
 		return nil, newOpenSSLError("EVP_PKEY_keygen failed")
 	}
 	return pkey, nil
 }
 
-type withKeyFunc func(func(*C.EVP_PKEY) C.int) C.int
-type initFunc func(*C.EVP_PKEY_CTX) C.int
-type cryptFunc func(*C.EVP_PKEY_CTX, *C.uint8_t, *C.uint, *C.uint8_t, C.uint) C.int
+type withKeyFunc func(func(C.GO_EVP_PKEY_PTR) C.int) C.int
+type initFunc func(C.GO_EVP_PKEY_CTX_PTR) C.int
+type cryptFunc func(C.GO_EVP_PKEY_CTX_PTR, *C.uint8_t, *C.uint, *C.uint8_t, C.uint) C.int
 
 func setupEVP(withKey withKeyFunc, padding C.int,
 	h hash.Hash, label []byte, saltLen int, ch crypto.Hash,
-	init initFunc) (ctx *C.EVP_PKEY_CTX, err error) {
+	init initFunc) (ctx C.GO_EVP_PKEY_CTX_PTR, err error) {
 	defer func() {
 		if err != nil {
 			if ctx != nil {
@@ -112,7 +112,7 @@ func setupEVP(withKey withKeyFunc, padding C.int,
 		}
 	}()
 
-	withKey(func(pkey *C.EVP_PKEY) C.int {
+	withKey(func(pkey C.GO_EVP_PKEY_PTR) C.int {
 		ctx = C.go_openssl_EVP_PKEY_CTX_new(pkey, nil)
 		return 1
 	})
@@ -230,40 +230,40 @@ func cryptEVP(withKey withKeyFunc, padding C.int,
 }
 
 func evpEncrypt(withKey withKeyFunc, padding C.int, h hash.Hash, label, msg []byte) ([]byte, error) {
-	encryptInit := func(ctx *C.EVP_PKEY_CTX) C.int {
+	encryptInit := func(ctx C.GO_EVP_PKEY_CTX_PTR) C.int {
 		return C.go_openssl_EVP_PKEY_encrypt_init(ctx)
 	}
-	encrypt := func(ctx *C.EVP_PKEY_CTX, out *C.uint8_t, outLen *C.uint, in *C.uint8_t, inLen C.uint) C.int {
+	encrypt := func(ctx C.GO_EVP_PKEY_CTX_PTR, out *C.uint8_t, outLen *C.uint, in *C.uint8_t, inLen C.uint) C.int {
 		return C.go_openssl_EVP_PKEY_encrypt(ctx, out, outLen, in, inLen)
 	}
 	return cryptEVP(withKey, padding, h, label, 0, 0, encryptInit, encrypt, nil, msg)
 }
 
 func evpDecrypt(withKey withKeyFunc, padding C.int, h hash.Hash, label, msg []byte) ([]byte, error) {
-	decryptInit := func(ctx *C.EVP_PKEY_CTX) C.int {
+	decryptInit := func(ctx C.GO_EVP_PKEY_CTX_PTR) C.int {
 		return C.go_openssl_EVP_PKEY_decrypt_init(ctx)
 	}
-	decrypt := func(ctx *C.EVP_PKEY_CTX, out *C.uint8_t, outLen *C.uint, in *C.uint8_t, inLen C.uint) C.int {
+	decrypt := func(ctx C.GO_EVP_PKEY_CTX_PTR, out *C.uint8_t, outLen *C.uint, in *C.uint8_t, inLen C.uint) C.int {
 		return C.go_openssl_EVP_PKEY_decrypt(ctx, out, outLen, in, inLen)
 	}
 	return cryptEVP(withKey, padding, h, label, 0, 0, decryptInit, decrypt, nil, msg)
 }
 
 func evpSign(withKey withKeyFunc, padding C.int, saltLen int, h crypto.Hash, hashed []byte) ([]byte, error) {
-	signtInit := func(ctx *C.EVP_PKEY_CTX) C.int {
+	signtInit := func(ctx C.GO_EVP_PKEY_CTX_PTR) C.int {
 		return C.go_openssl_EVP_PKEY_sign_init(ctx)
 	}
-	sign := func(ctx *C.EVP_PKEY_CTX, out *C.uint8_t, outLen *C.uint, in *C.uint8_t, inLen C.uint) C.int {
+	sign := func(ctx C.GO_EVP_PKEY_CTX_PTR, out *C.uint8_t, outLen *C.uint, in *C.uint8_t, inLen C.uint) C.int {
 		return C.go_openssl_EVP_PKEY_sign(ctx, out, outLen, in, inLen)
 	}
 	return cryptEVP(withKey, padding, nil, nil, saltLen, h, signtInit, sign, nil, hashed)
 }
 
 func evpVerify(withKey withKeyFunc, padding C.int, saltLen int, h crypto.Hash, sig, hashed []byte) error {
-	verifyInit := func(ctx *C.EVP_PKEY_CTX) C.int {
+	verifyInit := func(ctx C.GO_EVP_PKEY_CTX_PTR) C.int {
 		return C.go_openssl_EVP_PKEY_verify_init(ctx)
 	}
-	verify := func(ctx *C.EVP_PKEY_CTX, out *C.uint8_t, outLen *C.uint, in *C.uint8_t, inLen C.uint) C.int {
+	verify := func(ctx C.GO_EVP_PKEY_CTX_PTR, out *C.uint8_t, outLen *C.uint, in *C.uint8_t, inLen C.uint) C.int {
 		return C.go_openssl_EVP_PKEY_verify(ctx, out, *outLen, in, inLen)
 	}
 	_, err := cryptEVP(withKey, padding, nil, nil, saltLen, h, verifyInit, verify, sig, hashed)

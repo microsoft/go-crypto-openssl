@@ -39,7 +39,7 @@ func GenerateKeyRSA(bits int) (N, E, D, P, Q, Dp, Dq, Qinv *big.Int, err error) 
 
 type PublicKeyRSA struct {
 	// _pkey MUST NOT be accessed directly. Instead, use the withKey method.
-	_pkey *C.EVP_PKEY
+	_pkey C.GO_EVP_PKEY_PTR
 }
 
 func NewPublicKeyRSA(N, E *big.Int) (*PublicKeyRSA, error) {
@@ -69,7 +69,7 @@ func (k *PublicKeyRSA) finalize() {
 	C.go_openssl_EVP_PKEY_free(k._pkey)
 }
 
-func (k *PublicKeyRSA) withKey(f func(*C.EVP_PKEY) C.int) C.int {
+func (k *PublicKeyRSA) withKey(f func(C.GO_EVP_PKEY_PTR) C.int) C.int {
 	// Because of the finalizer, any time _pkey is passed to cgo, that call must
 	// be followed by a call to runtime.KeepAlive, to make sure k is not
 	// collected (and finalized) before the cgo call returns.
@@ -79,7 +79,7 @@ func (k *PublicKeyRSA) withKey(f func(*C.EVP_PKEY) C.int) C.int {
 
 type PrivateKeyRSA struct {
 	// _pkey MUST NOT be accessed directly. Instead, use the withKey method.
-	_pkey *C.EVP_PKEY
+	_pkey C.GO_EVP_PKEY_PTR
 }
 
 func NewPrivateKeyRSA(N, E, D, P, Q, Dp, Dq, Qinv *big.Int) (*PrivateKeyRSA, error) {
@@ -119,7 +119,7 @@ func (k *PrivateKeyRSA) finalize() {
 	C.go_openssl_EVP_PKEY_free(k._pkey)
 }
 
-func (k *PrivateKeyRSA) withKey(f func(*C.EVP_PKEY) C.int) C.int {
+func (k *PrivateKeyRSA) withKey(f func(C.GO_EVP_PKEY_PTR) C.int) C.int {
 	// Because of the finalizer, any time _pkey is passed to cgo, that call must
 	// be followed by a call to runtime.KeepAlive, to make sure k is not
 	// collected (and finalized) before the cgo call returns.
@@ -190,7 +190,7 @@ func SignRSAPKCS1v15(priv *PrivateKeyRSA, h crypto.Hash, hashed []byte) ([]byte,
 }
 
 func VerifyRSAPKCS1v15(pub *PublicKeyRSA, h crypto.Hash, hashed, sig []byte) error {
-	if pub.withKey(func(pkey *C.EVP_PKEY) C.int {
+	if pub.withKey(func(pkey C.GO_EVP_PKEY_PTR) C.int {
 		size := C.go_openssl_EVP_PKEY_get_size(pkey)
 		if len(sig) < int(size) {
 			return 0
