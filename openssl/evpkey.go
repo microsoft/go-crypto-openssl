@@ -15,9 +15,8 @@ import (
 	"unsafe"
 )
 
-// hashToMD converts a hash.Hash implementation from this package
-// to an OpenSSL *C.EVP_MD.
-func hashToMD(h hash.Hash) *C.EVP_MD {
+// hashToMD converts a hash.Hash implementation from this package to a GO_EVP_MD_PTR.
+func hashToMD(h hash.Hash) C.GO_EVP_MD_PTR {
 	switch h.(type) {
 	case *sha1Hash:
 		return C.go_openssl_EVP_sha1()
@@ -33,9 +32,8 @@ func hashToMD(h hash.Hash) *C.EVP_MD {
 	return nil
 }
 
-// cryptoHashToMD converts a crypto.Hash
-// to an OpenSSL *C.EVP_MD.
-func cryptoHashToMD(ch crypto.Hash) *C.EVP_MD {
+// cryptoHashToMD converts a crypto.Hash to a GO_EVP_MD_PTR.
+func cryptoHashToMD(ch crypto.Hash) C.GO_EVP_MD_PTR {
 	switch ch {
 	case crypto.MD5:
 		return C.go_openssl_EVP_md5()

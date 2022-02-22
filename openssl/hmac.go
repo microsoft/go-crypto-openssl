@@ -50,7 +50,7 @@ func NewHMAC(h func() hash.Hash, key []byte) hash.Hash {
 }
 
 type opensslHMAC struct {
-	md        *C.EVP_MD
+	md        C.GO_EVP_MD_PTR
 	ctx       *C.HMAC_CTX
 	size      int
 	blockSize int

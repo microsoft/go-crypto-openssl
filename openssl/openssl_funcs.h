@@ -58,28 +58,28 @@ DEFINEFUNC_3_0(int, EVP_default_properties_is_fips_enabled, (void* libctx), (lib
 DEFINEFUNC_3_0(int, EVP_set_default_properties, (void *libctx, const char *propq), (libctx, propq)) \
 DEFINEFUNC_3_0(void*, OSSL_PROVIDER_load, (void* libctx, const char *name), (libctx, name)) \
 DEFINEFUNC(int, RAND_bytes, (uint8_t * arg0, size_t arg1), (arg0, arg1)) \
-DEFINEFUNC(int, EVP_DigestInit_ex, (EVP_MD_CTX *ctx, const EVP_MD *type, ENGINE *impl), (ctx, type, impl)) \
-DEFINEFUNC(int, EVP_DigestUpdate, (EVP_MD_CTX *ctx, const void *d, size_t cnt), (ctx, d, cnt)) \
-DEFINEFUNC(int, EVP_DigestFinal_ex, (EVP_MD_CTX *ctx, unsigned char *md, unsigned int *s), (ctx, md, s)) \
-DEFINEFUNC_RENAMED(EVP_MD_CTX *, EVP_MD_CTX_new, EVP_MD_CTX_create, (), ()) \
-DEFINEFUNC_RENAMED(void, EVP_MD_CTX_free, EVP_MD_CTX_destroy, (EVP_MD_CTX *ctx), (ctx)) \
-DEFINEFUNC(int, EVP_MD_CTX_copy_ex, (EVP_MD_CTX *out, const EVP_MD_CTX *in), (out, in)) \
-DEFINEFUNC_RENAMED(int, EVP_MD_CTX_reset, EVP_MD_CTX_cleanup, (EVP_MD_CTX *ctx), (ctx)) \
-DEFINEFUNC(const EVP_MD *, EVP_md5, (void), ()) \
-DEFINEFUNC(const EVP_MD *, EVP_sha1, (void), ()) \
-DEFINEFUNC(const EVP_MD *, EVP_sha224, (void), ()) \
-DEFINEFUNC(const EVP_MD *, EVP_sha256, (void), ()) \
-DEFINEFUNC(const EVP_MD *, EVP_sha384, (void), ()) \
-DEFINEFUNC(const EVP_MD *, EVP_sha512, (void), ()) \
-DEFINEFUNC_1_1(const EVP_MD*, EVP_md5_sha1, (void), ()) \
-DEFINEFUNC_3_0(EVP_MD *, EVP_MD_fetch, (void *ctx, const char *algorithm, const char *properties), (ctx, algorithm, properties)) \
-DEFINEFUNC_3_0(void, EVP_MD_free, (EVP_MD* md), (md)) \
-DEFINEFUNC_RENAMED(int, EVP_MD_get_type, EVP_MD_type, (const EVP_MD *arg0), (arg0)) \
-DEFINEFUNC_RENAMED(size_t, EVP_MD_get_size, EVP_MD_size, (const EVP_MD *arg0), (arg0)) \
+DEFINEFUNC(int, EVP_DigestInit_ex, (GO_EVP_MD_CTX_PTR ctx, const GO_EVP_MD_PTR type, ENGINE *impl), (ctx, type, impl)) \
+DEFINEFUNC(int, EVP_DigestUpdate, (GO_EVP_MD_CTX_PTR ctx, const uint8_t *d, size_t cnt), (ctx, d, cnt)) \
+DEFINEFUNC(int, EVP_DigestFinal_ex, (GO_EVP_MD_CTX_PTR ctx, unsigned char *md, unsigned int *s), (ctx, md, s)) \
+DEFINEFUNC_RENAMED(GO_EVP_MD_CTX_PTR, EVP_MD_CTX_new, EVP_MD_CTX_create, (), ()) \
+DEFINEFUNC_RENAMED(void, EVP_MD_CTX_free, EVP_MD_CTX_destroy, (GO_EVP_MD_CTX_PTR ctx), (ctx)) \
+DEFINEFUNC(int, EVP_MD_CTX_copy_ex, (GO_EVP_MD_CTX_PTR out, const GO_EVP_MD_CTX_PTR in), (out, in)) \
+DEFINEFUNC_RENAMED(int, EVP_MD_CTX_reset, EVP_MD_CTX_cleanup, (GO_EVP_MD_CTX_PTR ctx), (ctx)) \
+DEFINEFUNC(const GO_EVP_MD_PTR, EVP_md5, (void), ()) \
+DEFINEFUNC(const GO_EVP_MD_PTR, EVP_sha1, (void), ()) \
+DEFINEFUNC(const GO_EVP_MD_PTR, EVP_sha224, (void), ()) \
+DEFINEFUNC(const GO_EVP_MD_PTR, EVP_sha256, (void), ()) \
+DEFINEFUNC(const GO_EVP_MD_PTR, EVP_sha384, (void), ()) \
+DEFINEFUNC(const GO_EVP_MD_PTR, EVP_sha512, (void), ()) \
+DEFINEFUNC_1_1(const GO_EVP_MD_PTR, EVP_md5_sha1, (void), ()) \
+DEFINEFUNC_3_0(GO_EVP_MD_PTR, EVP_MD_fetch, (void *ctx, const char *algorithm, const char *properties), (ctx, algorithm, properties)) \
+DEFINEFUNC_3_0(void, EVP_MD_free, (GO_EVP_MD_PTR md), (md)) \
+DEFINEFUNC_RENAMED(int, EVP_MD_get_type, EVP_MD_type, (const GO_EVP_MD_PTR arg0), (arg0)) \
+DEFINEFUNC_RENAMED(size_t, EVP_MD_get_size, EVP_MD_size, (const GO_EVP_MD_PTR arg0), (arg0)) \
 DEFINEFUNC_LEGACY_1_0(void, HMAC_CTX_init, (HMAC_CTX * arg0), (arg0)) \
 DEFINEFUNC_LEGACY_1_0(void, HMAC_CTX_cleanup, (HMAC_CTX * arg0), (arg0)) \
 DEFINEFUNC(int, HMAC_Init_ex, \
-           (HMAC_CTX * arg0, const void *arg1, int arg2, const EVP_MD *arg3, ENGINE *arg4), \
+           (HMAC_CTX * arg0, const void *arg1, int arg2, const GO_EVP_MD_PTR arg3, ENGINE *arg4), \
            (arg0, arg1, arg2, arg3, arg4)) \
 DEFINEFUNC(int, HMAC_Update, (HMAC_CTX * arg0, const uint8_t *arg1, size_t arg2), (arg0, arg1, arg2)) \
 DEFINEFUNC(int, HMAC_Final, (HMAC_CTX * arg0, uint8_t *arg1, unsigned int *arg2), (arg0, arg1, arg2)) \

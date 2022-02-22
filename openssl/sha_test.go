@@ -65,3 +65,19 @@ func TestSha(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkHash8Bytes(b *testing.B) {
+	b.StopTimer()
+	h := NewSHA256()
+	sum := make([]byte, h.Size())
+	var buf = make([]byte, 8192)
+	size := 1024
+	b.StartTimer()
+	b.SetBytes(int64(size))
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		h.Reset()
+		h.Write(buf[:size])
+		h.Sum(sum[:0])
+	}
+}
