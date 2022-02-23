@@ -43,10 +43,10 @@ func Init() error {
 }
 
 // providerAvailable looks through provider's digests
-// checking if there is any that matches the pprog query.
-func providerAvailable(pprog *C.char) bool {
+// checking if there is any that matches the props query.
+func providerAvailable(props *C.char) bool {
 	C.go_openssl_ERR_set_mark()
-	md := C.go_openssl_EVP_MD_fetch(nil, algProve, pprog)
+	md := C.go_openssl_EVP_MD_fetch(nil, algProve, props)
 	C.go_openssl_ERR_pop_to_mark()
 	if md == nil {
 		return false
@@ -89,26 +89,26 @@ func SetFIPS(enabled bool) error {
 		}
 		return nil
 	}
-	var pprop, provName *C.char
+	var props, provName *C.char
 	if enabled {
-		pprop = propFipsYes
+		props = propFipsYes
 		provName = providerNameFips
 	} else {
-		pprop = propFipsNo
+		props = propFipsNo
 		provName = providerNameDefault
 	}
-	// Check if there is any provider that matches pprop.
-	if !providerAvailable(pprop) {
+	// Check if there is any provider that matches props.
+	if !providerAvailable(props) {
 		// If not, fallback to provName provider.
 		if C.go_openssl_OSSL_PROVIDER_load(nil, provName) == nil {
 			return newOpenSSLError("openssl: OSSL_PROVIDER_try_load")
 		}
 		// Make sure we now have a provider available.
-		if !providerAvailable(pprop) {
+		if !providerAvailable(props) {
 			return fail("SetFIPS(" + strconv.FormatBool(enabled) + ") not supported")
 		}
 	}
-	if C.go_openssl_EVP_set_default_properties(nil, pprop) != 1 {
+	if C.go_openssl_EVP_set_default_properties(nil, props) != 1 {
 		return newOpenSSLError("openssl: EVP_set_default_properties")
 	}
 	return nil
