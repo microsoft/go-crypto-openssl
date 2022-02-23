@@ -32,8 +32,8 @@ All supported OpenSSL versions passes an small set of automatic tests that ensur
 These tests do not validate the cryptographic correctness of the `openssl` package.
 
 On top of that, the Microsoft CI builds and tests a subset of the supported OpenSSL versions as part of the [Microsoft Go fork](https://github.com/microsoft/go) release process.
-These tests are much more exhaustive and validate an specific OpenSSL version can produce working applications.
-Currently only OpenSSL 1.1.1 is goes through this process.
+These tests are much more exhaustive and validate a specific OpenSSL version can produce working applications.
+Currently only OpenSSL 1.1.1 goes through this process.
 
 Versions not listed above are not supported at all.
 
