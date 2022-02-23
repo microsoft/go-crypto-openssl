@@ -271,3 +271,11 @@ func TestDecryptInvariantReusableNonce(t *testing.T) {
 	// and decrypter doesn't change the encrypter/decrypter state."
 	testDecrypt(t, true)
 }
+
+func Test_aesCipher_finalize(t *testing.T) {
+	// Test that aesCipher.finalize does not panic if neither Encrypt nor Decrypt have been called.
+	// This test is important because aesCipher.finalize contains logic that is normally not exercided while testing.
+	// We can't used NewAESCipher here because the returned object will be automatically finalized by the GC
+	// in case test execution takes long enough, and it can't be finalized twice.
+	new(aesCipher).finalize()
+}
