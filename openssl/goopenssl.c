@@ -175,9 +175,9 @@ int local_openssl_thread_setup(void);
 int
 go_openssl_setup(void) 
 {
-	// v1_0_sentinel is only defined up to OpenSSL 1.0.x.
+    // v1_0_sentinel is only defined up to OpenSSL 1.0.x.
     const void* v1_0_sentinel = dlsym(handle, "EVP_MD_CTX_cleanup");
-	// v1_0_sentinel is only defined up to OpenSSL 1.x.
+    // v1_0_sentinel is only defined up to OpenSSL 1.x.
     const void* v1_sentinel = dlsym(handle, "FIPS_mode");
     go_openssl_load_functions(v1_0_sentinel, v1_sentinel);
     // OPENSSL_init initialize FIPS callbacks and rand generator.
