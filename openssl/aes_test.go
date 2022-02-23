@@ -35,7 +35,6 @@ func TestNewGCMNonce(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected no error for standard tag / nonce size, got: %#v", err)
 	}
-	c.finalize()
 }
 
 func TestSealAndOpen(t *testing.T) {
@@ -60,7 +59,6 @@ func TestSealAndOpen(t *testing.T) {
 	if !bytes.Equal(decrypted, plainText) {
 		t.Errorf("unexpected decrypted result\ngot: %#v\nexp: %#v", decrypted, plainText)
 	}
-	c.finalize()
 }
 
 func TestSealAndOpenAuthenticationError(t *testing.T) {
@@ -82,7 +80,6 @@ func TestSealAndOpenAuthenticationError(t *testing.T) {
 	if err != errOpen {
 		t.Errorf("expected authentication error, got: %#v", err)
 	}
-	c.finalize()
 }
 
 func assertPanic(t *testing.T, f func()) {
@@ -273,4 +270,12 @@ func TestDecryptInvariantReusableNonce(t *testing.T) {
 	// Test that changing the iv slice after creating the encrypter
 	// and decrypter doesn't change the encrypter/decrypter state."
 	testDecrypt(t, true)
+}
+
+func Test_aesCipher_finalize(t *testing.T) {
+	// Test that aesCipher.finalize does not panic if neither Encrypt nor Decrypt have been called.
+	// This test is important because aesCipher.finalize contains logic that is normally not exercided while testing.
+	// We can't used NewAESCipher here because the returned object will be automatically finalized by the GC
+	// in case test execution takes long enough, and it can't be finalized twice.
+	new(aesCipher).finalize()
 }
