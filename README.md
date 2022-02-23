@@ -26,11 +26,14 @@ On the other hand, Google maintains a branch that uses cgo and BoringSSL to impl
 
 ### Multiple OpenSSL versions supported
 
-OpenSSL does not maintain ABI compatibility between different releases, even if only the last digit is increased. The `openssl` package has support for multiple OpenSSL versions, yet each version has a different amount of automated validation:
+The `openssl` package has support for multiple OpenSSL versions, namely 1.0.1, 1.1.0, 1.1.1 and 3.0.2.
 
-- OpenSSL 1.1.1: the Microsoft CI builds official releases and runs automated tests with this version.
-- OpenSSL 1.0.1: the Microsoft CI builds official releases, but doesn't run tests, so it may not produce working applications.
-- OpenSSL 1.1.0 and 3.0: the Microsoft CI does not build nor test these versions, so they may or may not work.
+All supported OpenSSL versions passes an small set of automatic tests that ensure they can be built and that there are no major regressions.
+These tests do not validate the cryptographic correctness of the `openssl` package.
+
+On top of that, the Microsoft CI builds and tests a subset of the supported OpenSSL versions as part of the [Microsoft Go fork](https://github.com/microsoft/go) release process.
+These tests are much more exhaustive and validate a specific OpenSSL version can produce working applications.
+Currently only OpenSSL 1.1.1 goes through this process.
 
 Versions not listed above are not supported at all.
 
