@@ -68,7 +68,7 @@ FOR_ALL_OPENSSL_FUNCTIONS
 #undef DEFINEFUNC_3_0
 #undef DEFINEFUNC_RENAMED
 
-// These wrappers allocate out_len on the C stackto avoid having to pass a pointer from Go, which would escape to the heap.
+// These wrappers allocate out_len on the C stack to avoid having to pass a pointer from Go, which would escape to the heap.
 // Use them only in situations where the output length can be safely discarded.
 static inline int
 go_openssl_EVP_EncryptUpdate_wrapper(GO_EVP_CIPHER_CTX_PTR ctx, uint8_t *out, const uint8_t *in, int in_len)
