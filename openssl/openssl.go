@@ -193,7 +193,7 @@ func SetFIPS(enabled bool) error {
 			props = propFipsNo
 			provName = providerNameDefault
 		}
-		// Check if there is any provided that matches props.
+		// Check if there is any provider that matches props.
 		if !providerAvailable(props) {
 			// If not, fallback to provName provider.
 			if C.go_openssl_OSSL_PROVIDER_load(nil, provName) == nil {
