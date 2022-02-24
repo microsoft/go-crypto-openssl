@@ -113,7 +113,7 @@ func Init() error {
 func dlopen(version string) unsafe.Pointer {
 	cv := C.CString("libcrypto.so." + version)
 	defer C.free(unsafe.Pointer(cv))
-	return C.dlopen(cv, C.RTLD_LAZY|C.RTLD_GLOBAL)
+	return C.dlopen(cv, C.RTLD_LAZY|C.RTLD_LOCAL)
 }
 
 func loadLibrary(version string) (unsafe.Pointer, error) {
