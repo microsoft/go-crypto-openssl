@@ -22,28 +22,28 @@ type ecdsaSignature struct {
 
 type PrivateKeyECDSA struct {
 	// _pkey MUST NOT be accessed directly. Instead, use the withKey method.
-	_pkey *C.EVP_PKEY
+	_pkey C.GO_EVP_PKEY_PTR
 }
 
 func (k *PrivateKeyECDSA) finalize() {
 	C.go_openssl_EVP_PKEY_free(k._pkey)
 }
 
-func (k *PrivateKeyECDSA) withKey(f func(*C.EVP_PKEY) C.int) C.int {
+func (k *PrivateKeyECDSA) withKey(f func(C.GO_EVP_PKEY_PTR) C.int) C.int {
 	defer runtime.KeepAlive(k)
 	return f(k._pkey)
 }
 
 type PublicKeyECDSA struct {
 	// _pkey MUST NOT be accessed directly. Instead, use the withKey method.
-	_pkey *C.EVP_PKEY
+	_pkey C.GO_EVP_PKEY_PTR
 }
 
 func (k *PublicKeyECDSA) finalize() {
 	C.go_openssl_EVP_PKEY_free(k._pkey)
 }
 
-func (k *PublicKeyECDSA) withKey(f func(*C.EVP_PKEY) C.int) C.int {
+func (k *PublicKeyECDSA) withKey(f func(C.GO_EVP_PKEY_PTR) C.int) C.int {
 	defer runtime.KeepAlive(k)
 	return f(k._pkey)
 }
@@ -79,7 +79,7 @@ func NewPublicKeyECDSA(curve string, X, Y *big.Int) (*PublicKeyECDSA, error) {
 	return k, nil
 }
 
-func newECKey(curve string, X, Y, D *big.Int) (pkey *C.EVP_PKEY, err error) {
+func newECKey(curve string, X, Y, D *big.Int) (pkey C.GO_EVP_PKEY_PTR, err error) {
 	var nid C.int
 	if nid, err = curveNID(curve); err != nil {
 		return nil, err

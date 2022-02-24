@@ -154,33 +154,33 @@ DEFINEFUNC(const GO_EVP_CIPHER_PTR, EVP_aes_256_ecb, (void), ()) \
 DEFINEFUNC(const GO_EVP_CIPHER_PTR, EVP_aes_256_gcm, (void), ()) \
 DEFINEFUNC(void, EVP_CIPHER_CTX_free, (GO_EVP_CIPHER_CTX_PTR arg0), (arg0)) \
 DEFINEFUNC(int, EVP_CIPHER_CTX_ctrl, (GO_EVP_CIPHER_CTX_PTR ctx, int type, int arg, void *ptr), (ctx, type, arg, ptr)) \
-DEFINEFUNC(EVP_PKEY *, EVP_PKEY_new, (void), ()) \
-DEFINEFUNC_RENAMED(int, EVP_PKEY_get_size, EVP_PKEY_size, (const EVP_PKEY *pkey), (pkey)) \
-DEFINEFUNC(void, EVP_PKEY_free, (EVP_PKEY * arg0), (arg0)) \
-DEFINEFUNC(EC_KEY *, EVP_PKEY_get1_EC_KEY, (EVP_PKEY *pkey), (pkey)) \
-DEFINEFUNC(RSA *, EVP_PKEY_get1_RSA, (EVP_PKEY *pkey), (pkey)) \
-DEFINEFUNC(int, EVP_PKEY_assign, (EVP_PKEY *pkey, int type, void *key), (pkey, type, key)) \
+DEFINEFUNC(GO_EVP_PKEY_PTR, EVP_PKEY_new, (void), ()) \
+DEFINEFUNC_RENAMED(int, EVP_PKEY_get_size, EVP_PKEY_size, (const GO_EVP_PKEY_PTR pkey), (pkey)) \
+DEFINEFUNC(void, EVP_PKEY_free, (GO_EVP_PKEY_PTR arg0), (arg0)) \
+DEFINEFUNC(EC_KEY *, EVP_PKEY_get1_EC_KEY, (GO_EVP_PKEY_PTR pkey), (pkey)) \
+DEFINEFUNC(RSA *, EVP_PKEY_get1_RSA, (GO_EVP_PKEY_PTR pkey), (pkey)) \
+DEFINEFUNC(int, EVP_PKEY_assign, (GO_EVP_PKEY_PTR pkey, int type, void *key), (pkey, type, key)) \
 DEFINEFUNC(int, EVP_PKEY_verify, \
-    (EVP_PKEY_CTX *ctx, const uint8_t *sig, unsigned int siglen, const uint8_t *tbs, unsigned int tbslen), \
+    (GO_EVP_PKEY_CTX_PTR ctx, const uint8_t *sig, unsigned int siglen, const uint8_t *tbs, unsigned int tbslen), \
     (ctx, sig, siglen, tbs, tbslen)) \
-DEFINEFUNC(EVP_PKEY_CTX *, EVP_PKEY_CTX_new, (EVP_PKEY * arg0, ENGINE *arg1), (arg0, arg1)) \
-DEFINEFUNC(EVP_PKEY_CTX *, EVP_PKEY_CTX_new_id, (int id, ENGINE *e), (id, e)) \
-DEFINEFUNC(int, EVP_PKEY_keygen_init, (EVP_PKEY_CTX *ctx), (ctx)) \
-DEFINEFUNC(int, EVP_PKEY_keygen, (EVP_PKEY_CTX *ctx, EVP_PKEY **ppkey), (ctx, ppkey)) \
-DEFINEFUNC(void, EVP_PKEY_CTX_free, (EVP_PKEY_CTX * arg0), (arg0)) \
+DEFINEFUNC(GO_EVP_PKEY_CTX_PTR, EVP_PKEY_CTX_new, (GO_EVP_PKEY_PTR arg0, ENGINE *arg1), (arg0, arg1)) \
+DEFINEFUNC(GO_EVP_PKEY_CTX_PTR, EVP_PKEY_CTX_new_id, (int id, ENGINE *e), (id, e)) \
+DEFINEFUNC(int, EVP_PKEY_keygen_init, (GO_EVP_PKEY_CTX_PTR ctx), (ctx)) \
+DEFINEFUNC(int, EVP_PKEY_keygen, (GO_EVP_PKEY_CTX_PTR ctx, GO_EVP_PKEY_PTR *ppkey), (ctx, ppkey)) \
+DEFINEFUNC(void, EVP_PKEY_CTX_free, (GO_EVP_PKEY_CTX_PTR arg0), (arg0)) \
 DEFINEFUNC(int, EVP_PKEY_CTX_ctrl, \
-    (EVP_PKEY_CTX * ctx, int keytype, int optype, int cmd, int p1, void *p2), \
+    (GO_EVP_PKEY_CTX_PTR ctx, int keytype, int optype, int cmd, int p1, void *p2), \
     (ctx, keytype, optype, cmd, p1, p2)) \
 DEFINEFUNC(int, EVP_PKEY_decrypt, \
-    (EVP_PKEY_CTX * arg0, uint8_t *arg1, unsigned int *arg2, const uint8_t *arg3, unsigned int arg4), \
+    (GO_EVP_PKEY_CTX_PTR arg0, uint8_t *arg1, unsigned int *arg2, const uint8_t *arg3, unsigned int arg4), \
     (arg0, arg1, arg2, arg3, arg4)) \
 DEFINEFUNC(int, EVP_PKEY_encrypt, \
-    (EVP_PKEY_CTX * arg0, uint8_t *arg1, unsigned int *arg2, const uint8_t *arg3, unsigned int arg4), \
+    (GO_EVP_PKEY_CTX_PTR arg0, uint8_t *arg1, unsigned int *arg2, const uint8_t *arg3, unsigned int arg4), \
     (arg0, arg1, arg2, arg3, arg4)) \
-DEFINEFUNC(int, EVP_PKEY_decrypt_init, (EVP_PKEY_CTX * arg0), (arg0)) \
-DEFINEFUNC(int, EVP_PKEY_encrypt_init, (EVP_PKEY_CTX * arg0), (arg0)) \
-DEFINEFUNC(int, EVP_PKEY_sign_init, (EVP_PKEY_CTX * arg0), (arg0)) \
-DEFINEFUNC(int, EVP_PKEY_verify_init, (EVP_PKEY_CTX * arg0), (arg0)) \
+DEFINEFUNC(int, EVP_PKEY_decrypt_init, (GO_EVP_PKEY_CTX_PTR arg0), (arg0)) \
+DEFINEFUNC(int, EVP_PKEY_encrypt_init, (GO_EVP_PKEY_CTX_PTR arg0), (arg0)) \
+DEFINEFUNC(int, EVP_PKEY_sign_init, (GO_EVP_PKEY_CTX_PTR arg0), (arg0)) \
+DEFINEFUNC(int, EVP_PKEY_verify_init, (GO_EVP_PKEY_CTX_PTR arg0), (arg0)) \
 DEFINEFUNC(int, EVP_PKEY_sign, \
-    (EVP_PKEY_CTX * arg0, uint8_t *arg1, unsigned int *arg2, const uint8_t *arg3, unsigned int arg4), \
+    (GO_EVP_PKEY_CTX_PTR arg0, uint8_t *arg1, unsigned int *arg2, const uint8_t *arg3, unsigned int arg4), \
     (arg0, arg1, arg2, arg3, arg4))
