@@ -88,7 +88,7 @@ func (h *evpHash) sum(out []byte) {
 	if C.go_openssl_EVP_MD_CTX_copy_ex(h.ctx2, h.ctx) != 1 {
 		panic("openssl: EVP_MD_CTX_copy_ex failed")
 	}
-	if C.go_openssl_EVP_DigestFinal_ex(h.ctx2, (*C.uint8_t)(unsafe.Pointer(&out[0])), nil) != 1 {
+	if C.go_openssl_EVP_DigestFinal_ex(h.ctx2, base(out), nil) != 1 {
 		panic("openssl: EVP_DigestFinal_ex failed")
 	}
 	C.go_openssl_EVP_MD_CTX_reset(h.ctx2)

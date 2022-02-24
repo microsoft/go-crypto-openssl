@@ -79,7 +79,7 @@ DEFINEFUNC_RENAMED(size_t, EVP_MD_get_size, EVP_MD_size, (const GO_EVP_MD_PTR ar
 DEFINEFUNC_LEGACY_1_0(void, HMAC_CTX_init, (GO_HMAC_CTX_PTR arg0), (arg0)) \
 DEFINEFUNC_LEGACY_1_0(void, HMAC_CTX_cleanup, (GO_HMAC_CTX_PTR arg0), (arg0)) \
 DEFINEFUNC(int, HMAC_Init_ex, \
-           (GO_HMAC_CTX_PTR arg0, const void *arg1, int arg2, const GO_EVP_MD_PTR arg3, ENGINE *arg4), \
+           (GO_HMAC_CTX_PTR arg0, const uint8_t *arg1, int arg2, const GO_EVP_MD_PTR arg3, ENGINE *arg4), \
            (arg0, arg1, arg2, arg3, arg4)) \
 DEFINEFUNC(int, HMAC_Update, (GO_HMAC_CTX_PTR arg0, const uint8_t *arg1, size_t arg2), (arg0, arg1, arg2)) \
 DEFINEFUNC(int, HMAC_Final, (GO_HMAC_CTX_PTR arg0, uint8_t *arg1, unsigned int *arg2), (arg0, arg1, arg2)) \
