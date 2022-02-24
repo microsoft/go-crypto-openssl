@@ -244,7 +244,7 @@ func testDecrypt(t *testing.T, resetNonce bool) {
 		111, 184, 94, 169, 188, 93, 38, 150,
 		3, 208, 185, 201, 212, 246, 238, 181,
 	}
-	if bytes.Compare(expectedCipherText, cipherText) != 0 {
+	if !bytes.Equal(expectedCipherText, cipherText) {
 		t.Fail()
 	}
 
@@ -257,7 +257,7 @@ func testDecrypt(t *testing.T, resetNonce bool) {
 		t.Fail()
 	}
 
-	if bytes.Compare(plainText, decrypted) != 0 {
+	if !bytes.Equal(plainText, decrypted) {
 		t.Errorf("decryption incorrect\nexp %v, got %v\n", plainText, decrypted)
 	}
 }
@@ -278,4 +278,82 @@ func Test_aesCipher_finalize(t *testing.T) {
 	// We can't used NewAESCipher here because the returned object will be automatically finalized by the GC
 	// in case test execution takes long enough, and it can't be finalized twice.
 	new(aesCipher).finalize()
+}
+
+func BenchmarkAES_Encrypt(b *testing.B) {
+	key := []byte{0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c}
+	in := []byte{0x32, 0x43, 0xf6, 0xa8, 0x88, 0x5a, 0x30, 0x8d, 0x31, 0x31, 0x98, 0xa2, 0xe0, 0x37, 0x07, 0x34}
+	c, err := NewAESCipher(key)
+	if err != nil {
+		b.Fatal("NewCipher:", err)
+	}
+	out := make([]byte, len(in))
+	b.SetBytes(int64(len(out)))
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		c.Encrypt(out, in)
+	}
+}
+
+func BenchmarkAES_Decrypt(b *testing.B) {
+	key := []byte{0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c}
+	src := []byte{0x39, 0x25, 0x84, 0x1d, 0x02, 0xdc, 0x09, 0xfb, 0xdc, 0x11, 0x85, 0x97, 0x19, 0x6a, 0x0b, 0x32}
+	c, err := NewAESCipher(key)
+	if err != nil {
+		b.Fatal("NewCipher:", err)
+	}
+	out := make([]byte, len(src))
+	b.SetBytes(int64(len(src)))
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		c.Encrypt(out, src)
+	}
+}
+
+func BenchmarkAESGCM_Open(b *testing.B) {
+	const length = 64
+	const keySize = 128 / 8
+	buf := make([]byte, length)
+
+	b.ReportAllocs()
+	b.SetBytes(int64(len(buf)))
+
+	var key = make([]byte, keySize)
+	var nonce [12]byte
+	var ad [13]byte
+	c, _ := NewAESCipher(key)
+	aesgcm, _ := c.(extraModes).NewGCM(gcmStandardNonceSize, gcmTagSize)
+	var out []byte
+
+	ct := aesgcm.Seal(nil, nonce[:], buf[:], ad[:])
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		out, _ = aesgcm.Open(out[:0], nonce[:], ct, ad[:])
+	}
+}
+
+func BenchmarkAESGCM_Seal(b *testing.B) {
+	const length = 64
+	const keySize = 128 / 8
+	buf := make([]byte, length)
+
+	b.ReportAllocs()
+	b.SetBytes(int64(len(buf)))
+
+	var key = make([]byte, keySize)
+	var nonce [12]byte
+	var ad [13]byte
+	c, _ := NewAESCipher(key)
+	aesgcm, _ := c.(extraModes).NewGCM(gcmStandardNonceSize, gcmTagSize)
+	var out []byte
+
+	ct := aesgcm.Seal(nil, nonce[:], buf[:], ad[:])
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		out, _ = aesgcm.Open(out[:0], nonce[:], ct, ad[:])
+	}
 }
