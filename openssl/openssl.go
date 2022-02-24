@@ -73,9 +73,9 @@ func Init() error {
 			errInit = err
 			return
 		}
-		// v1_0_sentinel is only defined up to OpenSSL 1.0.x.
+		// v1_0_sentinel is only defined up to and including OpenSSL 1.0.x.
 		v1_0_sentinel := C.dlsym(handle, sentinelNameV1_0)
-		// v1_sentinel is only defined up to OpenSSL 1.x.
+		// v1_sentinel is only defined up to and including OpenSSL 1.x.
 		v1_sentinel := C.dlsym(handle, sentinelNameV1)
 
 		C.go_openssl_load_functions(handle, v1_0_sentinel, v1_sentinel)
