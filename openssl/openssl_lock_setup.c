@@ -38,7 +38,7 @@ static unsigned long id_function(void)
 	return ((unsigned long)syscall(__NR_gettid));
 }
  
-int local_openssl_thread_setup(void)
+int go_openssl_thread_setup(void)
 {
   int i;
  

@@ -31,11 +31,10 @@ func GenerateKeyRSA(bits int) (N, E, D, P, Q, Dp, Dq, Qinv *big.Int, err error) 
 	if key == nil {
 		return bad(newOpenSSLError("EVP_PKEY_get1_RSA failed"))
 	}
-	var n, e, d, p, q, dp, dq, qinv *C.BIGNUM
-	C.go_openssl_RSA_get0_key(key, &n, &e, &d)
-	C.go_openssl_RSA_get0_factors(key, &p, &q)
-	C.go_openssl_RSA_get0_crt_params(key, &dp, &dq, &qinv)
-	return bnToBig(n), bnToBig(e), bnToBig(d), bnToBig(p), bnToBig(q), bnToBig(dp), bnToBig(dq), bnToBig(qinv), nil
+	N, E, D = rsaGetKey(key)
+	P, Q = rsaGetFactors(key)
+	Dp, Dq, Qinv = rsaGetCRTParams(key)
+	return
 }
 
 type PublicKeyRSA struct {
@@ -48,10 +47,9 @@ func NewPublicKeyRSA(N, E *big.Int) (*PublicKeyRSA, error) {
 	if key == nil {
 		return nil, newOpenSSLError("RSA_new failed")
 	}
-	var n, e *C.BIGNUM
-	n = bigToBN(N)
-	e = bigToBN(E)
-	C.go_openssl_RSA_set0_key(key, n, e, nil)
+	if !rsaSetKey(key, N, E, nil) {
+		return nil, fail("RSA_set0_key")
+	}
 	pkey := C.go_openssl_EVP_PKEY_new()
 	if pkey == nil {
 		C.go_openssl_RSA_free(key)
@@ -89,21 +87,18 @@ func NewPrivateKeyRSA(N, E, D, P, Q, Dp, Dq, Qinv *big.Int) (*PrivateKeyRSA, err
 	if key == nil {
 		return nil, newOpenSSLError("RSA_new failed")
 	}
-	var n, e, d, p, q, dp, dq, qinv *C.BIGNUM
-	n = bigToBN(N)
-	e = bigToBN(E)
-	d = bigToBN(D)
-	C.go_openssl_RSA_set0_key(key, n, e, d)
+	if !rsaSetKey(key, N, E, D) {
+		return nil, fail("RSA_set0_key")
+	}
 	if P != nil && Q != nil {
-		p = bigToBN(P)
-		q = bigToBN(Q)
-		C.go_openssl_RSA_set0_factors(key, p, q)
+		if !rsaSetFactors(key, P, Q) {
+			return nil, fail("RSA_set0_factors")
+		}
 	}
 	if Dp != nil && Dq != nil && Qinv != nil {
-		dp = bigToBN(Dp)
-		dq = bigToBN(Dq)
-		qinv = bigToBN(Qinv)
-		C.go_openssl_RSA_set0_crt_params(key, dp, dq, qinv)
+		if !rsaSetCRTParams(key, Dp, Dq, Qinv) {
+			return nil, fail("RSA_set0_crt_params")
+		}
 	}
 	pkey := C.go_openssl_EVP_PKEY_new()
 	if pkey == nil {
@@ -205,4 +200,104 @@ func VerifyRSAPKCS1v15(pub *PublicKeyRSA, h crypto.Hash, hashed, sig []byte) err
 		return errors.New("crypto/rsa: verification error")
 	}
 	return evpVerify(pub.withKey, C.RSA_PKCS1_PADDING, 0, h, sig, hashed)
+}
+
+// rsa_st_1_0_2 is rsa_st memory layout in OpenSSL 1.0.2.
+type rsa_st_1_0_2 struct {
+	_                C.int
+	_                C.long
+	_                [2]unsafe.Pointer
+	n, e, d          *C.BIGNUM
+	p, q             *C.BIGNUM
+	dmp1, dmq1, iqmp *C.BIGNUM
+	// It contains more fields, but we are not interesed on them.
+}
+
+func bnSet(b1 **C.BIGNUM, b2 *big.Int) {
+	if b2 == nil {
+		return
+	}
+	if *b1 != nil {
+		C.go_openssl_BN_clear_free(*b1)
+	}
+	*b1 = bigToBN(b2)
+}
+
+func rsaSetKey(key *C.RSA, n, e, d *big.Int) bool {
+	if vMajor == 1 && vMinor == 0 {
+		r := (*rsa_st_1_0_2)(unsafe.Pointer(key))
+		//r.d and d will be nil for public keys.
+		if (r.n == nil && n == nil) ||
+			(r.e == nil && e == nil) {
+			return false
+		}
+		bnSet(&r.n, n)
+		bnSet(&r.e, e)
+		bnSet(&r.d, d)
+		return true
+	}
+	return C.go_openssl_RSA_set0_key(key, bigToBN(n), bigToBN(e), bigToBN(d)) == 1
+}
+
+func rsaSetFactors(key *C.RSA, p, q *big.Int) bool {
+	if vMajor == 1 && vMinor == 0 {
+		r := (*rsa_st_1_0_2)(unsafe.Pointer(key))
+		if (r.p == nil && p == nil) ||
+			(r.q == nil && q == nil) {
+			return false
+		}
+		bnSet(&r.p, p)
+		bnSet(&r.q, q)
+		return true
+	}
+	return C.go_openssl_RSA_set0_factors(key, bigToBN(p), bigToBN(q)) == 1
+}
+
+func rsaSetCRTParams(key *C.RSA, dmp1, dmq1, iqmp *big.Int) bool {
+	if vMajor == 1 && vMinor == 0 {
+		r := (*rsa_st_1_0_2)(unsafe.Pointer(key))
+		if (r.dmp1 == nil && dmp1 == nil) ||
+			(r.dmq1 == nil && dmq1 == nil) ||
+			(r.iqmp == nil && iqmp == nil) {
+			return false
+		}
+		bnSet(&r.dmp1, dmp1)
+		bnSet(&r.dmq1, dmq1)
+		bnSet(&r.iqmp, iqmp)
+		return true
+	}
+	return C.go_openssl_RSA_set0_crt_params(key, bigToBN(dmp1), bigToBN(dmq1), bigToBN(iqmp)) == 1
+}
+
+func rsaGetKey(key *C.RSA) (*big.Int, *big.Int, *big.Int) {
+	var n, e, d *C.BIGNUM
+	if vMajor == 1 && vMinor == 0 {
+		r := (*rsa_st_1_0_2)(unsafe.Pointer(key))
+		n, e, d = r.n, r.e, r.d
+	} else {
+		C.go_openssl_RSA_get0_key(key, &n, &e, &d)
+	}
+	return bnToBig(n), bnToBig(e), bnToBig(d)
+}
+
+func rsaGetFactors(key *C.RSA) (*big.Int, *big.Int) {
+	var p, q *C.BIGNUM
+	if vMajor == 1 && vMinor == 0 {
+		r := (*rsa_st_1_0_2)(unsafe.Pointer(key))
+		p, q = r.p, r.q
+	} else {
+		C.go_openssl_RSA_get0_factors(key, &p, &q)
+	}
+	return bnToBig(p), bnToBig(q)
+}
+
+func rsaGetCRTParams(key *C.RSA) (*big.Int, *big.Int, *big.Int) {
+	var dmp1, dmq1, iqmp *C.BIGNUM
+	if vMajor == 1 && vMinor == 0 {
+		r := (*rsa_st_1_0_2)(unsafe.Pointer(key))
+		dmp1, dmq1, iqmp = r.dmp1, r.dmq1, r.iqmp
+	} else {
+		C.go_openssl_RSA_get0_crt_params(key, &dmp1, &dmq1, &iqmp)
+	}
+	return bnToBig(dmp1), bnToBig(dmq1), bnToBig(iqmp)
 }

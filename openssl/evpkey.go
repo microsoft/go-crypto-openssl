@@ -40,6 +40,14 @@ func cryptoHashToMD(ch crypto.Hash) *C.EVP_MD {
 	case crypto.MD5:
 		return C.go_openssl_EVP_md5()
 	case crypto.MD5SHA1:
+		if vMajor == 1 && vMinor == 0 {
+			// MD5SHA1 is not implemented in OpenSSL 1.0.2.
+			// It is implemented in higher versions but without FIPS support.
+			// It is considered a deprecated digest, not approved by FIPS 140-2
+			// and only used in pre-TLS 1.2, so we would rather not support it
+			// if using 1.0.2 than than implement something that is not properly validated.
+			return nil
+		}
 		return C.go_openssl_EVP_md5_sha1()
 	case crypto.SHA1:
 		return C.go_openssl_EVP_sha1()
