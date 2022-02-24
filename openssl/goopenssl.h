@@ -25,8 +25,10 @@
 #include <openssl/ecdsa.h>
 #include <openssl/rsa.h>
 
+int go_openssl_version_major(void* handle);
+int go_openssl_version_minor(void* handle);
 int go_openssl_thread_setup(void);
-void go_openssl_load_functions(void* handle, const void* v1_0_sentinel, const void* v1_sentinel);
+void go_openssl_load_functions(void* handle);
 
 #define GO_OPENSSL_INIT_LOAD_CRYPTO_STRINGS 0x00000002L
 #define GO_OPENSSL_INIT_ADD_ALL_CIPHERS 0x00000004L
