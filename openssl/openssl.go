@@ -58,7 +58,7 @@ func errUnsuportedVersion() error {
 // It must be called before any other OpenSSL call.
 //
 // Only the first call to Init is effective,
-// subsecuent calls will return the same error result as the one from the first call.
+// subsequent calls will return the same error result as the one from the first call.
 //
 // If GO_OPENSSL_VERSION_OVERRIDE environment variable is not empty, its value will be appended to the OpenSSL shared library name
 // as a version suffix when calling dlopen. For example, "GO_OPENSSL_VERSION_OVERRIDE=1.1.1k-fips"
