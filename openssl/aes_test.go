@@ -9,7 +9,6 @@ package openssl
 import (
 	"bytes"
 	"crypto/cipher"
-	"strconv"
 	"testing"
 )
 
@@ -281,7 +280,7 @@ func Test_aesCipher_finalize(t *testing.T) {
 	new(aesCipher).finalize()
 }
 
-func BenchmarkAESEncrypt(b *testing.B) {
+func BenchmarkAES_Encrypt(b *testing.B) {
 	key := []byte{0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c}
 	in := []byte{0x32, 0x43, 0xf6, 0xa8, 0x88, 0x5a, 0x30, 0x8d, 0x31, 0x31, 0x98, 0xa2, 0xe0, 0x37, 0x07, 0x34}
 	c, err := NewAESCipher(key)
@@ -297,7 +296,7 @@ func BenchmarkAESEncrypt(b *testing.B) {
 	}
 }
 
-func BenchmarkAESDecrypt(b *testing.B) {
+func BenchmarkAES_Decrypt(b *testing.B) {
 	key := []byte{0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c}
 	src := []byte{0x39, 0x25, 0x84, 0x1d, 0x02, 0xdc, 0x09, 0xfb, 0xdc, 0x11, 0x85, 0x97, 0x19, 0x6a, 0x0b, 0x32}
 	c, err := NewAESCipher(key)
@@ -313,24 +312,11 @@ func BenchmarkAESDecrypt(b *testing.B) {
 	}
 }
 
-func benchmarkAESGCMSeal(b *testing.B, buf []byte, keySize int) {
-	b.ReportAllocs()
-	b.SetBytes(int64(len(buf)))
+func BenchmarkAESGCM_Open(b *testing.B) {
+	const length = 64
+	const keySize = 128 / 8
+	buf := make([]byte, length)
 
-	var key = make([]byte, keySize)
-	var nonce [12]byte
-	var ad [13]byte
-	c, _ := NewAESCipher(key)
-	aesgcm, _ := c.(extraModes).NewGCM(gcmStandardNonceSize, gcmTagSize)
-	var out []byte
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		out = aesgcm.Seal(out[:0], nonce[:], buf, ad[:])
-	}
-}
-
-func benchmarkAESGCMOpen(b *testing.B, buf []byte, keySize int) {
 	b.ReportAllocs()
 	b.SetBytes(int64(len(buf)))
 
@@ -349,13 +335,25 @@ func benchmarkAESGCMOpen(b *testing.B, buf []byte, keySize int) {
 	}
 }
 
-func BenchmarkAESGCM(b *testing.B) {
-	for _, length := range []int{64, 1350} {
-		b.Run("Open-128-"+strconv.Itoa(length), func(b *testing.B) {
-			benchmarkAESGCMOpen(b, make([]byte, length), 128/8)
-		})
-		b.Run("Seal-128-"+strconv.Itoa(length), func(b *testing.B) {
-			benchmarkAESGCMSeal(b, make([]byte, length), 128/8)
-		})
+func BenchmarkAESGCM_Seal(b *testing.B) {
+	const length = 64
+	const keySize = 128 / 8
+	buf := make([]byte, length)
+
+	b.ReportAllocs()
+	b.SetBytes(int64(len(buf)))
+
+	var key = make([]byte, keySize)
+	var nonce [12]byte
+	var ad [13]byte
+	c, _ := NewAESCipher(key)
+	aesgcm, _ := c.(extraModes).NewGCM(gcmStandardNonceSize, gcmTagSize)
+	var out []byte
+
+	ct := aesgcm.Seal(nil, nonce[:], buf[:], ad[:])
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		out, _ = aesgcm.Open(out[:0], nonce[:], ct, ad[:])
 	}
 }
