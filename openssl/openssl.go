@@ -27,8 +27,6 @@ var (
 	propFipsYes         = C.CString("fips=yes")
 	propFipsNo          = C.CString("fips=no")
 	algProve            = C.CString("SHA2-256")
-	sentinelNameV1_0    = C.CString("EVP_MD_CTX_cleanup")
-	sentinelNameV1      = C.CString("FIPS_mode")
 )
 
 var (
@@ -73,24 +71,26 @@ func Init() error {
 			errInit = err
 			return
 		}
-		// v1_0_sentinel is only defined up to and including OpenSSL 1.0.x.
-		v1_0_sentinel := C.dlsym(handle, sentinelNameV1_0)
-		// v1_sentinel is only defined up to and including OpenSSL 1.x.
-		v1_sentinel := C.dlsym(handle, sentinelNameV1)
 
-		C.go_openssl_load_functions(handle, v1_0_sentinel, v1_sentinel)
-
-		if v1_sentinel != nil {
-			vMajor = 1
-			if v1_0_sentinel != nil {
-				vMinor = 0
-			} else {
-				vMinor = 1
-			}
-		} else {
-			vMajor = 3
-			vMinor = 0
+		vMajor = int(C.go_openssl_version_major(handle))
+		vMinor = int(C.go_openssl_version_minor(handle))
+		if vMajor == -1 || vMinor == -1 {
+			errInit = errors.New("openssl: can't retrieve OpenSSL version")
+			return
 		}
+		var supported bool
+		if vMajor == 1 {
+			supported = vMinor == 0 || vMinor == 1
+		} else if vMajor == 3 {
+			// OpenSSL team guarantees API and ABI compatibility within the same major version since OpenSSL 3.
+			supported = true
+		}
+		if !supported {
+			errInit = errUnsuportedVersion()
+			return
+		}
+
+		C.go_openssl_load_functions(handle, C.int(vMajor), C.int(vMinor))
 		C.go_openssl_OPENSSL_init()
 		if vMajor == 1 && vMinor == 0 {
 			if C.go_openssl_thread_setup() != 1 {
@@ -113,7 +113,7 @@ func Init() error {
 func dlopen(version string) unsafe.Pointer {
 	cv := C.CString("libcrypto.so." + version)
 	defer C.free(unsafe.Pointer(cv))
-	return C.dlopen(cv, C.RTLD_LAZY|C.RTLD_GLOBAL)
+	return C.dlopen(cv, C.RTLD_LAZY|C.RTLD_LOCAL)
 }
 
 func loadLibrary(version string) (unsafe.Pointer, error) {
