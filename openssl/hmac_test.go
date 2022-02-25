@@ -62,3 +62,33 @@ func TestHMAC(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkHMACSHA256_32(b *testing.B) {
+	b.StopTimer()
+	key := make([]byte, 32)
+	buf := make([]byte, 32)
+	h := NewHMAC(NewSHA256, key)
+	b.SetBytes(int64(len(buf)))
+	b.StartTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		h.Write(buf)
+		mac := h.Sum(nil)
+		h.Reset()
+		buf[0] = mac[0]
+	}
+}
+
+func BenchmarkHMACNewWriteSum(b *testing.B) {
+	b.StopTimer()
+	buf := make([]byte, 32)
+	b.SetBytes(int64(len(buf)))
+	b.StartTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		h := NewHMAC(NewSHA256, make([]byte, 32))
+		h.Write(buf)
+		mac := h.Sum(nil)
+		buf[0] = mac[0]
+	}
+}

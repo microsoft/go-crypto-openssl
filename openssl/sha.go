@@ -18,12 +18,12 @@ import (
 )
 
 type evpHash struct {
-	md  *C.EVP_MD
-	ctx *C.EVP_MD_CTX
+	md  C.GO_EVP_MD_PTR
+	ctx C.GO_EVP_MD_CTX_PTR
 	// ctx2 is used in evpHash.sum to avoid changing
 	// the state of ctx. Having it here allows reusing the
 	// same allocated object multiple times.
-	ctx2      *C.EVP_MD_CTX
+	ctx2      C.GO_EVP_MD_CTX_PTR
 	size      int
 	blockSize int
 }
@@ -64,7 +64,7 @@ func (h *evpHash) Reset() {
 }
 
 func (h *evpHash) Write(p []byte) (int, error) {
-	if len(p) > 0 && C.go_openssl_EVP_DigestUpdate(h.ctx, unsafe.Pointer(&p[0]), C.size_t(len(p))) != 1 {
+	if len(p) > 0 && C.go_openssl_EVP_DigestUpdate(h.ctx, base(p), C.size_t(len(p))) != 1 {
 		panic("openssl: EVP_DigestUpdate failed")
 	}
 	runtime.KeepAlive(h)
@@ -88,7 +88,7 @@ func (h *evpHash) sum(out []byte) {
 	if C.go_openssl_EVP_MD_CTX_copy_ex(h.ctx2, h.ctx) != 1 {
 		panic("openssl: EVP_MD_CTX_copy_ex failed")
 	}
-	if C.go_openssl_EVP_DigestFinal_ex(h.ctx2, (*C.uint8_t)(unsafe.Pointer(&out[0])), nil) != 1 {
+	if C.go_openssl_EVP_DigestFinal_ex(h.ctx2, base(out), nil) != 1 {
 		panic("openssl: EVP_DigestFinal_ex failed")
 	}
 	C.go_openssl_EVP_MD_CTX_reset(h.ctx2)
