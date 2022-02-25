@@ -54,8 +54,8 @@ go_openssl_version_minor(void* handle)
 
     // If OPENSSL_version_major is not defined, try with OpenSSL 1 functions.
     unsigned long num = version_num(handle);
+    // We only support minor version 0 and 1.
     if (num < 0x10000000L || num >= 0x10200000L)
-        // We only support minor version 0 and 1.
         return -1;
 
     if (num >= 0x10100000L)
