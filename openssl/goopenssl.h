@@ -28,7 +28,7 @@
 int go_openssl_version_major(void* handle);
 int go_openssl_version_minor(void* handle);
 int go_openssl_thread_setup(void);
-void go_openssl_load_functions(void* handle);
+void go_openssl_load_functions(void* handle, int major, int minor);
 
 #define GO_OPENSSL_INIT_LOAD_CRYPTO_STRINGS 0x00000002L
 #define GO_OPENSSL_INIT_ADD_ALL_CIPHERS 0x00000004L

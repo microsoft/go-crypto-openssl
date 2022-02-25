@@ -90,7 +90,7 @@ func Init() error {
 			return
 		}
 
-		C.go_openssl_load_functions(handle)
+		C.go_openssl_load_functions(handle, C.int(vMajor), C.int(vMinor))
 		C.go_openssl_OPENSSL_init()
 		if vMajor == 1 && vMinor == 0 {
 			if C.go_openssl_thread_setup() != 1 {

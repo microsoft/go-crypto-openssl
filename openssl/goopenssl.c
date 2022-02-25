@@ -54,9 +54,15 @@ go_openssl_version_minor(void* handle)
 
     // If OPENSSL_version_major is not defined, try with OpenSSL 1 functions.
     unsigned long num = version_num(handle);
-    // We only support minor version 0 and 1.
+    // OpenSSL version number follows this schema:
+    // MNNFFPPS: major minor fix patch status.
     if (num < 0x10000000L || num >= 0x10200000L)
+    {
+        // We only support minor version 0 and 1,
+        // so there is no need to implement an algorithm
+        // that decodes the version number into individual components.
         return -1;
+    }
 
     if (num >= 0x10100000L)
         return 1;
@@ -87,11 +93,8 @@ FOR_ALL_OPENSSL_FUNCTIONS
 // and assign them to their corresponding function pointer
 // defined in goopenssl.h.
 void
-go_openssl_load_functions(void* handle)
+go_openssl_load_functions(void* handle, int major, int minor)
 {
-    int major = go_openssl_version_major(handle);
-    int minor = go_openssl_version_minor(handle);
-
     // This function could be called concurrently from different Goroutines unless correctly locked.
     // If that happen there could be a race in DEFINEFUNC_RENAMED where the global function pointer is NULL,
     // then properly loaded, then goes back to NULL right before being used (then loaded again).
