@@ -37,14 +37,6 @@ void go_openssl_load_functions(void* handle, int major, int minor);
 #define GO_AES_ENCRYPT 1
 #define GO_AES_DECRYPT 0
 
-typedef void* GO_EVP_CIPHER_PTR;
-typedef void* GO_EVP_CIPHER_CTX_PTR;
-typedef void* GO_EVP_PKEY_PTR;
-typedef void* GO_EVP_PKEY_CTX_PTR;
-typedef void* GO_EVP_MD_PTR;
-typedef void* GO_EVP_MD_CTX_PTR;
-typedef void* GO_HMAC_CTX_PTR;
-
 // Define pointers to all the used OpenSSL functions.
 // Calling C function pointers from Go is currently not supported.
 // It is possible to circumvent this by using a C function wrapper.

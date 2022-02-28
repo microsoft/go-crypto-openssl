@@ -4,6 +4,14 @@
 #include <stdlib.h> // size_t
 #include <stdint.h> // uint8_t
 
+typedef void* GO_EVP_CIPHER_PTR;
+typedef void* GO_EVP_CIPHER_CTX_PTR;
+typedef void* GO_EVP_PKEY_PTR;
+typedef void* GO_EVP_PKEY_CTX_PTR;
+typedef void* GO_EVP_MD_PTR;
+typedef void* GO_EVP_MD_CTX_PTR;
+typedef void* GO_HMAC_CTX_PTR;
+
 // List of all functions from the libcrypto that are used in this package.
 // Forgetting to add a function here results in build failure with message reporting the function
 // that needs to be added.
