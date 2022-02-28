@@ -78,7 +78,8 @@ go_openssl_version_minor(void* handle)
 #define DEFINEFUNC_LEGACY_1(ret, func, args, argscall)         DEFINEFUNC(ret, func, args, argscall)
 #define DEFINEFUNC_1_1(ret, func, args, argscall)              DEFINEFUNC(ret, func, args, argscall)
 #define DEFINEFUNC_3_0(ret, func, args, argscall)              DEFINEFUNC(ret, func, args, argscall)
-#define DEFINEFUNC_RENAMED(ret, func, oldfunc, args, argscall) DEFINEFUNC(ret, func, args, argscall)
+#define DEFINEFUNC_RENAMED_1_1(ret, func, oldfunc, args, argscall) DEFINEFUNC(ret, func, args, argscall)
+#define DEFINEFUNC_RENAMED_3_0(ret, func, oldfunc, args, argscall) DEFINEFUNC(ret, func, args, argscall)
 
 FOR_ALL_OPENSSL_FUNCTIONS
 
@@ -87,7 +88,8 @@ FOR_ALL_OPENSSL_FUNCTIONS
 #undef DEFINEFUNC_LEGACY_1
 #undef DEFINEFUNC_1_1
 #undef DEFINEFUNC_3_0
-#undef DEFINEFUNC_RENAMED
+#undef DEFINEFUNC_RENAMED_1_1
+#undef DEFINEFUNC_RENAMED_3_0
 
 // Load all the functions stored in FOR_ALL_OPENSSL_FUNCTIONS
 // and assign them to their corresponding function pointer
@@ -95,48 +97,49 @@ FOR_ALL_OPENSSL_FUNCTIONS
 void
 go_openssl_load_functions(void* handle, int major, int minor)
 {
-    // This function could be called concurrently from different Goroutines unless correctly locked.
-    // If that happen there could be a race in DEFINEFUNC_RENAMED where the global function pointer is NULL,
-    // then properly loaded, then goes back to NULL right before being used (then loaded again).
-    // To avoid this situation only assign the function pointer when the function has been successfully
-    // loaded in tmp_ptr.
-    void* tmp_ptr;
-
+#define DEFINEFUNC_INTERNAL(name, func) \
+    _g_##name = dlsym(handle, func);         \
+    if (_g_##name == NULL) { fprintf(stderr, "Cannot get required symbol " #func " from libcrypto version %d.%d\n", major, minor); abort(); }
 #define DEFINEFUNC(ret, func, args, argscall) \
-    _g_##func = dlsym(handle, #func);         \
-    if (_g_##func == NULL) { fprintf(stderr, "Cannot get required symbol " #func " from libcrypto\n"); abort(); }
+    DEFINEFUNC_INTERNAL(func, #func)
 #define DEFINEFUNC_LEGACY_1_0(ret, func, args, argscall)  \
     if (major == 1 && minor == 0)                         \
     {                                                     \
-        DEFINEFUNC(ret, func, args, argscall)             \
+        DEFINEFUNC_INTERNAL(func, #func)                  \
     }
 #define DEFINEFUNC_LEGACY_1(ret, func, args, argscall)  \
     if (major == 1)                                     \
     {                                                   \
-        DEFINEFUNC(ret, func, args, argscall)           \
+        DEFINEFUNC_INTERNAL(func, #func)                \
     }
 #define DEFINEFUNC_1_1(ret, func, args, argscall)     \
     if (major == 3 || (major == 1 && minor == 1))     \
     {                                                 \
-        DEFINEFUNC(ret, func, args, argscall)         \
+        DEFINEFUNC_INTERNAL(func, #func)              \
     }
 #define DEFINEFUNC_3_0(ret, func, args, argscall)     \
     if (major == 3)                                   \
     {                                                 \
-        DEFINEFUNC(ret, func, args, argscall)         \
+        DEFINEFUNC_INTERNAL(func, #func)              \
     }
-#define DEFINEFUNC_RENAMED(ret, func, oldfunc, args, argscall)                                              \
-    tmp_ptr = dlsym(handle, #func);                                                                         \
-    if (tmp_ptr == NULL)                                                                                    \
-    {                                                                                                       \
-        tmp_ptr = dlsym(handle, #oldfunc);                                                                  \
-        if (tmp_ptr == NULL)                                                                                \
-        {                                                                                                   \
-            fprintf(stderr, "Cannot get required symbol " #func " nor " #oldfunc " from libcrypto\n");      \
-            abort();                                                                                        \
-        }                                                                                                   \
-    }                                                                                                       \
-    _g_##func = tmp_ptr;
+#define DEFINEFUNC_RENAMED_1_1(ret, func, oldfunc, args, argscall)  \
+    if (major == 1 && minor == 0)                                   \
+    {                                                               \
+        DEFINEFUNC_INTERNAL(func, #oldfunc)                         \
+    }                                                               \
+    else                                                            \
+    {                                                               \
+        DEFINEFUNC_INTERNAL(func, #func)                            \
+    }
+#define DEFINEFUNC_RENAMED_3_0(ret, func, oldfunc, args, argscall)  \
+    if (major == 1)                                                 \
+    {                                                               \
+        DEFINEFUNC_INTERNAL(func, #oldfunc)                         \
+    }                                                               \
+    else                                                            \
+    {                                                               \
+        DEFINEFUNC_INTERNAL(func, #func)                            \
+    }
 
 FOR_ALL_OPENSSL_FUNCTIONS
 
@@ -145,5 +148,6 @@ FOR_ALL_OPENSSL_FUNCTIONS
 #undef DEFINEFUNC_LEGACY_1
 #undef DEFINEFUNC_1_1
 #undef DEFINEFUNC_3_0
-#undef DEFINEFUNC_RENAMED
+#undef DEFINEFUNC_RENAMED_1_1
+#undef DEFINEFUNC_RENAMED_3_0
 }

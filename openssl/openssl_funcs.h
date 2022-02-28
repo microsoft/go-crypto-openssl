@@ -41,16 +41,24 @@ typedef void* GO_HMAC_CTX_PTR;
 // DEFINEFUNC_3_0 acts like DEFINEFUNC but only aborts the process if function can't be loaded
 // when using 3.0.0 or higher.
 //
-// DEFINEFUNC_RENAMED acts like DEFINEFUNC but if the function can't be loaded it will try with another
-// function name, as in some version jumps openssl has renamed functions without changing the signature.
-// The process will be aborted if neither function can be loaded.
+// DEFINEFUNC_RENAMED_1_1 acts like DEFINEFUNC but tries to load the function using the new name when using >= 1.1.x
+// and the old name when using 1.0.2. In both cases the function will have the new name.
 //
+// DEFINEFUNC_RENAMED_3_0 acts like DEFINEFUNC but tries to load the function using the new name when using >= 3.x
+// and the old name when using 1.x. In both cases the function will have the new name.
+//
+// #include "openssl/err.h"
+// #include "openssl/rsa.h"
+// #include "openssl/hmac.h"
+// #include "openssl/ec.h"
+// #include "openssl/rand.h"
+// #include "openssl/evp.h"
 #define FOR_ALL_OPENSSL_FUNCTIONS \
 DEFINEFUNC(int, ERR_set_mark, (void), ()) \
 DEFINEFUNC(int, ERR_pop_to_mark, (void), ()) \
 DEFINEFUNC(unsigned long, ERR_get_error, (void), ()) \
 DEFINEFUNC(void, ERR_error_string_n, (unsigned long e, unsigned char *buf, size_t len), (e, buf, len)) \
-DEFINEFUNC_RENAMED(const char *, OpenSSL_version, SSLeay_version, (int type), (type)) \
+DEFINEFUNC_RENAMED_1_1(const char *, OpenSSL_version, SSLeay_version, (int type), (type)) \
 DEFINEFUNC(void, OPENSSL_init, (void), ()) \
 DEFINEFUNC_LEGACY_1_0(void, ERR_load_crypto_strings, (void), ()) \
 DEFINEFUNC_LEGACY_1_0(int, CRYPTO_num_locks, (void), ()) \
@@ -67,10 +75,10 @@ DEFINEFUNC(int, RAND_bytes, (uint8_t * arg0, size_t arg1), (arg0, arg1)) \
 DEFINEFUNC(int, EVP_DigestInit_ex, (GO_EVP_MD_CTX_PTR ctx, const GO_EVP_MD_PTR type, ENGINE *impl), (ctx, type, impl)) \
 DEFINEFUNC(int, EVP_DigestUpdate, (GO_EVP_MD_CTX_PTR ctx, const uint8_t *d, size_t cnt), (ctx, d, cnt)) \
 DEFINEFUNC(int, EVP_DigestFinal_ex, (GO_EVP_MD_CTX_PTR ctx, unsigned char *md, unsigned int *s), (ctx, md, s)) \
-DEFINEFUNC_RENAMED(GO_EVP_MD_CTX_PTR, EVP_MD_CTX_new, EVP_MD_CTX_create, (), ()) \
-DEFINEFUNC_RENAMED(void, EVP_MD_CTX_free, EVP_MD_CTX_destroy, (GO_EVP_MD_CTX_PTR ctx), (ctx)) \
+DEFINEFUNC_RENAMED_1_1(GO_EVP_MD_CTX_PTR, EVP_MD_CTX_new, EVP_MD_CTX_create, (), ()) \
+DEFINEFUNC_RENAMED_1_1(void, EVP_MD_CTX_free, EVP_MD_CTX_destroy, (GO_EVP_MD_CTX_PTR ctx), (ctx)) \
 DEFINEFUNC(int, EVP_MD_CTX_copy_ex, (GO_EVP_MD_CTX_PTR out, const GO_EVP_MD_CTX_PTR in), (out, in)) \
-DEFINEFUNC_RENAMED(int, EVP_MD_CTX_reset, EVP_MD_CTX_cleanup, (GO_EVP_MD_CTX_PTR ctx), (ctx)) \
+DEFINEFUNC_RENAMED_1_1(int, EVP_MD_CTX_reset, EVP_MD_CTX_cleanup, (GO_EVP_MD_CTX_PTR ctx), (ctx)) \
 DEFINEFUNC(const GO_EVP_MD_PTR, EVP_md5, (void), ()) \
 DEFINEFUNC(const GO_EVP_MD_PTR, EVP_sha1, (void), ()) \
 DEFINEFUNC(const GO_EVP_MD_PTR, EVP_sha224, (void), ()) \
@@ -80,8 +88,7 @@ DEFINEFUNC(const GO_EVP_MD_PTR, EVP_sha512, (void), ()) \
 DEFINEFUNC_1_1(const GO_EVP_MD_PTR, EVP_md5_sha1, (void), ()) \
 DEFINEFUNC_3_0(GO_EVP_MD_PTR, EVP_MD_fetch, (void *ctx, const char *algorithm, const char *properties), (ctx, algorithm, properties)) \
 DEFINEFUNC_3_0(void, EVP_MD_free, (GO_EVP_MD_PTR md), (md)) \
-DEFINEFUNC_RENAMED(int, EVP_MD_get_type, EVP_MD_type, (const GO_EVP_MD_PTR arg0), (arg0)) \
-DEFINEFUNC_RENAMED(size_t, EVP_MD_get_size, EVP_MD_size, (const GO_EVP_MD_PTR arg0), (arg0)) \
+DEFINEFUNC_RENAMED_3_0(size_t, EVP_MD_get_size, EVP_MD_size, (const GO_EVP_MD_PTR arg0), (arg0)) \
 DEFINEFUNC_LEGACY_1_0(void, HMAC_CTX_init, (GO_HMAC_CTX_PTR arg0), (arg0)) \
 DEFINEFUNC_LEGACY_1_0(void, HMAC_CTX_cleanup, (GO_HMAC_CTX_PTR arg0), (arg0)) \
 DEFINEFUNC(int, HMAC_Init_ex, (GO_HMAC_CTX_PTR arg0, const uint8_t *arg1, int arg2, const GO_EVP_MD_PTR arg3, ENGINE *arg4), (arg0, arg1, arg2, arg3, arg4)) \
@@ -140,7 +147,7 @@ DEFINEFUNC(const GO_EVP_CIPHER_PTR, EVP_aes_256_gcm, (void), ()) \
 DEFINEFUNC(void, EVP_CIPHER_CTX_free, (GO_EVP_CIPHER_CTX_PTR arg0), (arg0)) \
 DEFINEFUNC(int, EVP_CIPHER_CTX_ctrl, (GO_EVP_CIPHER_CTX_PTR ctx, int type, int arg, void *ptr), (ctx, type, arg, ptr)) \
 DEFINEFUNC(GO_EVP_PKEY_PTR, EVP_PKEY_new, (void), ()) \
-DEFINEFUNC_RENAMED(int, EVP_PKEY_get_size, EVP_PKEY_size, (const GO_EVP_PKEY_PTR pkey), (pkey)) \
+DEFINEFUNC_RENAMED_3_0(int, EVP_PKEY_get_size, EVP_PKEY_size, (const GO_EVP_PKEY_PTR pkey), (pkey)) \
 DEFINEFUNC(void, EVP_PKEY_free, (GO_EVP_PKEY_PTR arg0), (arg0)) \
 DEFINEFUNC(EC_KEY *, EVP_PKEY_get1_EC_KEY, (GO_EVP_PKEY_PTR pkey), (pkey)) \
 DEFINEFUNC(RSA *, EVP_PKEY_get1_RSA, (GO_EVP_PKEY_PTR pkey), (pkey)) \
