@@ -8,7 +8,6 @@
 
 #include <stdio.h>
 #include <pthread.h>
-#include <openssl/err.h>
 #include <sys/types.h>
 #include <sys/syscall.h>
 
@@ -27,7 +26,7 @@ static MUTEX_TYPE *mutex_buf = NULL;
  
 static void locking_function(int mode, int n, const char *file, int line)
 {
-  if(mode & CRYPTO_LOCK)
+  if(mode & 1)
     MUTEX_LOCK(mutex_buf[n]);
   else
     MUTEX_UNLOCK(mutex_buf[n]);

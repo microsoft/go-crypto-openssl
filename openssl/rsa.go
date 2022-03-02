@@ -22,7 +22,7 @@ func GenerateKeyRSA(bits int) (N, E, D, P, Q, Dp, Dq, Qinv *big.Int, err error) 
 	bad := func(e error) (N, E, D, P, Q, Dp, Dq, Qinv *big.Int, err error) {
 		return nil, nil, nil, nil, nil, nil, nil, nil, e
 	}
-	pkey, err := generateEVPPKey(C.EVP_PKEY_RSA, bits, "")
+	pkey, err := generateEVPPKey(C.GO_EVP_PKEY_RSA, bits, "")
 	if err != nil {
 		return bad(err)
 	}
@@ -55,7 +55,7 @@ func NewPublicKeyRSA(N, E *big.Int) (*PublicKeyRSA, error) {
 		C.go_openssl_RSA_free(key)
 		return nil, newOpenSSLError("EVP_PKEY_new failed")
 	}
-	if C.go_openssl_EVP_PKEY_assign(pkey, C.EVP_PKEY_RSA, (unsafe.Pointer)(key)) != 1 {
+	if C.go_openssl_EVP_PKEY_assign(pkey, C.GO_EVP_PKEY_RSA, (unsafe.Pointer)(key)) != 1 {
 		C.go_openssl_RSA_free(key)
 		C.go_openssl_EVP_PKEY_free(pkey)
 		return nil, newOpenSSLError("EVP_PKEY_assign failed")
@@ -105,7 +105,7 @@ func NewPrivateKeyRSA(N, E, D, P, Q, Dp, Dq, Qinv *big.Int) (*PrivateKeyRSA, err
 		C.go_openssl_RSA_free(key)
 		return nil, newOpenSSLError("EVP_PKEY_new failed")
 	}
-	if C.go_openssl_EVP_PKEY_assign(pkey, C.EVP_PKEY_RSA, (unsafe.Pointer)(key)) != 1 {
+	if C.go_openssl_EVP_PKEY_assign(pkey, C.GO_EVP_PKEY_RSA, (unsafe.Pointer)(key)) != 1 {
 		C.go_openssl_RSA_free(key)
 		C.go_openssl_EVP_PKEY_free(pkey)
 		return nil, newOpenSSLError("EVP_PKEY_assign failed")
@@ -128,23 +128,23 @@ func (k *PrivateKeyRSA) withKey(f func(C.GO_EVP_PKEY_PTR) C.int) C.int {
 }
 
 func DecryptRSAOAEP(h hash.Hash, priv *PrivateKeyRSA, ciphertext, label []byte) ([]byte, error) {
-	return evpDecrypt(priv.withKey, C.RSA_PKCS1_OAEP_PADDING, h, label, ciphertext)
+	return evpDecrypt(priv.withKey, C.GO_RSA_PKCS1_OAEP_PADDING, h, label, ciphertext)
 }
 
 func EncryptRSAOAEP(h hash.Hash, pub *PublicKeyRSA, msg, label []byte) ([]byte, error) {
-	return evpEncrypt(pub.withKey, C.RSA_PKCS1_OAEP_PADDING, h, label, msg)
+	return evpEncrypt(pub.withKey, C.GO_RSA_PKCS1_OAEP_PADDING, h, label, msg)
 }
 
 func DecryptRSAPKCS1(priv *PrivateKeyRSA, ciphertext []byte) ([]byte, error) {
-	return evpDecrypt(priv.withKey, C.RSA_PKCS1_PADDING, nil, nil, ciphertext)
+	return evpDecrypt(priv.withKey, C.GO_RSA_PKCS1_PADDING, nil, nil, ciphertext)
 }
 
 func EncryptRSAPKCS1(pub *PublicKeyRSA, msg []byte) ([]byte, error) {
-	return evpEncrypt(pub.withKey, C.RSA_PKCS1_PADDING, nil, nil, msg)
+	return evpEncrypt(pub.withKey, C.GO_RSA_PKCS1_PADDING, nil, nil, msg)
 }
 
 func DecryptRSANoPadding(priv *PrivateKeyRSA, ciphertext []byte) ([]byte, error) {
-	ret, err := evpDecrypt(priv.withKey, C.RSA_NO_PADDING, nil, nil, ciphertext)
+	ret, err := evpDecrypt(priv.withKey, C.GO_RSA_NO_PADDING, nil, nil, ciphertext)
 	if err != nil {
 		return nil, err
 	}
@@ -168,25 +168,25 @@ func DecryptRSANoPadding(priv *PrivateKeyRSA, ciphertext []byte) ([]byte, error)
 }
 
 func EncryptRSANoPadding(pub *PublicKeyRSA, msg []byte) ([]byte, error) {
-	return evpEncrypt(pub.withKey, C.RSA_NO_PADDING, nil, nil, msg)
+	return evpEncrypt(pub.withKey, C.GO_RSA_NO_PADDING, nil, nil, msg)
 }
 
 func SignRSAPSS(priv *PrivateKeyRSA, h crypto.Hash, hashed []byte, saltLen int) ([]byte, error) {
 	if saltLen == 0 {
 		saltLen = -1 // RSA_PSS_SALTLEN_DIGEST
 	}
-	return evpSign(priv.withKey, C.RSA_PKCS1_PSS_PADDING, saltLen, h, hashed)
+	return evpSign(priv.withKey, C.GO_RSA_PKCS1_PSS_PADDING, saltLen, h, hashed)
 }
 
 func VerifyRSAPSS(pub *PublicKeyRSA, h crypto.Hash, hashed, sig []byte, saltLen int) error {
 	if saltLen == 0 {
 		saltLen = -2 // RSA_PSS_SALTLEN_AUTO
 	}
-	return evpVerify(pub.withKey, C.RSA_PKCS1_PSS_PADDING, saltLen, h, sig, hashed)
+	return evpVerify(pub.withKey, C.GO_RSA_PKCS1_PSS_PADDING, saltLen, h, sig, hashed)
 }
 
 func SignRSAPKCS1v15(priv *PrivateKeyRSA, h crypto.Hash, hashed []byte) ([]byte, error) {
-	return evpSign(priv.withKey, C.RSA_PKCS1_PADDING, 0, h, hashed)
+	return evpSign(priv.withKey, C.GO_RSA_PKCS1_PADDING, 0, h, hashed)
 }
 
 func VerifyRSAPKCS1v15(pub *PublicKeyRSA, h crypto.Hash, hashed, sig []byte) error {
@@ -199,7 +199,7 @@ func VerifyRSAPKCS1v15(pub *PublicKeyRSA, h crypto.Hash, hashed, sig []byte) err
 	}) == 0 {
 		return errors.New("crypto/rsa: verification error")
 	}
-	return evpVerify(pub.withKey, C.RSA_PKCS1_PADDING, 0, h, sig, hashed)
+	return evpVerify(pub.withKey, C.GO_RSA_PKCS1_PADDING, 0, h, sig, hashed)
 }
 
 // rsa_st_1_0_2 is rsa_st memory layout in OpenSSL 1.0.2.
@@ -207,13 +207,13 @@ type rsa_st_1_0_2 struct {
 	_                C.int
 	_                C.long
 	_                [2]unsafe.Pointer
-	n, e, d          *C.BIGNUM
-	p, q             *C.BIGNUM
-	dmp1, dmq1, iqmp *C.BIGNUM
+	n, e, d          C.GO_BIGNUM_PTR
+	p, q             C.GO_BIGNUM_PTR
+	dmp1, dmq1, iqmp C.GO_BIGNUM_PTR
 	// It contains more fields, but we are not interesed on them.
 }
 
-func bnSet(b1 **C.BIGNUM, b2 *big.Int) {
+func bnSet(b1 *C.GO_BIGNUM_PTR, b2 *big.Int) {
 	if b2 == nil {
 		return
 	}
@@ -223,7 +223,7 @@ func bnSet(b1 **C.BIGNUM, b2 *big.Int) {
 	*b1 = bigToBN(b2)
 }
 
-func rsaSetKey(key *C.RSA, n, e, d *big.Int) bool {
+func rsaSetKey(key C.GO_RSA_PTR, n, e, d *big.Int) bool {
 	if vMajor == 1 && vMinor == 0 {
 		r := (*rsa_st_1_0_2)(unsafe.Pointer(key))
 		//r.d and d will be nil for public keys.
@@ -239,7 +239,7 @@ func rsaSetKey(key *C.RSA, n, e, d *big.Int) bool {
 	return C.go_openssl_RSA_set0_key(key, bigToBN(n), bigToBN(e), bigToBN(d)) == 1
 }
 
-func rsaSetFactors(key *C.RSA, p, q *big.Int) bool {
+func rsaSetFactors(key C.GO_RSA_PTR, p, q *big.Int) bool {
 	if vMajor == 1 && vMinor == 0 {
 		r := (*rsa_st_1_0_2)(unsafe.Pointer(key))
 		if (r.p == nil && p == nil) ||
@@ -253,7 +253,7 @@ func rsaSetFactors(key *C.RSA, p, q *big.Int) bool {
 	return C.go_openssl_RSA_set0_factors(key, bigToBN(p), bigToBN(q)) == 1
 }
 
-func rsaSetCRTParams(key *C.RSA, dmp1, dmq1, iqmp *big.Int) bool {
+func rsaSetCRTParams(key C.GO_RSA_PTR, dmp1, dmq1, iqmp *big.Int) bool {
 	if vMajor == 1 && vMinor == 0 {
 		r := (*rsa_st_1_0_2)(unsafe.Pointer(key))
 		if (r.dmp1 == nil && dmp1 == nil) ||
@@ -269,8 +269,8 @@ func rsaSetCRTParams(key *C.RSA, dmp1, dmq1, iqmp *big.Int) bool {
 	return C.go_openssl_RSA_set0_crt_params(key, bigToBN(dmp1), bigToBN(dmq1), bigToBN(iqmp)) == 1
 }
 
-func rsaGetKey(key *C.RSA) (*big.Int, *big.Int, *big.Int) {
-	var n, e, d *C.BIGNUM
+func rsaGetKey(key C.GO_RSA_PTR) (*big.Int, *big.Int, *big.Int) {
+	var n, e, d C.GO_BIGNUM_PTR
 	if vMajor == 1 && vMinor == 0 {
 		r := (*rsa_st_1_0_2)(unsafe.Pointer(key))
 		n, e, d = r.n, r.e, r.d
@@ -280,8 +280,8 @@ func rsaGetKey(key *C.RSA) (*big.Int, *big.Int, *big.Int) {
 	return bnToBig(n), bnToBig(e), bnToBig(d)
 }
 
-func rsaGetFactors(key *C.RSA) (*big.Int, *big.Int) {
-	var p, q *C.BIGNUM
+func rsaGetFactors(key C.GO_RSA_PTR) (*big.Int, *big.Int) {
+	var p, q C.GO_BIGNUM_PTR
 	if vMajor == 1 && vMinor == 0 {
 		r := (*rsa_st_1_0_2)(unsafe.Pointer(key))
 		p, q = r.p, r.q
@@ -291,8 +291,8 @@ func rsaGetFactors(key *C.RSA) (*big.Int, *big.Int) {
 	return bnToBig(p), bnToBig(q)
 }
 
-func rsaGetCRTParams(key *C.RSA) (*big.Int, *big.Int, *big.Int) {
-	var dmp1, dmq1, iqmp *C.BIGNUM
+func rsaGetCRTParams(key C.GO_RSA_PTR) (*big.Int, *big.Int, *big.Int) {
+	var dmp1, dmq1, iqmp C.GO_BIGNUM_PTR
 	if vMajor == 1 && vMinor == 0 {
 		r := (*rsa_st_1_0_2)(unsafe.Pointer(key))
 		dmp1, dmq1, iqmp = r.dmp1, r.dmq1, r.iqmp

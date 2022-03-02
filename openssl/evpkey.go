@@ -74,7 +74,7 @@ func generateEVPPKey(id C.int, bits int, curve string) (C.GO_EVP_PKEY_PTR, error
 		return nil, newOpenSSLError("EVP_PKEY_keygen_init failed")
 	}
 	if bits != 0 {
-		if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, id, -1, C.EVP_PKEY_CTRL_RSA_KEYGEN_BITS, C.int(bits), nil) != 1 {
+		if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, id, -1, C.GO_EVP_PKEY_CTRL_RSA_KEYGEN_BITS, C.int(bits), nil) != 1 {
 			return nil, newOpenSSLError("EVP_PKEY_CTX_ctrl failed")
 		}
 	}
@@ -83,7 +83,7 @@ func generateEVPPKey(id C.int, bits int, curve string) (C.GO_EVP_PKEY_PTR, error
 		if err != nil {
 			return nil, err
 		}
-		if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, id, -1, C.EVP_PKEY_CTRL_EC_PARAMGEN_CURVE_NID, nid, nil) != 1 {
+		if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, id, -1, C.GO_EVP_PKEY_CTRL_EC_PARAMGEN_CURVE_NID, nid, nil) != 1 {
 			return nil, newOpenSSLError("EVP_PKEY_CTX_ctrl failed")
 		}
 	}
@@ -127,13 +127,13 @@ func setupEVP(withKey withKeyFunc, padding C.int,
 	// Each padding type has its own requirements in terms of when to apply the padding,
 	// so it can't be just set at this point.
 	setPadding := func() error {
-		if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, C.EVP_PKEY_RSA, -1, C.EVP_PKEY_CTRL_RSA_PADDING, padding, nil) != 1 {
+		if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, C.GO_EVP_PKEY_RSA, -1, C.GO_EVP_PKEY_CTRL_RSA_PADDING, padding, nil) != 1 {
 			return newOpenSSLError("EVP_PKEY_CTX_ctrl failed")
 		}
 		return nil
 	}
 	switch padding {
-	case C.RSA_PKCS1_OAEP_PADDING:
+	case C.GO_RSA_PKCS1_OAEP_PADDING:
 		md := hashToMD(h)
 		if md == nil {
 			return nil, errors.New("crypto/rsa: unsupported hash function")
@@ -142,7 +142,7 @@ func setupEVP(withKey withKeyFunc, padding C.int,
 		if err := setPadding(); err != nil {
 			return nil, err
 		}
-		if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, C.EVP_PKEY_RSA, -1, C.EVP_PKEY_CTRL_RSA_OAEP_MD, 0, unsafe.Pointer(md)) != 1 {
+		if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, C.GO_EVP_PKEY_RSA, -1, C.GO_EVP_PKEY_CTRL_RSA_OAEP_MD, 0, unsafe.Pointer(md)) != 1 {
 			return nil, newOpenSSLError("EVP_PKEY_CTX_ctrl failed")
 		}
 		// ctx takes ownership of label, so malloc a copy for OpenSSL to free.
@@ -154,18 +154,18 @@ func setupEVP(withKey withKeyFunc, padding C.int,
 			clabel = (*C.uchar)(C.malloc(C.size_t(len(label))))
 			copy((*[1 << 30]byte)(unsafe.Pointer(clabel))[:len(label)], label)
 		}
-		if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, C.EVP_PKEY_RSA, -1, C.EVP_PKEY_CTRL_RSA_OAEP_LABEL, C.int(len(label)), unsafe.Pointer(clabel)) != 1 {
+		if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, C.GO_EVP_PKEY_RSA, -1, C.GO_EVP_PKEY_CTRL_RSA_OAEP_LABEL, C.int(len(label)), unsafe.Pointer(clabel)) != 1 {
 			if clabel != nil {
 				C.free(unsafe.Pointer(clabel))
 			}
 			return nil, newOpenSSLError("EVP_PKEY_CTX_ctrl failed")
 		}
-	case C.RSA_PKCS1_PSS_PADDING:
+	case C.GO_RSA_PKCS1_PSS_PADDING:
 		md := cryptoHashToMD(ch)
 		if md == nil {
 			return nil, errors.New("crypto/rsa: unsupported hash function")
 		}
-		if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, C.EVP_PKEY_RSA, -1, C.EVP_PKEY_CTRL_MD, 0, unsafe.Pointer(md)) != 1 {
+		if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, C.GO_EVP_PKEY_RSA, -1, C.GO_EVP_PKEY_CTRL_MD, 0, unsafe.Pointer(md)) != 1 {
 			return nil, newOpenSSLError("EVP_PKEY_CTX_ctrl failed")
 		}
 		// setPadding must happen after setting EVP_PKEY_CTRL_MD.
@@ -173,19 +173,19 @@ func setupEVP(withKey withKeyFunc, padding C.int,
 			return nil, err
 		}
 		if saltLen != 0 {
-			if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, C.EVP_PKEY_RSA, -1, C.EVP_PKEY_CTRL_RSA_PSS_SALTLEN, C.int(saltLen), nil) != 1 {
+			if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, C.GO_EVP_PKEY_RSA, -1, C.GO_EVP_PKEY_CTRL_RSA_PSS_SALTLEN, C.int(saltLen), nil) != 1 {
 				return nil, newOpenSSLError("EVP_PKEY_CTX_ctrl failed")
 			}
 		}
 
-	case C.RSA_PKCS1_PADDING:
+	case C.GO_RSA_PKCS1_PADDING:
 		if ch != 0 {
 			// We support unhashed messages.
 			md := cryptoHashToMD(ch)
 			if md == nil {
 				return nil, errors.New("crypto/rsa: unsupported hash function")
 			}
-			if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, -1, -1, C.EVP_PKEY_CTRL_MD, 0, unsafe.Pointer(md)) != 1 {
+			if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, -1, -1, C.GO_EVP_PKEY_CTRL_MD, 0, unsafe.Pointer(md)) != 1 {
 				return nil, newOpenSSLError("EVP_PKEY_CTX_ctrl failed")
 			}
 			if err := setPadding(); err != nil {

@@ -12,6 +12,56 @@
 #include <stdlib.h> // size_t
 #include <stdint.h> // uint64_t
 
+// #include "openssl/crypto.h"
+enum {
+    GO_OPENSSL_INIT_LOAD_CRYPTO_STRINGS = 0x00000002L,
+    GO_OPENSSL_INIT_ADD_ALL_CIPHERS = 0x00000004L,
+    GO_OPENSSL_INIT_ADD_ALL_DIGESTS = 0x00000008L,
+    GO_OPENSSL_INIT_LOAD_CONFIG = 0x00000040L
+};
+
+// #include "openssl/aes.h"
+enum {
+    GO_AES_ENCRYPT = 1,
+    GO_AES_DECRYPT = 0
+};
+
+// #include "openssl/evp.h"
+enum {
+    GO_EVP_CTRL_GCM_GET_TAG = 0x10,
+    GO_EVP_CTRL_GCM_SET_TAG = 0x11,
+    GO_EVP_PKEY_CTRL_MD = 1,
+    GO_EVP_PKEY_RSA = 6,
+    GO_EVP_PKEY_EC = 408,
+    GO_EVP_MAX_MD_SIZE = 64
+};
+
+// #include "openssl/ec.h"
+enum {
+    GO_EVP_PKEY_CTRL_EC_PARAMGEN_CURVE_NID = 0x1001
+};
+
+// #include "openssl/obj_mac.h"
+enum {
+    GO_NID_X9_62_prime256v1 = 415,
+    GO_NID_secp224r1 = 713,
+    GO_NID_secp384r1 = 715,
+    GO_NID_secp521r1 = 716
+};
+
+// #include "openssl/rsa.h"
+enum {
+    GO_RSA_PKCS1_PADDING = 1,
+    GO_RSA_NO_PADDING = 3,
+    GO_RSA_PKCS1_OAEP_PADDING = 4,
+    GO_RSA_PKCS1_PSS_PADDING = 6,
+    GO_EVP_PKEY_CTRL_RSA_PADDING = 0x1001,
+    GO_EVP_PKEY_CTRL_RSA_PSS_SALTLEN = 0x1002,
+    GO_EVP_PKEY_CTRL_RSA_KEYGEN_BITS = 0x1003,
+    GO_EVP_PKEY_CTRL_RSA_OAEP_MD = 0x1009,
+    GO_EVP_PKEY_CTRL_RSA_OAEP_LABEL = 0x100A
+};
+
 typedef void* GO_EVP_CIPHER_PTR;
 typedef void* GO_EVP_CIPHER_CTX_PTR;
 typedef void* GO_EVP_PKEY_PTR;
@@ -22,6 +72,13 @@ typedef void* GO_HMAC_CTX_PTR;
 typedef void* GO_OPENSSL_INIT_SETTINGS_PTR;
 typedef void* GO_OSSL_LIB_CTX_PTR;
 typedef void* GO_OSSL_PROVIDER_PTR;
+typedef void* GO_ENGINE_PTR;
+typedef void* GO_BIGNUM_PTR;
+typedef void* GO_BN_CTX_PTR;
+typedef void* GO_EC_KEY_PTR;
+typedef void* GO_EC_POINT_PTR;
+typedef void* GO_EC_GROUP_PTR;
+typedef void* GO_RSA_PTR;
 
 // List of all functions from the libcrypto that are used in this package.
 // Forgetting to add a function here results in build failure with message reporting the function
@@ -87,7 +144,7 @@ DEFINEFUNC_3_0(int, EVP_default_properties_is_fips_enabled, (GO_OSSL_LIB_CTX_PTR
 DEFINEFUNC_3_0(int, EVP_set_default_properties, (GO_OSSL_LIB_CTX_PTR libctx, const char *propq), (libctx, propq)) \
 DEFINEFUNC_3_0(GO_OSSL_PROVIDER_PTR, OSSL_PROVIDER_load, (GO_OSSL_LIB_CTX_PTR libctx, const char *name), (libctx, name)) \
 DEFINEFUNC(int, RAND_bytes, (unsigned char* arg0, int arg1), (arg0, arg1)) \
-DEFINEFUNC(int, EVP_DigestInit_ex, (GO_EVP_MD_CTX_PTR ctx, const GO_EVP_MD_PTR type, ENGINE *impl), (ctx, type, impl)) \
+DEFINEFUNC(int, EVP_DigestInit_ex, (GO_EVP_MD_CTX_PTR ctx, const GO_EVP_MD_PTR type, GO_ENGINE_PTR impl), (ctx, type, impl)) \
 DEFINEFUNC(int, EVP_DigestUpdate, (GO_EVP_MD_CTX_PTR ctx, const void *d, size_t cnt), (ctx, d, cnt)) \
 DEFINEFUNC(int, EVP_DigestFinal_ex, (GO_EVP_MD_CTX_PTR ctx, unsigned char *md, unsigned int *s), (ctx, md, s)) \
 DEFINEFUNC_RENAMED_1_1(GO_EVP_MD_CTX_PTR, EVP_MD_CTX_new, EVP_MD_CTX_create, (), ()) \
@@ -106,7 +163,7 @@ DEFINEFUNC_3_0(void, EVP_MD_free, (GO_EVP_MD_PTR md), (md)) \
 DEFINEFUNC_RENAMED_3_0(int, EVP_MD_get_size, EVP_MD_size, (const GO_EVP_MD_PTR arg0), (arg0)) \
 DEFINEFUNC_LEGACY_1_0(void, HMAC_CTX_init, (GO_HMAC_CTX_PTR arg0), (arg0)) \
 DEFINEFUNC_LEGACY_1_0(void, HMAC_CTX_cleanup, (GO_HMAC_CTX_PTR arg0), (arg0)) \
-DEFINEFUNC(int, HMAC_Init_ex, (GO_HMAC_CTX_PTR arg0, const void *arg1, int arg2, const GO_EVP_MD_PTR arg3, ENGINE *arg4), (arg0, arg1, arg2, arg3, arg4)) \
+DEFINEFUNC(int, HMAC_Init_ex, (GO_HMAC_CTX_PTR arg0, const void *arg1, int arg2, const GO_EVP_MD_PTR arg3, GO_ENGINE_PTR arg4), (arg0, arg1, arg2, arg3, arg4)) \
 DEFINEFUNC(int, HMAC_Update, (GO_HMAC_CTX_PTR arg0, const unsigned char *arg1, size_t arg2), (arg0, arg1, arg2)) \
 DEFINEFUNC(int, HMAC_Final, (GO_HMAC_CTX_PTR arg0, unsigned char *arg1, unsigned int *arg2), (arg0, arg1, arg2)) \
 DEFINEFUNC(int, HMAC_CTX_copy, (GO_HMAC_CTX_PTR dest, GO_HMAC_CTX_PTR src), (dest, src)) \
@@ -115,34 +172,34 @@ DEFINEFUNC_1_1(GO_HMAC_CTX_PTR, HMAC_CTX_new, (void), ()) \
 DEFINEFUNC_1_1(int, HMAC_CTX_reset, (GO_HMAC_CTX_PTR arg0), (arg0)) \
 DEFINEFUNC(GO_EVP_CIPHER_CTX_PTR, EVP_CIPHER_CTX_new, (void), ()) \
 DEFINEFUNC(int, EVP_CIPHER_CTX_set_padding, (GO_EVP_CIPHER_CTX_PTR x, int padding), (x, padding)) \
-DEFINEFUNC(int, EVP_CipherInit_ex, (GO_EVP_CIPHER_CTX_PTR ctx, const GO_EVP_CIPHER_PTR type, ENGINE *impl, const unsigned char *key, const unsigned char *iv, int enc), (ctx, type, impl, key, iv, enc)) \
+DEFINEFUNC(int, EVP_CipherInit_ex, (GO_EVP_CIPHER_CTX_PTR ctx, const GO_EVP_CIPHER_PTR type, GO_ENGINE_PTR impl, const unsigned char *key, const unsigned char *iv, int enc), (ctx, type, impl, key, iv, enc)) \
 DEFINEFUNC(int, EVP_CipherUpdate, (GO_EVP_CIPHER_CTX_PTR ctx, unsigned char *out, int *outl, const unsigned char *in, int inl), (ctx, out, outl, in, inl)) \
-DEFINEFUNC(BIGNUM *, BN_new, (void), ()) \
-DEFINEFUNC(void, BN_free, (BIGNUM * arg0), (arg0)) \
-DEFINEFUNC(void, BN_clear_free, (BIGNUM * arg0), (arg0)) \
-DEFINEFUNC(int, BN_num_bits, (const BIGNUM *arg0), (arg0)) \
-DEFINEFUNC(BIGNUM *, BN_bin2bn, (const unsigned char *arg0, int arg1, BIGNUM *arg2), (arg0, arg1, arg2)) \
-DEFINEFUNC(int, BN_bn2bin, (const BIGNUM *arg0, unsigned char *arg1), (arg0, arg1)) \
-DEFINEFUNC(void, EC_GROUP_free, (EC_GROUP * arg0), (arg0)) \
-DEFINEFUNC(EC_POINT *, EC_POINT_new, (const EC_GROUP *arg0), (arg0)) \
-DEFINEFUNC(void, EC_POINT_free, (EC_POINT * arg0), (arg0)) \
-DEFINEFUNC(int, EC_POINT_get_affine_coordinates_GFp, (const EC_GROUP *arg0, const EC_POINT *arg1, BIGNUM *arg2, BIGNUM *arg3, BN_CTX *arg4), (arg0, arg1, arg2, arg3, arg4)) \
-DEFINEFUNC(EC_KEY *, EC_KEY_new_by_curve_name, (int arg0), (arg0)) \
-DEFINEFUNC(int, EC_KEY_set_public_key_affine_coordinates, (EC_KEY *key, BIGNUM *x, BIGNUM *y), (key, x, y)) \
-DEFINEFUNC(void, EC_KEY_free, (EC_KEY * arg0), (arg0)) \
-DEFINEFUNC(const EC_GROUP *, EC_KEY_get0_group, (const EC_KEY *arg0), (arg0)) \
-DEFINEFUNC(int, EC_KEY_set_private_key, (EC_KEY * arg0, const BIGNUM *arg1), (arg0, arg1)) \
-DEFINEFUNC(const BIGNUM *, EC_KEY_get0_private_key, (const EC_KEY *arg0), (arg0)) \
-DEFINEFUNC(const EC_POINT *, EC_KEY_get0_public_key, (const EC_KEY *arg0), (arg0)) \
-DEFINEFUNC(RSA *, RSA_new, (void), ()) \
-DEFINEFUNC(void, RSA_free, (RSA * arg0), (arg0)) \
-DEFINEFUNC_1_1(int, RSA_set0_factors, (RSA * rsa, BIGNUM *p, BIGNUM *q), (rsa, p, q)) \
-DEFINEFUNC_1_1(int, RSA_set0_crt_params, (RSA * rsa, BIGNUM *dmp1, BIGNUM *dmp2, BIGNUM *iqmp), (rsa, dmp1, dmp2, iqmp)) \
-DEFINEFUNC_1_1(void, RSA_get0_crt_params, (const RSA *r, const BIGNUM **dmp1, const BIGNUM **dmq1, const BIGNUM **iqmp), (r, dmp1, dmq1, iqmp)) \
-DEFINEFUNC_1_1(int, RSA_set0_key, (RSA * r, BIGNUM *n, BIGNUM *e, BIGNUM *d), (r, n, e, d)) \
-DEFINEFUNC_1_1(void, RSA_get0_factors, (const RSA *rsa, const BIGNUM **p, const BIGNUM **q), (rsa, p, q)) \
-DEFINEFUNC_1_1(void, RSA_get0_key, (const RSA *rsa, const BIGNUM **n, const BIGNUM **e, const BIGNUM **d), (rsa, n, e, d)) \
-DEFINEFUNC(int, EVP_EncryptInit_ex, (GO_EVP_CIPHER_CTX_PTR ctx, const GO_EVP_CIPHER_PTR type, ENGINE *impl, const unsigned char *key, const unsigned char *iv), (ctx, type, impl, key, iv)) \
+DEFINEFUNC(GO_BIGNUM_PTR, BN_new, (void), ()) \
+DEFINEFUNC(void, BN_free, (GO_BIGNUM_PTR arg0), (arg0)) \
+DEFINEFUNC(void, BN_clear_free, (GO_BIGNUM_PTR arg0), (arg0)) \
+DEFINEFUNC(int, BN_num_bits, (const GO_BIGNUM_PTR arg0), (arg0)) \
+DEFINEFUNC(GO_BIGNUM_PTR, BN_bin2bn, (const unsigned char *arg0, int arg1, GO_BIGNUM_PTR arg2), (arg0, arg1, arg2)) \
+DEFINEFUNC(int, BN_bn2bin, (const GO_BIGNUM_PTR arg0, unsigned char *arg1), (arg0, arg1)) \
+DEFINEFUNC(void, EC_GROUP_free, (GO_EC_GROUP_PTR arg0), (arg0)) \
+DEFINEFUNC(GO_EC_POINT_PTR, EC_POINT_new, (const GO_EC_GROUP_PTR arg0), (arg0)) \
+DEFINEFUNC(void, EC_POINT_free, (GO_EC_POINT_PTR arg0), (arg0)) \
+DEFINEFUNC(int, EC_POINT_get_affine_coordinates_GFp, (const GO_EC_GROUP_PTR arg0, const GO_EC_POINT_PTR arg1, GO_BIGNUM_PTR arg2, GO_BIGNUM_PTR arg3, GO_BN_CTX_PTR arg4), (arg0, arg1, arg2, arg3, arg4)) \
+DEFINEFUNC(GO_EC_KEY_PTR, EC_KEY_new_by_curve_name, (int arg0), (arg0)) \
+DEFINEFUNC(int, EC_KEY_set_public_key_affine_coordinates, (GO_EC_KEY_PTR key, GO_BIGNUM_PTR x, GO_BIGNUM_PTR y), (key, x, y)) \
+DEFINEFUNC(void, EC_KEY_free, (GO_EC_KEY_PTR arg0), (arg0)) \
+DEFINEFUNC(const GO_EC_GROUP_PTR, EC_KEY_get0_group, (const GO_EC_KEY_PTR arg0), (arg0)) \
+DEFINEFUNC(int, EC_KEY_set_private_key, (GO_EC_KEY_PTR arg0, const GO_BIGNUM_PTR arg1), (arg0, arg1)) \
+DEFINEFUNC(const GO_BIGNUM_PTR, EC_KEY_get0_private_key, (const GO_EC_KEY_PTR arg0), (arg0)) \
+DEFINEFUNC(const GO_EC_POINT_PTR, EC_KEY_get0_public_key, (const GO_EC_KEY_PTR arg0), (arg0)) \
+DEFINEFUNC(GO_RSA_PTR, RSA_new, (void), ()) \
+DEFINEFUNC(void, RSA_free, (GO_RSA_PTR arg0), (arg0)) \
+DEFINEFUNC_1_1(int, RSA_set0_factors, (GO_RSA_PTR rsa, GO_BIGNUM_PTR p, GO_BIGNUM_PTR q), (rsa, p, q)) \
+DEFINEFUNC_1_1(int, RSA_set0_crt_params, (GO_RSA_PTR rsa, GO_BIGNUM_PTR dmp1, GO_BIGNUM_PTR dmp2,GO_BIGNUM_PTR iqmp), (rsa, dmp1, dmp2, iqmp)) \
+DEFINEFUNC_1_1(void, RSA_get0_crt_params, (const GO_RSA_PTR r, const GO_BIGNUM_PTR *dmp1, const GO_BIGNUM_PTR *dmq1, const GO_BIGNUM_PTR *iqmp), (r, dmp1, dmq1, iqmp)) \
+DEFINEFUNC_1_1(int, RSA_set0_key, (GO_RSA_PTR r, GO_BIGNUM_PTR n, GO_BIGNUM_PTR e, GO_BIGNUM_PTR d), (r, n, e, d)) \
+DEFINEFUNC_1_1(void, RSA_get0_factors, (const GO_RSA_PTR rsa, const GO_BIGNUM_PTR *p, const GO_BIGNUM_PTR *q), (rsa, p, q)) \
+DEFINEFUNC_1_1(void, RSA_get0_key, (const GO_RSA_PTR rsa, const GO_BIGNUM_PTR *n, const GO_BIGNUM_PTR *e, const GO_BIGNUM_PTR *d), (rsa, n, e, d)) \
+DEFINEFUNC(int, EVP_EncryptInit_ex, (GO_EVP_CIPHER_CTX_PTR ctx, const GO_EVP_CIPHER_PTR type, GO_ENGINE_PTR impl, const unsigned char *key, const unsigned char *iv), (ctx, type, impl, key, iv)) \
 DEFINEFUNC(int, EVP_EncryptUpdate, (GO_EVP_CIPHER_CTX_PTR ctx, unsigned char *out, int *outl, const unsigned char *in, int inl), (ctx, out, outl, in, inl)) \
 DEFINEFUNC(int, EVP_EncryptFinal_ex, (GO_EVP_CIPHER_CTX_PTR ctx, unsigned char *out, int *outl), (ctx, out, outl)) \
 DEFINEFUNC(int, EVP_DecryptUpdate, (GO_EVP_CIPHER_CTX_PTR ctx, unsigned char *out, int *outl, const unsigned char *in, int inl),	(ctx, out, outl, in, inl)) \
@@ -166,12 +223,12 @@ DEFINEFUNC(GO_EVP_PKEY_PTR, EVP_PKEY_new, (void), ()) \
 /* Exclude it from headercheck tool when using previous OpenSSL versions. */ \
 /*check:from=1.1.1*/ DEFINEFUNC_RENAMED_3_0(int, EVP_PKEY_get_size, EVP_PKEY_size, (const GO_EVP_PKEY_PTR pkey), (pkey)) \
 DEFINEFUNC(void, EVP_PKEY_free, (GO_EVP_PKEY_PTR arg0), (arg0)) \
-DEFINEFUNC(EC_KEY *, EVP_PKEY_get1_EC_KEY, (GO_EVP_PKEY_PTR pkey), (pkey)) \
-DEFINEFUNC(RSA *, EVP_PKEY_get1_RSA, (GO_EVP_PKEY_PTR pkey), (pkey)) \
+DEFINEFUNC(GO_EC_KEY_PTR, EVP_PKEY_get1_EC_KEY, (GO_EVP_PKEY_PTR pkey), (pkey)) \
+DEFINEFUNC(GO_RSA_PTR, EVP_PKEY_get1_RSA, (GO_EVP_PKEY_PTR pkey), (pkey)) \
 DEFINEFUNC(int, EVP_PKEY_assign, (GO_EVP_PKEY_PTR pkey, int type, void *key), (pkey, type, key)) \
 DEFINEFUNC(int, EVP_PKEY_verify, (GO_EVP_PKEY_CTX_PTR ctx, const unsigned char *sig, size_t siglen, const unsigned char *tbs, size_t tbslen), (ctx, sig, siglen, tbs, tbslen)) \
-DEFINEFUNC(GO_EVP_PKEY_CTX_PTR, EVP_PKEY_CTX_new, (GO_EVP_PKEY_PTR arg0, ENGINE *arg1), (arg0, arg1)) \
-DEFINEFUNC(GO_EVP_PKEY_CTX_PTR, EVP_PKEY_CTX_new_id, (int id, ENGINE *e), (id, e)) \
+DEFINEFUNC(GO_EVP_PKEY_CTX_PTR, EVP_PKEY_CTX_new, (GO_EVP_PKEY_PTR arg0, GO_ENGINE_PTR arg1), (arg0, arg1)) \
+DEFINEFUNC(GO_EVP_PKEY_CTX_PTR, EVP_PKEY_CTX_new_id, (int id, GO_ENGINE_PTR e), (id, e)) \
 DEFINEFUNC(int, EVP_PKEY_keygen_init, (GO_EVP_PKEY_CTX_PTR ctx), (ctx)) \
 DEFINEFUNC(int, EVP_PKEY_keygen, (GO_EVP_PKEY_CTX_PTR ctx, GO_EVP_PKEY_PTR *ppkey), (ctx, ppkey)) \
 DEFINEFUNC(void, EVP_PKEY_CTX_free, (GO_EVP_PKEY_CTX_PTR arg0), (arg0)) \

@@ -375,7 +375,7 @@ func (g *aesGCM) Seal(dst, nonce, plaintext, additionalData []byte) []byte {
 	}
 	encLen += encFinalLen
 
-	if C.go_openssl_EVP_CIPHER_CTX_ctrl(ctx, C.EVP_CTRL_GCM_GET_TAG, 16, unsafe.Pointer(&out[encLen])) != 1 {
+	if C.go_openssl_EVP_CIPHER_CTX_ctrl(ctx, C.GO_EVP_CTRL_GCM_GET_TAG, 16, unsafe.Pointer(&out[encLen])) != 1 {
 		panic(fail("EVP_CIPHER_CTX_seal"))
 	}
 	encLen += 16
@@ -435,7 +435,7 @@ func (g *aesGCM) Open(dst, nonce, ciphertext, additionalData []byte) ([]byte, er
 	}
 
 	// Set expected tag value. Works in OpenSSL 1.0.1d and later.
-	if C.go_openssl_EVP_CIPHER_CTX_ctrl(ctx, C.EVP_CTRL_GCM_SET_TAG, 16, unsafe.Pointer(&tag[0])) != 1 {
+	if C.go_openssl_EVP_CIPHER_CTX_ctrl(ctx, C.GO_EVP_CTRL_GCM_SET_TAG, 16, unsafe.Pointer(&tag[0])) != 1 {
 		return clearAndFail(errOpen)
 	}
 
