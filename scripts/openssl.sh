@@ -40,7 +40,7 @@ mv "openssl-$tag" "openssl-$version"
 
 cd "openssl-$version"
 ./config shared
-make build_libs
+make -j$(nproc) build_libs
 
 rm -rf /usr/include/openssl
 rm -rf /usr/include/crypto
