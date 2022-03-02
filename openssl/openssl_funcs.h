@@ -12,7 +12,7 @@
 #include <stdlib.h> // size_t
 #include <stdint.h> // uint64_t
 
-// #include "openssl/crypto.h"
+// #include <openssl/crypto.h>
 enum {
     GO_OPENSSL_INIT_LOAD_CRYPTO_STRINGS = 0x00000002L,
     GO_OPENSSL_INIT_ADD_ALL_CIPHERS = 0x00000004L,
@@ -20,13 +20,13 @@ enum {
     GO_OPENSSL_INIT_LOAD_CONFIG = 0x00000040L
 };
 
-// #include "openssl/aes.h"
+// #include <openssl/aes.h>
 enum {
     GO_AES_ENCRYPT = 1,
     GO_AES_DECRYPT = 0
 };
 
-// #include "openssl/evp.h"
+// #include <openssl/evp.h>
 enum {
     GO_EVP_CTRL_GCM_GET_TAG = 0x10,
     GO_EVP_CTRL_GCM_SET_TAG = 0x11,
@@ -36,12 +36,12 @@ enum {
     GO_EVP_MAX_MD_SIZE = 64
 };
 
-// #include "openssl/ec.h"
+// #include <openssl/ec.h>
 enum {
     GO_EVP_PKEY_CTRL_EC_PARAMGEN_CURVE_NID = 0x1001
 };
 
-// #include "openssl/obj_mac.h"
+// #include <openssl/obj_mac.h>
 enum {
     GO_NID_X9_62_prime256v1 = 415,
     GO_NID_secp224r1 = 713,
@@ -49,7 +49,7 @@ enum {
     GO_NID_secp521r1 = 716
 };
 
-// #include "openssl/rsa.h"
+// #include <openssl/rsa.h>
 enum {
     GO_RSA_PKCS1_PADDING = 1,
     GO_RSA_NO_PADDING = 3,

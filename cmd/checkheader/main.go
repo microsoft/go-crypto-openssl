@@ -104,8 +104,21 @@ func generate(header string) (string, error) {
 	var b strings.Builder
 	sc := bufio.NewScanner(f)
 	var i int
+	var enum bool
 	for sc.Scan() {
 		l := strings.TrimSpace(sc.Text())
+		if enum {
+			if strings.HasPrefix(l, "}") {
+				enum = false
+				continue
+			}
+			checkEnum(&b, l)
+			continue
+		}
+		if strings.HasPrefix(l, "enum {") {
+			enum = true
+			continue
+		}
 		if tryConvertDirective(&b, l) {
 			continue
 		}
@@ -149,6 +162,20 @@ func tryConvertTypedef(w io.Writer, l string) bool {
 	name := l[i1+len("GO_") : i2]
 	fmt.Fprintf(w, "#define GO_%s_PTR %s*\n", name, name)
 	return true
+}
+
+func checkEnum(w io.Writer, l string) {
+	if !strings.HasPrefix(l, "GO_") {
+		return
+	}
+	if l[len(l)-1] == ',' {
+		l = l[:len(l)-1]
+	}
+	split := strings.SplitN(l, " = ", 2)
+	name := split[0][3:]
+	fmt.Fprintf(w, "#ifdef %s\n", name)
+	fmt.Fprintf(w, "_Static_assert(%s == %s, \"%s\");\n", name, split[1], name)
+	fmt.Fprintln(w, "#endif")
 }
 
 // tryConvertDefineFunc adds a static check which verifies that
