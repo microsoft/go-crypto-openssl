@@ -64,7 +64,7 @@ func (h *evpHash) Reset() {
 }
 
 func (h *evpHash) Write(p []byte) (int, error) {
-	if len(p) > 0 && C.go_openssl_EVP_DigestUpdate(h.ctx, base(p), C.size_t(len(p))) != 1 {
+	if len(p) > 0 && C.go_openssl_EVP_DigestUpdate(h.ctx, unsafe.Pointer(&p[0]), C.size_t(len(p))) != 1 {
 		panic("openssl: EVP_DigestUpdate failed")
 	}
 	runtime.KeepAlive(h)

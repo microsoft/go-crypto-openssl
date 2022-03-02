@@ -231,7 +231,7 @@ func newOpenSSLError(msg string) error {
 			break
 		}
 		var buf [256]byte
-		C.go_openssl_ERR_error_string_n(e, base(buf[:]), 256)
+		C.go_openssl_ERR_error_string_n(e, (*C.char)(unsafe.Pointer(&buf[0])), 256)
 		b.Write(buf[:])
 		b.WriteByte('\n')
 	}
@@ -247,7 +247,7 @@ func bigToBN(x *big.Int) *C.BIGNUM {
 		return nil
 	}
 	raw := x.Bytes()
-	return C.go_openssl_BN_bin2bn(base(raw), C.size_t(len(raw)), nil)
+	return C.go_openssl_BN_bin2bn(base(raw), C.int(len(raw)), nil)
 }
 
 func bnToBig(bn *C.BIGNUM) *big.Int {

@@ -61,10 +61,10 @@ type opensslHMAC struct {
 func (h *opensslHMAC) Reset() {
 	hmacCtxReset(h.ctx)
 
-	if C.go_openssl_HMAC_Init_ex(h.ctx, base(h.key), C.int(len(h.key)), h.md, nil) == 0 {
+	if C.go_openssl_HMAC_Init_ex(h.ctx, unsafe.Pointer(&h.key[0]), C.int(len(h.key)), h.md, nil) == 0 {
 		panic("openssl: HMAC_Init failed")
 	}
-	if size := C.go_openssl_EVP_MD_get_size(h.md); size != C.size_t(h.size) {
+	if size := C.go_openssl_EVP_MD_get_size(h.md); size != C.int(h.size) {
 		println("openssl: HMAC size:", size, "!=", h.size)
 		panic("openssl: HMAC size mismatch")
 	}
