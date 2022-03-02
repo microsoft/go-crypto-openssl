@@ -19,6 +19,7 @@ import (
 // - Typedefs following this pattern "typedef void* GO_%name%_PTR" are translated into "#define %name% GO_%name%_PTR".
 // - Function macros are validated against their definition in the OpenSSL headers. Example:
 //   "DEFINEFUNC(int, RAND_bytes, (uint8_t *a0, size_t a1), (a0, a1))" => "__typeof__(int(*)(uint8_t *, size_t)) __check_0 = RAND_bytes;"
+// - Function macros can be excluded from old OpenSSL versions by prepending '/*check:from=%version%*/', being %version% a version string such as '1.1.1' or '3.0.0'.
 
 const description = `
 Example: A check operation:
@@ -75,6 +76,9 @@ func gccRun(program string) error {
 	if err := f.Close(); err != nil {
 		log.Fatal(err)
 	}
+	// gcc will fail to compile the generated C header if
+	// any of the static checks fails. If it succeed it means
+	// the checked header matches the OpenSSL definitions.
 	p := exec.Command("gcc",
 		"-c",                           // skip linking
 		"-Werror",                      // promote all warnings to errors
@@ -97,10 +101,10 @@ func generate(header string) (string, error) {
 	var i int
 	for sc.Scan() {
 		l := strings.TrimSpace(sc.Text())
-		if checkDirective(&b, l) {
+		if addDirective(&b, l) {
 			continue
 		}
-		if checkTypedef(&b, l) {
+		if convertTypedef(&b, l) {
 			continue
 		}
 		if checkMacro(&b, l, i) {
@@ -113,7 +117,7 @@ func generate(header string) (string, error) {
 	return b.String(), nil
 }
 
-func checkDirective(w io.Writer, l string) bool {
+func addDirective(w io.Writer, l string) bool {
 	if strings.HasPrefix(l, "// #include ") ||
 		strings.HasPrefix(l, "// #if ") ||
 		strings.HasPrefix(l, "// #endif") {
@@ -123,7 +127,11 @@ func checkDirective(w io.Writer, l string) bool {
 	return false
 }
 
-func checkTypedef(w io.Writer, l string) bool {
+// convertTypedef converts a typedef contained in the line l
+// into a #define pointing to the corresponding OpenSSL type.
+// Only void* typedefs starting with GO are converted.
+// If l does not contain a typedef it does nothing and returns false.
+func convertTypedef(w io.Writer, l string) bool {
 	if !strings.HasPrefix(l, "typedef void* GO_") {
 		return false
 	}
@@ -140,7 +148,34 @@ func checkTypedef(w io.Writer, l string) bool {
 	return true
 }
 
+// checkMacro adds a static check which verifies that
+// the function definition macro contained in the line l
+// matches the corresponding OpenSSL function signature.
+// If l does not contain a function definition macro
+// it does nothing and returns false.
 func checkMacro(w io.Writer, l string, i int) bool {
+	var versionCond string
+	if strings.HasPrefix(l, "/*check:from=") {
+		i1 := strings.Index(l, "=")
+		i2 := strings.Index(l, "*/")
+		if i1 < 0 || i2 < 0 {
+			log.Println("unexpected 'check:from' condition: " + l)
+			return false
+		}
+		from := l[i1+1 : i2]
+		switch from {
+		case "1.1.0":
+			versionCond = "OPENSSL_VERSION_NUMBER >= 0x10100000L"
+		case "1.1.1":
+			versionCond = "OPENSSL_VERSION_NUMBER >= 0x10101000L"
+		case "3.0.0":
+			versionCond = "OPENSSL_VERSION_NUMBER >= 0x30000000L"
+		default:
+			log.Println("unexpected 'check:from' version" + l)
+			return false
+		}
+		l = l[i2+3:]
+	}
 	if !strings.HasPrefix(l, "DEFINEFUNC") {
 		return false
 	}
@@ -170,10 +205,15 @@ func checkMacro(w io.Writer, l string, i int) bool {
 	writeDefineFuncRename := func(cond string) {
 		sp := strings.SplitN(subs, ",", 4)
 		fmt.Fprintf(w, "#if %s\n", cond)
+		// sp[2] contains the old name
 		writeCheck(sp[0], sp[2], sp[3])
 		fmt.Fprintln(w, "#else")
+		// sp[1] contains the new name
 		writeCheck(sp[0], sp[1], sp[3])
 		fmt.Fprintln(w, "#endif")
+	}
+	if versionCond != "" {
+		fmt.Fprintf(w, "#if %s\n", versionCond)
 	}
 	switch l[:i1] {
 	case "DEFINEFUNC":
@@ -190,6 +230,9 @@ func checkMacro(w io.Writer, l string, i int) bool {
 		writeDefineFuncRename("OPENSSL_VERSION_NUMBER < 0x10100000L")
 	case "DEFINEFUNC_RENAMED_3_0":
 		writeDefineFuncRename("OPENSSL_VERSION_NUMBER < 0x30000000L")
+	}
+	if versionCond != "" {
+		fmt.Fprintln(w, "#endif")
 	}
 	return true
 }
