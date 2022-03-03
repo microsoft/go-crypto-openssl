@@ -21,7 +21,7 @@ import (
 // - Comments are discarded unless they start with " #include", " #if" or " #endif".
 // - Typedefs following this pattern "typedef void* GO_%name%_PTR" are translated into "#define %name% GO_%name%_PTR".
 // - Function macros are validated against their definition in the OpenSSL headers. Example:
-//   "DEFINEFUNC(int, RAND_bytes, (uint8_t *a0, size_t a1), (a0, a1))" => "__typeof__(int(*)(uint8_t *, size_t)) __check_0 = RAND_bytes;"
+//   "DEFINEFUNC(int, RAND_bytes, (uint8_t *a0, size_t a1), (a0, a1))" => "int(*__check_0)(uint8_t *, size_t) = RAND_bytes;"
 // - Function macros can be excluded when checking old OpenSSL versions by prepending '/*check:from=%version%*/', %version% being a version string such as '1.1.1' or '3.0.0'.
 
 const description = `
