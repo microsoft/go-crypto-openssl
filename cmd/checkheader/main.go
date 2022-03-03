@@ -149,7 +149,7 @@ func tryConvertTypedef(w io.Writer, l string) bool {
 		log.Println("unexpected line in typedef: " + l)
 		return false
 	}
-	name := l[i1+3 : i2]
+	name := l[i1+len("GO_") : i2]
 	fmt.Fprintf(w, "#define GO_%s_PTR %s*\n", name, name)
 	return true
 }
