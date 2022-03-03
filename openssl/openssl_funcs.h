@@ -1,6 +1,14 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+// To make this header standalone (so that building Go does not require
+// having a full set of OpenSSL headers), the struct details are not here.
+// Instead, while testing the openssl module, we generate and compile a C program
+// that checks that the function signatures match the OpenSSL equivalents.
+// The generation of the checking program depends on the declaration
+// forms used below, which includes commented directives (#include, #if and #endif)
+// and comments starting with `check:`.
+
 #include <stdlib.h> // size_t
 #include <stdint.h> // uint8_t
 
