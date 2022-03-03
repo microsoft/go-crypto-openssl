@@ -205,6 +205,10 @@ func tryConvertDefineFunc(w io.Writer, l string, i int) bool {
 	}
 	writeDefineFunc := func(cond string) {
 		args := strings.SplitN(subs, ",", 3)
+		if len(args) < 3 {
+			log.Printf("wrong number of function macro arguments in line: %s\n", l)
+			return
+		}
 		fnret, fnname, fnargs := args[0], args[1], args[2]
 		if cond != "" {
 			fmt.Fprintf(w, "#if %s\n", cond)
@@ -220,6 +224,10 @@ func tryConvertDefineFunc(w io.Writer, l string, i int) bool {
 	}
 	writeDefineFuncRename := func(cond string) {
 		args := strings.SplitN(subs, ",", 4)
+		if len(args) < 4 {
+			log.Printf("wrong number of function macro arguments in line: %s\n", l)
+			return
+		}
 		fnret, fnname, fnoldname, fnargs := args[0], args[1], args[2], args[3]
 		if fnret == "" || fnname == "" || fnoldname == "" || fnargs == "" {
 			log.Printf("empty function macro arguments in line: %s\n", l)
