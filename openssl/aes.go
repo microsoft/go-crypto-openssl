@@ -498,6 +498,7 @@ func newCipherCtx(cipher C.GO_EVP_CIPHER_PTR, mode C.int, key, iv []byte) (C.GO_
 		return nil, fail("unable to create EVP cipher ctx")
 	}
 	if C.go_openssl_EVP_CipherInit_ex(ctx, cipher, nil, base(key), base(iv), mode) != 1 {
+		C.go_openssl_EVP_CIPHER_CTX_free(ctx)
 		return nil, fail("unable to initialize EVP cipher ctx")
 	}
 	return ctx, nil
