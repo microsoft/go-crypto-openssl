@@ -61,6 +61,47 @@ func TestSealAndOpen(t *testing.T) {
 	}
 }
 
+func TestSealAndOpenTLS(t *testing.T) {
+	key := []byte("D249BF6DEC97B1EBD69BC4D6B3A3C49D")
+	ci, err := NewAESCipher(key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := ci.(*aesCipher)
+	gcm, err := c.NewGCMTLS()
+	if err != nil {
+		t.Fatal(err)
+	}
+	nonce := []byte{0x91, 0xc7, 0xa7, 0x54, 0, 0, 0, 0, 0, 0, 0, 0}
+	nonce1 := []byte{0x91, 0xc7, 0xa7, 0x54, 0, 0, 0, 0, 0, 0, 0, 1}
+	plainText := []byte{0x01, 0x02, 0x03}
+	additionalData := make([]byte, 13)
+	additionalData[11] = byte(len(plainText) >> 8)
+	additionalData[12] = byte(len(plainText))
+	sealed := gcm.Seal(nil, nonce, plainText, additionalData)
+	assertPanic(t, func() {
+		gcm.Seal(nil, nonce, plainText, additionalData)
+	})
+	sealed1 := gcm.Seal(nil, nonce1, plainText, additionalData)
+	if bytes.Equal(sealed, sealed1) {
+		t.Errorf("different nonces should produce different outputs\ngot: %#v\nexp: %#v", sealed, sealed1)
+	}
+	decrypted, err := gcm.Open(nil, nonce, sealed, additionalData)
+	if err != nil {
+		t.Error(err)
+	}
+	decrypted1, err := gcm.Open(nil, nonce1, sealed1, additionalData)
+	if err != nil {
+		t.Error(err)
+	}
+	if !bytes.Equal(decrypted, plainText) {
+		t.Errorf("unexpected decrypted result\ngot: %#v\nexp: %#v", decrypted, plainText)
+	}
+	if !bytes.Equal(decrypted, decrypted1) {
+		t.Errorf("unexpected decrypted result\ngot: %#v\nexp: %#v", decrypted, decrypted1)
+	}
+}
+
 func TestSealAndOpenAuthenticationError(t *testing.T) {
 	key := []byte("D249BF6DEC97B1EBD69BC4D6B3A3C49D")
 	ci, err := NewAESCipher(key)

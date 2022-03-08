@@ -263,12 +263,15 @@ type aesGCM struct {
 	key    []byte
 	tls    bool
 	cipher C.GO_EVP_CIPHER_PTR
+	minNextNonce uint64
 }
 
 const (
 	gcmBlockSize         = 16
 	gcmTagSize           = 16
 	gcmStandardNonceSize = 12
+	gcmTlsAddSize        = 13
+	gcmTlsFixedNonceSize = 4
 )
 
 type aesNonceSizeError int
@@ -342,6 +345,25 @@ func (g *aesGCM) Seal(dst, nonce, plaintext, additionalData []byte) []byte {
 	if len(dst)+len(plaintext)+gcmTagSize < len(dst) {
 		panic("cipher: message too large for buffer")
 	}
+	if g.tls {
+		if len(additionalData) != gcmTlsAddSize {
+			panic("cipher: incorrect additional data length given to GCM TLS")
+		}
+		// BoringCrypto enforces strictly monotonically increasing explicit nonces
+		// and to fail after 2^64 - 1 keys for as per FIPS 140-2 IG A.5,
+		// but OpenSSL does not perform this check.
+		const maxUint64 = 1<<64 - 1
+		counter := bigUint64(nonce[gcmTlsFixedNonceSize:])
+		if g.minNextNonce == maxUint64 {
+			panic("cipher: nonce counter must be less than 2^64 - 1")
+		}
+		if counter < g.minNextNonce {
+			panic("cipher: nonce counter must be strictly monotonically increasing")
+		}
+		defer func() {
+			g.minNextNonce++
+		}()
+	}
 
 	// Make room in dst to append plaintext+overhead.
 	ret, out := sliceForAppend(dst, len(plaintext)+gcmTagSize)
@@ -359,7 +381,13 @@ func (g *aesGCM) Seal(dst, nonce, plaintext, additionalData []byte) []byte {
 
 	var encLen C.int
 	// Encrypt additional data.
-	if C.go_openssl_EVP_EncryptUpdate(ctx, nil, &encLen, base(additionalData), C.int(len(additionalData))) != 1 {
+	// When sealing a TLS payload, OpenSSL app sets the additional data using
+	// 'EVP_CIPHER_CTX_ctrl(g.ctx, C.EVP_CTRL_AEAD_TLS1_AAD, C.EVP_AEAD_TLS1_AAD_LEN, base(additionalData))'.
+	// This makes the explicit nonce component to monotonically increase on every Seal operation without
+	// relying in the explicit nonce being securely set externally,
+	// and it also gives some interesting speed gains.
+	// Unfortunately we can't use it because Go expects AEAD.Seal to honor the provided nonce.
+	if C.go_openssl_EVP_EncryptUpdate(g.ctx, nil, &encLen, base(additionalData), C.int(len(additionalData))) != 1 {
 		panic(fail("EVP_CIPHER_CTX_seal"))
 	}
 
@@ -398,6 +426,7 @@ func (g *aesGCM) Open(dst, nonce, ciphertext, additionalData []byte) ([]byte, er
 	if uint64(len(ciphertext)) > ((1<<32)-2)*aesBlockSize+gcmTagSize {
 		return nil, errOpen
 	}
+	// BoringCrypto does not do any TLS check when decrypting, neither do we.
 
 	tag := ciphertext[len(ciphertext)-gcmTagSize:]
 	ciphertext = ciphertext[:len(ciphertext)-gcmTagSize]
@@ -472,4 +501,10 @@ func newCipherCtx(cipher C.GO_EVP_CIPHER_PTR, mode C.int, key, iv []byte) (C.GO_
 		return nil, fail("unable to initialize EVP cipher ctx")
 	}
 	return ctx, nil
+}
+
+func bigUint64(b []byte) uint64 {
+	_ = b[7]
+	return uint64(b[7]) | uint64(b[6])<<8 | uint64(b[5])<<16 | uint64(b[4])<<24 |
+		uint64(b[3])<<32 | uint64(b[2])<<40 | uint64(b[1])<<48 | uint64(b[0])<<56
 }
