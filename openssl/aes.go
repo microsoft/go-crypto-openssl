@@ -260,14 +260,12 @@ func (c *aesCTR) finalize() {
 }
 
 type aesGCM struct {
-	key    []byte
-	tls    bool
-	cipher C.GO_EVP_CIPHER_PTR
+	ctx          C.GO_EVP_CIPHER_CTX_PTR
+	tls          bool
 	minNextNonce uint64
 }
 
 const (
-	gcmBlockSize         = 16
 	gcmTagSize           = 16
 	gcmStandardNonceSize = 12
 	gcmTlsAddSize        = 13
@@ -303,19 +301,28 @@ func (c *aesCipher) NewGCMTLS() (cipher.AEAD, error) {
 }
 
 func (c *aesCipher) newGCM(tls bool) (cipher.AEAD, error) {
-	g := &aesGCM{key: c.key, tls: tls}
+	var cipher C.GO_EVP_CIPHER_PTR
 	switch len(c.key) * 8 {
 	case 128:
-		g.cipher = C.go_openssl_EVP_aes_128_gcm()
+		cipher = C.go_openssl_EVP_aes_128_gcm()
 	case 192:
-		g.cipher = C.go_openssl_EVP_aes_192_gcm()
+		cipher = C.go_openssl_EVP_aes_192_gcm()
 	case 256:
-		g.cipher = C.go_openssl_EVP_aes_256_gcm()
+		cipher = C.go_openssl_EVP_aes_256_gcm()
 	default:
 		panic("openssl: unsupported key length")
 	}
-
+	ctx, err := newCipherCtx(cipher, -1, c.key, nil)
+	if err != nil {
+		return nil, err
+	}
+	g := &aesGCM{ctx: ctx, tls: tls}
+	runtime.SetFinalizer(g, (*aesGCM).finalize)
 	return g, nil
+}
+
+func (g *aesGCM) finalize() {
+	C.go_openssl_EVP_CIPHER_CTX_free(g.ctx)
 }
 
 func (g *aesGCM) NonceSize() int {
@@ -373,11 +380,9 @@ func (g *aesGCM) Seal(dst, nonce, plaintext, additionalData []byte) []byte {
 		panic("cipher: invalid buffer overlap")
 	}
 
-	ctx, err := newCipherCtx(g.cipher, C.GO_AES_ENCRYPT, g.key, nonce)
-	if err != nil {
-		panic(err)
+	if C.go_openssl_EVP_CipherInit_ex(g.ctx, nil, nil, nil, base(nonce), C.GO_AES_ENCRYPT) != 1 {
+		panic(fail("unable to initialize EVP cipher ctx"))
 	}
-	defer C.go_openssl_EVP_CIPHER_CTX_free(ctx)
 
 	var encLen C.int
 	// Encrypt additional data.
@@ -392,25 +397,22 @@ func (g *aesGCM) Seal(dst, nonce, plaintext, additionalData []byte) []byte {
 	}
 
 	// Encrypt plain text.
-	if C.go_openssl_EVP_EncryptUpdate(ctx, base(out), &encLen, base(plaintext), C.int(len(plaintext))) != 1 {
+	if C.go_openssl_EVP_EncryptUpdate(g.ctx, base(out), &encLen, base(plaintext), C.int(len(plaintext))) != 1 {
 		panic(fail("EVP_CIPHER_CTX_seal"))
 	}
 
 	// Finalise encryption.
 	var encFinalLen C.int
-	if C.go_openssl_EVP_EncryptFinal_ex(ctx, base(out[encLen:]), &encFinalLen) != 1 {
+	if C.go_openssl_EVP_EncryptFinal_ex(g.ctx, base(out[encLen:]), &encFinalLen) != 1 {
 		panic(fail("EVP_CIPHER_CTX_seal"))
 	}
 	encLen += encFinalLen
 
-	if C.go_openssl_EVP_CIPHER_CTX_ctrl(ctx, C.EVP_CTRL_GCM_GET_TAG, 16, unsafe.Pointer(&out[encLen])) != 1 {
+	// Get tag value.
+	if C.go_openssl_EVP_CIPHER_CTX_ctrl(g.ctx, C.EVP_CTRL_GCM_GET_TAG, gcmTagSize, unsafe.Pointer(&out[encLen])) != 1 {
 		panic(fail("EVP_CIPHER_CTX_seal"))
 	}
-	encLen += 16
-
-	if int(encLen) != len(plaintext)+gcmTagSize {
-		panic("internal confusion about GCM tag size")
-	}
+	runtime.KeepAlive(g)
 	return ret
 }
 
@@ -439,11 +441,9 @@ func (g *aesGCM) Open(dst, nonce, ciphertext, additionalData []byte) ([]byte, er
 		panic("cipher: invalid buffer overlap")
 	}
 
-	ctx, err := newCipherCtx(g.cipher, C.GO_AES_DECRYPT, g.key, nonce)
-	if err != nil {
-		panic(err)
+	if C.go_openssl_EVP_CipherInit_ex(g.ctx, nil, nil, nil, base(nonce), C.GO_AES_DECRYPT) != 1 {
+		panic(fail("unable to initialize EVP cipher ctx"))
 	}
-	defer C.go_openssl_EVP_CIPHER_CTX_free(ctx)
 
 	clearAndFail := func(err error) ([]byte, error) {
 		for i := range out {
@@ -454,29 +454,30 @@ func (g *aesGCM) Open(dst, nonce, ciphertext, additionalData []byte) ([]byte, er
 
 	// Provide any AAD data.
 	var decLen C.int
-	if C.go_openssl_EVP_DecryptUpdate(ctx, nil, &decLen, base(additionalData), C.int(len(additionalData))) != 1 {
+	if C.go_openssl_EVP_DecryptUpdate(g.ctx, nil, &decLen, base(additionalData), C.int(len(additionalData))) != 1 {
 		return clearAndFail(errOpen)
 	}
 
 	// Provide the message to be decrypted, and obtain the plaintext output.
-	if C.go_openssl_EVP_DecryptUpdate(ctx, base(out), &decLen, base(ciphertext), C.int(len(ciphertext))) != 1 {
+	if C.go_openssl_EVP_DecryptUpdate(g.ctx, base(out), &decLen, base(ciphertext), C.int(len(ciphertext))) != 1 {
 		return clearAndFail(errOpen)
 	}
 
-	// Set expected tag value. Works in OpenSSL 1.0.1d and later.
-	if C.go_openssl_EVP_CIPHER_CTX_ctrl(ctx, C.EVP_CTRL_GCM_SET_TAG, 16, unsafe.Pointer(&tag[0])) != 1 {
+	// Set expected tag value.
+	if C.go_openssl_EVP_CIPHER_CTX_ctrl(g.ctx, C.EVP_CTRL_GCM_SET_TAG, gcmTagSize, unsafe.Pointer(&tag[0])) != 1 {
 		return clearAndFail(errOpen)
 	}
 
 	// Finalise the decryption.
 	var tagLen C.int
-	if C.go_openssl_EVP_DecryptFinal_ex(ctx, base(out[int(decLen):]), &tagLen) != 1 {
+	if C.go_openssl_EVP_DecryptFinal_ex(g.ctx, base(out[int(decLen):]), &tagLen) != 1 {
 		return clearAndFail(errOpen)
 	}
 
 	if int(decLen+tagLen) != len(ciphertext) {
 		panic("internal confusion about GCM tag size")
 	}
+	runtime.KeepAlive(g)
 	return ret, nil
 }
 
