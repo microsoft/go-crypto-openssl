@@ -391,10 +391,8 @@ func BenchmarkAESGCM_Seal(b *testing.B) {
 	aesgcm, _ := c.(extraModes).NewGCM(gcmStandardNonceSize, gcmTagSize)
 	var out []byte
 
-	ct := aesgcm.Seal(nil, nonce[:], buf[:], ad[:])
-
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		out, _ = aesgcm.Open(out[:0], nonce[:], ct, ad[:])
+		out = aesgcm.Seal(out[:0], nonce[:], buf, ad[:])
 	}
 }
