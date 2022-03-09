@@ -161,7 +161,7 @@ DEFINEFUNC(EC_KEY *, EVP_PKEY_get1_EC_KEY, (GO_EVP_PKEY_PTR pkey), (pkey)) \
 DEFINEFUNC(RSA *, EVP_PKEY_get1_RSA, (GO_EVP_PKEY_PTR pkey), (pkey)) \
 DEFINEFUNC(int, EVP_PKEY_assign, (GO_EVP_PKEY_PTR pkey, int type, void *key), (pkey, type, key)) \
 DEFINEFUNC(int, EVP_PKEY_verify, \
-    (GO_EVP_PKEY_CTX_PTR ctx, const uint8_t *sig, unsigned int siglen, const uint8_t *tbs, unsigned int tbslen), \
+    (GO_EVP_PKEY_CTX_PTR ctx, const uint8_t *sig, size_t siglen, const uint8_t *tbs, size_t tbslen), \
     (ctx, sig, siglen, tbs, tbslen)) \
 DEFINEFUNC(GO_EVP_PKEY_CTX_PTR, EVP_PKEY_CTX_new, (GO_EVP_PKEY_PTR arg0, ENGINE *arg1), (arg0, arg1)) \
 DEFINEFUNC(GO_EVP_PKEY_CTX_PTR, EVP_PKEY_CTX_new_id, (int id, ENGINE *e), (id, e)) \
@@ -172,15 +172,15 @@ DEFINEFUNC(int, EVP_PKEY_CTX_ctrl, \
     (GO_EVP_PKEY_CTX_PTR ctx, int keytype, int optype, int cmd, int p1, void *p2), \
     (ctx, keytype, optype, cmd, p1, p2)) \
 DEFINEFUNC(int, EVP_PKEY_decrypt, \
-    (GO_EVP_PKEY_CTX_PTR arg0, uint8_t *arg1, unsigned int *arg2, const uint8_t *arg3, unsigned int arg4), \
+    (GO_EVP_PKEY_CTX_PTR arg0, uint8_t *arg1, size_t *arg2, const uint8_t *arg3, size_t arg4), \
     (arg0, arg1, arg2, arg3, arg4)) \
 DEFINEFUNC(int, EVP_PKEY_encrypt, \
-    (GO_EVP_PKEY_CTX_PTR arg0, uint8_t *arg1, unsigned int *arg2, const uint8_t *arg3, unsigned int arg4), \
+    (GO_EVP_PKEY_CTX_PTR arg0, uint8_t *arg1, size_t *arg2, const uint8_t *arg3, size_t arg4), \
     (arg0, arg1, arg2, arg3, arg4)) \
 DEFINEFUNC(int, EVP_PKEY_decrypt_init, (GO_EVP_PKEY_CTX_PTR arg0), (arg0)) \
 DEFINEFUNC(int, EVP_PKEY_encrypt_init, (GO_EVP_PKEY_CTX_PTR arg0), (arg0)) \
 DEFINEFUNC(int, EVP_PKEY_sign_init, (GO_EVP_PKEY_CTX_PTR arg0), (arg0)) \
 DEFINEFUNC(int, EVP_PKEY_verify_init, (GO_EVP_PKEY_CTX_PTR arg0), (arg0)) \
 DEFINEFUNC(int, EVP_PKEY_sign, \
-    (GO_EVP_PKEY_CTX_PTR arg0, uint8_t *arg1, unsigned int *arg2, const uint8_t *arg3, unsigned int arg4), \
+    (GO_EVP_PKEY_CTX_PTR arg0, uint8_t *arg1, size_t *arg2, const uint8_t *arg3, size_t arg4), \
     (arg0, arg1, arg2, arg3, arg4))
