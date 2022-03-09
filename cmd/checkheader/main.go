@@ -123,9 +123,7 @@ func generate(header string) (string, error) {
 }
 
 func tryConvertDirective(w io.Writer, l string) bool {
-	if strings.HasPrefix(l, "// #include ") ||
-		strings.HasPrefix(l, "// #if ") ||
-		strings.HasPrefix(l, "// #endif") {
+	if strings.HasPrefix(l, "// #") {
 
 		fmt.Fprintln(w, l[len("// "):])
 		return true
