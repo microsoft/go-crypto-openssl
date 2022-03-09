@@ -18,7 +18,7 @@ import (
 // The generation of the checking program follows these rules:
 // - Lines are added in order of appearance.
 // - Blank lines are discarded.
-// - Comments are discarded unless they start with " #include", " #if" or " #endif".
+// - Comments are discarded unless they contain a C directive, i.e #include, #if or #endif.
 // - Typedefs following this pattern "typedef void* GO_%name%_PTR" are translated into "#define %name% GO_%name%_PTR".
 // - Function macros are validated against their definition in the OpenSSL headers. Example:
 //   "DEFINEFUNC(int, RAND_bytes, (uint8_t *a0, size_t a1), (a0, a1))" => "int(*__check_0)(uint8_t *, size_t) = RAND_bytes;"
@@ -124,7 +124,6 @@ func generate(header string) (string, error) {
 
 func tryConvertDirective(w io.Writer, l string) bool {
 	if strings.HasPrefix(l, "// #") {
-
 		fmt.Fprintln(w, l[len("// "):])
 		return true
 	}
