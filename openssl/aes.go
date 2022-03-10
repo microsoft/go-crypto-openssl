@@ -357,8 +357,8 @@ func (g *aesGCM) Seal(dst, nonce, plaintext, additionalData []byte) []byte {
 			panic("cipher: incorrect additional data length given to GCM TLS")
 		}
 		// BoringCrypto enforces strictly monotonically increasing explicit nonces
-		// and to fail after 2^64 - 1 keys for as per FIPS 140-2 IG A.5,
-		// but OpenSSL does not perform this check.
+		// and to fail after 2^64 - 1 keys as per FIPS 140-2 IG A.5,
+		// but OpenSSL does not perform this check, so it is implemented here.
 		const maxUint64 = 1<<64 - 1
 		counter := bigUint64(nonce[gcmTlsFixedNonceSize:])
 		if g.minNextNonce == maxUint64 {
