@@ -74,6 +74,8 @@ func TestSealAndOpenTLS(t *testing.T) {
 	}
 	nonce := []byte{0x91, 0xc7, 0xa7, 0x54, 0, 0, 0, 0, 0, 0, 0, 0}
 	nonce1 := []byte{0x91, 0xc7, 0xa7, 0x54, 0, 0, 0, 0, 0, 0, 0, 1}
+	nonce9 := []byte{0x91, 0xc7, 0xa7, 0x54, 0, 0, 0, 0, 0, 0, 0, 9}
+	nonce10 := []byte{0x91, 0xc7, 0xa7, 0x54, 0, 0, 0, 0, 0, 0, 0, 10}
 	plainText := []byte{0x01, 0x02, 0x03}
 	additionalData := make([]byte, 13)
 	additionalData[11] = byte(len(plainText) >> 8)
@@ -83,6 +85,10 @@ func TestSealAndOpenTLS(t *testing.T) {
 		gcm.Seal(nil, nonce, plainText, additionalData)
 	})
 	sealed1 := gcm.Seal(nil, nonce1, plainText, additionalData)
+	gcm.Seal(nil, nonce10, plainText, additionalData)
+	assertPanic(t, func() {
+		gcm.Seal(nil, nonce9, plainText, additionalData)
+	})
 	if bytes.Equal(sealed, sealed1) {
 		t.Errorf("different nonces should produce different outputs\ngot: %#v\nexp: %#v", sealed, sealed1)
 	}

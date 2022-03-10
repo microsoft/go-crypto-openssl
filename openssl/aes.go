@@ -368,7 +368,7 @@ func (g *aesGCM) Seal(dst, nonce, plaintext, additionalData []byte) []byte {
 			panic("cipher: nonce counter must be strictly monotonically increasing")
 		}
 		defer func() {
-			g.minNextNonce++
+			g.minNextNonce = counter + 1
 		}()
 	}
 
