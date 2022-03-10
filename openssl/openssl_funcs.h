@@ -10,7 +10,7 @@
 // and comments starting with `check:`.
 
 #include <stdlib.h> // size_t
-#include <stdint.h> // uint8_t
+#include <stdint.h> // uint64_t
 
 typedef void* GO_EVP_CIPHER_PTR;
 typedef void* GO_EVP_CIPHER_CTX_PTR;

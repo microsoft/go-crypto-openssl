@@ -96,8 +96,8 @@ func generateEVPPKey(id C.int, bits int, curve string) (C.GO_EVP_PKEY_PTR, error
 
 type withKeyFunc func(func(C.GO_EVP_PKEY_PTR) C.int) C.int
 type initFunc func(C.GO_EVP_PKEY_CTX_PTR) C.int
-type cryptFunc func(C.GO_EVP_PKEY_CTX_PTR, *C.uint8_t, *C.size_t, *C.uint8_t, C.size_t) C.int
-type verifyFunc func(C.GO_EVP_PKEY_CTX_PTR, *C.uint8_t, C.size_t, *C.uint8_t, C.size_t) C.int
+type cryptFunc func(C.GO_EVP_PKEY_CTX_PTR, *C.uchar, *C.size_t, *C.uchar, C.size_t) C.int
+type verifyFunc func(C.GO_EVP_PKEY_CTX_PTR, *C.uchar, C.size_t, *C.uchar, C.size_t) C.int
 
 func setupEVP(withKey withKeyFunc, padding C.int,
 	h hash.Hash, label []byte, saltLen int, ch crypto.Hash,
@@ -148,10 +148,10 @@ func setupEVP(withKey withKeyFunc, padding C.int,
 		// ctx takes ownership of label, so malloc a copy for OpenSSL to free.
 		// OpenSSL 1.1.1 and higher does not take ownership of the label if the length is zero,
 		// so better avoid the allocation.
-		var clabel *C.uint8_t
+		var clabel *C.uchar
 		if len(label) > 0 {
 			// Go guarantees C.malloc never returns nil.
-			clabel = (*C.uint8_t)(C.malloc(C.size_t(len(label))))
+			clabel = (*C.uchar)(C.malloc(C.size_t(len(label))))
 			copy((*[1 << 30]byte)(unsafe.Pointer(clabel))[:len(label)], label)
 		}
 		if C.go_openssl_EVP_PKEY_CTX_ctrl(ctx, C.EVP_PKEY_RSA, -1, C.EVP_PKEY_CTRL_RSA_OAEP_LABEL, C.int(len(label)), unsafe.Pointer(clabel)) != 1 {
@@ -242,7 +242,7 @@ func evpEncrypt(withKey withKeyFunc, padding C.int, h hash.Hash, label, msg []by
 	encryptInit := func(ctx C.GO_EVP_PKEY_CTX_PTR) C.int {
 		return C.go_openssl_EVP_PKEY_encrypt_init(ctx)
 	}
-	encrypt := func(ctx C.GO_EVP_PKEY_CTX_PTR, out *C.uint8_t, outLen *C.size_t, in *C.uint8_t, inLen C.size_t) C.int {
+	encrypt := func(ctx C.GO_EVP_PKEY_CTX_PTR, out *C.uchar, outLen *C.size_t, in *C.uchar, inLen C.size_t) C.int {
 		return C.go_openssl_EVP_PKEY_encrypt(ctx, out, outLen, in, inLen)
 	}
 	return cryptEVP(withKey, padding, h, label, 0, 0, encryptInit, encrypt, msg)
@@ -252,7 +252,7 @@ func evpDecrypt(withKey withKeyFunc, padding C.int, h hash.Hash, label, msg []by
 	decryptInit := func(ctx C.GO_EVP_PKEY_CTX_PTR) C.int {
 		return C.go_openssl_EVP_PKEY_decrypt_init(ctx)
 	}
-	decrypt := func(ctx C.GO_EVP_PKEY_CTX_PTR, out *C.uint8_t, outLen *C.size_t, in *C.uint8_t, inLen C.size_t) C.int {
+	decrypt := func(ctx C.GO_EVP_PKEY_CTX_PTR, out *C.uchar, outLen *C.size_t, in *C.uchar, inLen C.size_t) C.int {
 		return C.go_openssl_EVP_PKEY_decrypt(ctx, out, outLen, in, inLen)
 	}
 	return cryptEVP(withKey, padding, h, label, 0, 0, decryptInit, decrypt, msg)
@@ -262,7 +262,7 @@ func evpSign(withKey withKeyFunc, padding C.int, saltLen int, h crypto.Hash, has
 	signtInit := func(ctx C.GO_EVP_PKEY_CTX_PTR) C.int {
 		return C.go_openssl_EVP_PKEY_sign_init(ctx)
 	}
-	sign := func(ctx C.GO_EVP_PKEY_CTX_PTR, out *C.uint8_t, outLen *C.size_t, in *C.uint8_t, inLen C.size_t) C.int {
+	sign := func(ctx C.GO_EVP_PKEY_CTX_PTR, out *C.uchar, outLen *C.size_t, in *C.uchar, inLen C.size_t) C.int {
 		return C.go_openssl_EVP_PKEY_sign(ctx, out, outLen, in, inLen)
 	}
 	return cryptEVP(withKey, padding, nil, nil, saltLen, h, signtInit, sign, hashed)
@@ -272,7 +272,7 @@ func evpVerify(withKey withKeyFunc, padding C.int, saltLen int, h crypto.Hash, s
 	verifyInit := func(ctx C.GO_EVP_PKEY_CTX_PTR) C.int {
 		return C.go_openssl_EVP_PKEY_verify_init(ctx)
 	}
-	verify := func(ctx C.GO_EVP_PKEY_CTX_PTR, out *C.uint8_t, outLen C.size_t, in *C.uint8_t, inLen C.size_t) C.int {
+	verify := func(ctx C.GO_EVP_PKEY_CTX_PTR, out *C.uchar, outLen C.size_t, in *C.uchar, inLen C.size_t) C.int {
 		return C.go_openssl_EVP_PKEY_verify(ctx, out, outLen, in, inLen)
 	}
 	return verifyEVP(withKey, padding, nil, nil, saltLen, h, verifyInit, verify, sig, hashed)

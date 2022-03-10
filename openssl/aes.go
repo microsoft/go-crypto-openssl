@@ -325,11 +325,11 @@ func (g *aesGCM) Overhead() int {
 
 // base returns the address of the underlying array in b,
 // being careful not to panic when b has zero length.
-func base(b []byte) *C.uint8_t {
+func base(b []byte) *C.uchar {
 	if len(b) == 0 {
 		return nil
 	}
-	return (*C.uint8_t)(unsafe.Pointer(&b[0]))
+	return (*C.uchar)(unsafe.Pointer(&b[0]))
 }
 
 func (g *aesGCM) Seal(dst, nonce, plaintext, additionalData []byte) []byte {

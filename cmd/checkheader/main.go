@@ -21,7 +21,7 @@ import (
 // - Comments are discarded unless they contain a C directive, i.e #include, #if or #endif.
 // - Typedefs following this pattern "typedef void* GO_%name%_PTR" are translated into "#define %name% GO_%name%_PTR".
 // - Function macros are validated against their definition in the OpenSSL headers. Example:
-//   "DEFINEFUNC(int, RAND_bytes, (uint8_t *a0, size_t a1), (a0, a1))" => "int(*__check_0)(uint8_t *, size_t) = RAND_bytes;"
+//   "DEFINEFUNC(int, RAND_bytes, (unsigned char *a0, int a1), (a0, a1))" => "int(*__check_0)(unsigned char *, int) = RAND_bytes;"
 // - Function macros can be excluded when checking old OpenSSL versions by prepending '/*check:from=%version%*/', %version% being a version string such as '1.1.1' or '3.0.0'.
 
 const description = `
@@ -87,7 +87,7 @@ func gccRun(program string) error {
 		"-c",                           // skip linking
 		"-Werror",                      // promote all warnings to errors
 		"-Wno-deprecated-declarations", // deprecation warnings are expected
-		"-isystem", *osslInclude,       // OpenSSL include from --ossl-include must be prefered over system includes
+		"-isystem", *osslInclude,       // OpenSSL include from --ossl-include must be preferred over system includes
 		"-o", "/dev/null", // discard output
 		name)
 	p.Stdout = os.Stdout
