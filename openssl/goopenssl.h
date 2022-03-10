@@ -37,14 +37,6 @@ void go_openssl_load_functions(void* handle, int major, int minor);
 #define GO_AES_ENCRYPT 1
 #define GO_AES_DECRYPT 0
 
-typedef void* GO_EVP_CIPHER_PTR;
-typedef void* GO_EVP_CIPHER_CTX_PTR;
-typedef void* GO_EVP_PKEY_PTR;
-typedef void* GO_EVP_PKEY_CTX_PTR;
-typedef void* GO_EVP_MD_PTR;
-typedef void* GO_EVP_MD_CTX_PTR;
-typedef void* GO_HMAC_CTX_PTR;
-
 // Define pointers to all the used OpenSSL functions.
 // Calling C function pointers from Go is currently not supported.
 // It is possible to circumvent this by using a C function wrapper.
@@ -63,7 +55,9 @@ typedef void* GO_HMAC_CTX_PTR;
     DEFINEFUNC(ret, func, args, argscall)
 #define DEFINEFUNC_3_0(ret, func, args, argscall)     \
     DEFINEFUNC(ret, func, args, argscall)
-#define DEFINEFUNC_RENAMED(ret, func, oldfunc, args, argscall)     \
+#define DEFINEFUNC_RENAMED_1_1(ret, func, oldfunc, args, argscall)     \
+    DEFINEFUNC(ret, func, args, argscall)
+#define DEFINEFUNC_RENAMED_3_0(ret, func, oldfunc, args, argscall)     \
     DEFINEFUNC(ret, func, args, argscall)
 
 FOR_ALL_OPENSSL_FUNCTIONS
@@ -73,7 +67,8 @@ FOR_ALL_OPENSSL_FUNCTIONS
 #undef DEFINEFUNC_LEGACY_1
 #undef DEFINEFUNC_1_1
 #undef DEFINEFUNC_3_0
-#undef DEFINEFUNC_RENAMED
+#undef DEFINEFUNC_RENAMED_1_1
+#undef DEFINEFUNC_RENAMED_3_0
 
 // These wrappers allocate out_len on the C stack to avoid having to pass a pointer from Go, which would escape to the heap.
 // Use them only in situations where the output length can be safely discarded.
