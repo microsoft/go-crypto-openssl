@@ -72,31 +72,35 @@ func TestSealAndOpenTLS(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	nonce := []byte{0x91, 0xc7, 0xa7, 0x54, 0, 0, 0, 0, 0, 0, 0, 0}
-	nonce1 := []byte{0x91, 0xc7, 0xa7, 0x54, 0, 0, 0, 0, 0, 0, 0, 1}
-	nonce9 := []byte{0x91, 0xc7, 0xa7, 0x54, 0, 0, 0, 0, 0, 0, 0, 9}
-	nonce10 := []byte{0x91, 0xc7, 0xa7, 0x54, 0, 0, 0, 0, 0, 0, 0, 10}
+	nonce := [12]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	nonce1 := [12]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}
+	nonce9 := [12]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9}
+	nonce10 := [12]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10}
+	nonceMax := [12]byte{0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255}
 	plainText := []byte{0x01, 0x02, 0x03}
 	additionalData := make([]byte, 13)
 	additionalData[11] = byte(len(plainText) >> 8)
 	additionalData[12] = byte(len(plainText))
-	sealed := gcm.Seal(nil, nonce, plainText, additionalData)
+	sealed := gcm.Seal(nil, nonce[:], plainText, additionalData)
 	assertPanic(t, func() {
-		gcm.Seal(nil, nonce, plainText, additionalData)
+		gcm.Seal(nil, nonce[:], plainText, additionalData)
 	})
-	sealed1 := gcm.Seal(nil, nonce1, plainText, additionalData)
-	gcm.Seal(nil, nonce10, plainText, additionalData)
+	sealed1 := gcm.Seal(nil, nonce1[:], plainText, additionalData)
+	gcm.Seal(nil, nonce10[:], plainText, additionalData)
 	assertPanic(t, func() {
-		gcm.Seal(nil, nonce9, plainText, additionalData)
+		gcm.Seal(nil, nonce9[:], plainText, additionalData)
+	})
+	assertPanic(t, func() {
+		gcm.Seal(nil, nonceMax[:], plainText, additionalData)
 	})
 	if bytes.Equal(sealed, sealed1) {
 		t.Errorf("different nonces should produce different outputs\ngot: %#v\nexp: %#v", sealed, sealed1)
 	}
-	decrypted, err := gcm.Open(nil, nonce, sealed, additionalData)
+	decrypted, err := gcm.Open(nil, nonce[:], sealed, additionalData)
 	if err != nil {
 		t.Error(err)
 	}
-	decrypted1, err := gcm.Open(nil, nonce1, sealed1, additionalData)
+	decrypted1, err := gcm.Open(nil, nonce1[:], sealed1, additionalData)
 	if err != nil {
 		t.Error(err)
 	}

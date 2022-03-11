@@ -361,7 +361,7 @@ func (g *aesGCM) Seal(dst, nonce, plaintext, additionalData []byte) []byte {
 		// but OpenSSL does not perform this check, so it is implemented here.
 		const maxUint64 = 1<<64 - 1
 		counter := bigUint64(nonce[gcmTlsFixedNonceSize:])
-		if g.minNextNonce == maxUint64 {
+		if counter == maxUint64 {
 			panic("cipher: nonce counter must be less than 2^64 - 1")
 		}
 		if counter < g.minNextNonce {
