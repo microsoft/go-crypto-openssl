@@ -20,13 +20,14 @@
 #define MUTEX_LOCK(x)    pthread_mutex_lock(&(x))
 #define MUTEX_UNLOCK(x)  pthread_mutex_unlock(&(x))
 #define THREAD_ID        pthread_self()
- 
+#define CRYPTO_LOCK      0x01
+
 /* This array will store all of the mutexes available to OpenSSL. */ 
 static MUTEX_TYPE *mutex_buf = NULL;
  
 static void locking_function(int mode, int n, const char *file, int line)
 {
-  if(mode & 1)
+  if(mode & CRYPTO_LOCK)
     MUTEX_LOCK(mutex_buf[n]);
   else
     MUTEX_UNLOCK(mutex_buf[n]);

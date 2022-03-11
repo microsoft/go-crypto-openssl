@@ -110,11 +110,11 @@ func generate(header string) (string, error) {
 	for sc.Scan() {
 		l := strings.TrimSpace(sc.Text())
 		if enum {
-			if strings.HasPrefix(l, "}") {
+			if !strings.HasPrefix(l, "}") {
+				tryConvertEnum(&b, l)
+			} else {
 				enum = false
-				continue
 			}
-			tryConvertEnum(&b, l)
 			continue
 		}
 		if strings.HasPrefix(l, "enum {") {
@@ -178,6 +178,10 @@ func tryConvertEnum(w io.Writer, l string) {
 		l = l[:len(l)-1]
 	}
 	split := strings.SplitN(l, " = ", 2)
+	if len(split) < 2 {
+		log.Printf("unexpected enum definition in function line: %s\n", l)
+		return
+	}
 	name := split[0][len("GO_"):]
 	fmt.Fprintf(w, "#ifdef %s\n", name)
 	fmt.Fprintf(w, "_Static_assert(%s == %s, \"%s\");\n", name, split[1], name)
