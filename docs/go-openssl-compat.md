@@ -35,7 +35,7 @@ When AES-GCM is used to encrypt a TLS payload (aka TLS mode), FIPS 140-2 IG A.5 
 - Fixed 4 bytes field which identifies the encryption context and is reused in different Seal operations using the same key.
 - Explicit 8 bytes field which identifies the Seal operation within an encryption context. This field must not be reused in the same encryption context and should be set using a counter incremented in every Seal operation within an encryption context.
 
-The [FIPS 140-2 Implementation Guidance)(https://csrc.nist.gov/csrc/media/projects/cryptographic-module-validation-program/documents/fips140-2/fips1402ig.pdf) requires that the explicit IV counter does not exceed the 2^64-1 value.
+The [FIPS 140-2 Implementation Guidance](https://csrc.nist.gov/csrc/media/projects/cryptographic-module-validation-program/documents/fips140-2/fips1402ig.pdf) requires that the explicit IV counter does not exceed the 2^64-1 value.
 
 As it is implemented in BoringCrypto, the Go TLS stack is responsible for constructing a valid, unique Key/IV pair. This is passed to the `Seal` method (backed by BoringSSL or OpenSSL) with the expectation that the nonce (IV) is honored. 
 
