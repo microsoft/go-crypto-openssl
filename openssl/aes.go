@@ -260,15 +260,16 @@ func (c *aesCTR) finalize() {
 }
 
 type aesGCM struct {
-	key    []byte
-	tls    bool
-	cipher C.GO_EVP_CIPHER_PTR
+	ctx          C.GO_EVP_CIPHER_CTX_PTR
+	tls          bool
+	minNextNonce uint64
 }
 
 const (
-	gcmBlockSize         = 16
 	gcmTagSize           = 16
 	gcmStandardNonceSize = 12
+	gcmTlsAddSize        = 13
+	gcmTlsFixedNonceSize = 4
 )
 
 type aesNonceSizeError int
@@ -300,19 +301,28 @@ func (c *aesCipher) NewGCMTLS() (cipher.AEAD, error) {
 }
 
 func (c *aesCipher) newGCM(tls bool) (cipher.AEAD, error) {
-	g := &aesGCM{key: c.key, tls: tls}
+	var cipher C.GO_EVP_CIPHER_PTR
 	switch len(c.key) * 8 {
 	case 128:
-		g.cipher = C.go_openssl_EVP_aes_128_gcm()
+		cipher = C.go_openssl_EVP_aes_128_gcm()
 	case 192:
-		g.cipher = C.go_openssl_EVP_aes_192_gcm()
+		cipher = C.go_openssl_EVP_aes_192_gcm()
 	case 256:
-		g.cipher = C.go_openssl_EVP_aes_256_gcm()
+		cipher = C.go_openssl_EVP_aes_256_gcm()
 	default:
 		panic("openssl: unsupported key length")
 	}
-
+	ctx, err := newCipherCtx(cipher, -1, c.key, nil)
+	if err != nil {
+		return nil, err
+	}
+	g := &aesGCM{ctx: ctx, tls: tls}
+	runtime.SetFinalizer(g, (*aesGCM).finalize)
 	return g, nil
+}
+
+func (g *aesGCM) finalize() {
+	C.go_openssl_EVP_CIPHER_CTX_free(g.ctx)
 }
 
 func (g *aesGCM) NonceSize() int {
@@ -342,6 +352,25 @@ func (g *aesGCM) Seal(dst, nonce, plaintext, additionalData []byte) []byte {
 	if len(dst)+len(plaintext)+gcmTagSize < len(dst) {
 		panic("cipher: message too large for buffer")
 	}
+	if g.tls {
+		if len(additionalData) != gcmTlsAddSize {
+			panic("cipher: incorrect additional data length given to GCM TLS")
+		}
+		// BoringCrypto enforces strictly monotonically increasing explicit nonces
+		// and to fail after 2^64 - 1 keys as per FIPS 140-2 IG A.5,
+		// but OpenSSL does not perform this check, so it is implemented here.
+		const maxUint64 = 1<<64 - 1
+		counter := bigUint64(nonce[gcmTlsFixedNonceSize:])
+		if counter == maxUint64 {
+			panic("cipher: nonce counter must be less than 2^64 - 1")
+		}
+		if counter < g.minNextNonce {
+			panic("cipher: nonce counter must be strictly monotonically increasing")
+		}
+		defer func() {
+			g.minNextNonce = counter + 1
+		}()
+	}
 
 	// Make room in dst to append plaintext+overhead.
 	ret, out := sliceForAppend(dst, len(plaintext)+gcmTagSize)
@@ -351,38 +380,20 @@ func (g *aesGCM) Seal(dst, nonce, plaintext, additionalData []byte) []byte {
 		panic("cipher: invalid buffer overlap")
 	}
 
-	ctx, err := newCipherCtx(g.cipher, C.GO_AES_ENCRYPT, g.key, nonce)
-	if err != nil {
-		panic(err)
-	}
-	defer C.go_openssl_EVP_CIPHER_CTX_free(ctx)
-
-	var encLen C.int
 	// Encrypt additional data.
-	if C.go_openssl_EVP_EncryptUpdate(ctx, nil, &encLen, base(additionalData), C.int(len(additionalData))) != 1 {
+	// When sealing a TLS payload, OpenSSL app sets the additional data using
+	// 'EVP_CIPHER_CTX_ctrl(g.ctx, C.EVP_CTRL_AEAD_TLS1_AAD, C.EVP_AEAD_TLS1_AAD_LEN, base(additionalData))'.
+	// This makes the explicit nonce component to monotonically increase on every Seal operation without
+	// relying in the explicit nonce being securely set externally,
+	// and it also gives some interesting speed gains.
+	// Unfortunately we can't use it because Go expects AEAD.Seal to honor the provided nonce.
+	if C.go_openssl_EVP_CIPHER_CTX_seal_wrapper(g.ctx, base(out), base(nonce),
+		base(plaintext), C.int(len(plaintext)),
+		base(additionalData), C.int(len(additionalData))) != 1 {
+
 		panic(fail("EVP_CIPHER_CTX_seal"))
 	}
-
-	// Encrypt plain text.
-	if C.go_openssl_EVP_EncryptUpdate(ctx, base(out), &encLen, base(plaintext), C.int(len(plaintext))) != 1 {
-		panic(fail("EVP_CIPHER_CTX_seal"))
-	}
-
-	// Finalise encryption.
-	var encFinalLen C.int
-	if C.go_openssl_EVP_EncryptFinal_ex(ctx, base(out[encLen:]), &encFinalLen) != 1 {
-		panic(fail("EVP_CIPHER_CTX_seal"))
-	}
-	encLen += encFinalLen
-
-	if C.go_openssl_EVP_CIPHER_CTX_ctrl(ctx, C.GO_EVP_CTRL_GCM_GET_TAG, 16, unsafe.Pointer(&out[encLen])) != 1 {
-		panic(fail("EVP_CIPHER_CTX_seal"))
-	}
-	encLen += 16
-
-	if int(encLen) != len(plaintext)+gcmTagSize {
-		panic("internal confusion about GCM tag size")
-	}
+	runtime.KeepAlive(g)
 	return ret
 }
 
@@ -398,6 +409,7 @@ func (g *aesGCM) Open(dst, nonce, ciphertext, additionalData []byte) ([]byte, er
 	if uint64(len(ciphertext)) > ((1<<32)-2)*aesBlockSize+gcmTagSize {
 		return nil, errOpen
 	}
+	// BoringCrypto does not do any TLS check when decrypting, neither do we.
 
 	tag := ciphertext[len(ciphertext)-gcmTagSize:]
 	ciphertext = ciphertext[:len(ciphertext)-gcmTagSize]
@@ -410,44 +422,16 @@ func (g *aesGCM) Open(dst, nonce, ciphertext, additionalData []byte) ([]byte, er
 		panic("cipher: invalid buffer overlap")
 	}
 
-	ctx, err := newCipherCtx(g.cipher, C.GO_AES_DECRYPT, g.key, nonce)
-	if err != nil {
-		panic(err)
-	}
-	defer C.go_openssl_EVP_CIPHER_CTX_free(ctx)
+	if C.go_openssl_EVP_CIPHER_CTX_open_wrapper(g.ctx, base(out), base(nonce),
+		base(ciphertext), C.int(len(ciphertext)),
+		base(additionalData), C.int(len(additionalData)), base(tag)) != 1 {
 
-	clearAndFail := func(err error) ([]byte, error) {
 		for i := range out {
 			out[i] = 0
 		}
-		return nil, err
+		return nil, errOpen
 	}
-
-	// Provide any AAD data.
-	var decLen C.int
-	if C.go_openssl_EVP_DecryptUpdate(ctx, nil, &decLen, base(additionalData), C.int(len(additionalData))) != 1 {
-		return clearAndFail(errOpen)
-	}
-
-	// Provide the message to be decrypted, and obtain the plaintext output.
-	if C.go_openssl_EVP_DecryptUpdate(ctx, base(out), &decLen, base(ciphertext), C.int(len(ciphertext))) != 1 {
-		return clearAndFail(errOpen)
-	}
-
-	// Set expected tag value. Works in OpenSSL 1.0.1d and later.
-	if C.go_openssl_EVP_CIPHER_CTX_ctrl(ctx, C.GO_EVP_CTRL_GCM_SET_TAG, 16, unsafe.Pointer(&tag[0])) != 1 {
-		return clearAndFail(errOpen)
-	}
-
-	// Finalise the decryption.
-	var tagLen C.int
-	if C.go_openssl_EVP_DecryptFinal_ex(ctx, base(out[int(decLen):]), &tagLen) != 1 {
-		return clearAndFail(errOpen)
-	}
-
-	if int(decLen+tagLen) != len(ciphertext) {
-		panic("internal confusion about GCM tag size")
-	}
+	runtime.KeepAlive(g)
 	return ret, nil
 }
 
@@ -469,7 +453,14 @@ func newCipherCtx(cipher C.GO_EVP_CIPHER_PTR, mode C.int, key, iv []byte) (C.GO_
 		return nil, fail("unable to create EVP cipher ctx")
 	}
 	if C.go_openssl_EVP_CipherInit_ex(ctx, cipher, nil, base(key), base(iv), mode) != 1 {
+		C.go_openssl_EVP_CIPHER_CTX_free(ctx)
 		return nil, fail("unable to initialize EVP cipher ctx")
 	}
 	return ctx, nil
+}
+
+func bigUint64(b []byte) uint64 {
+	_ = b[7] // bounds check hint to compiler; see go.dev/issue/14808
+	return uint64(b[7]) | uint64(b[6])<<8 | uint64(b[5])<<16 | uint64(b[4])<<24 |
+		uint64(b[3])<<32 | uint64(b[2])<<40 | uint64(b[1])<<48 | uint64(b[0])<<56
 }
