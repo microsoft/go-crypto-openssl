@@ -42,10 +42,4 @@ cd "openssl-$version"
 ./config shared
 make -j$(nproc) build_libs
 
-rm -rf /usr/include/openssl
-rm -rf /usr/include/crypto
-
-cp -r -L ./include/openssl /usr/include
-# include/crypto only exists in some OpenSSL versions
-test -e ./include/crypto && cp -r -L ./include/crypto /usr/include
 cp -H ./libcrypto.so "/usr/lib/libcrypto.so.${version}"

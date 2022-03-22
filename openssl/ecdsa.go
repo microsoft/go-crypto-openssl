@@ -54,13 +54,13 @@ var errUnsupportedCurve = errors.New("openssl: unsupported elliptic curve")
 func curveNID(curve string) (C.int, error) {
 	switch curve {
 	case "P-224":
-		return C.NID_secp224r1, nil
+		return C.GO_NID_secp224r1, nil
 	case "P-256":
-		return C.NID_X9_62_prime256v1, nil
+		return C.GO_NID_X9_62_prime256v1, nil
 	case "P-384":
-		return C.NID_secp384r1, nil
+		return C.GO_NID_secp384r1, nil
 	case "P-521":
-		return C.NID_secp521r1, nil
+		return C.GO_NID_secp521r1, nil
 	}
 	return 0, errUnknownCurve
 }
@@ -84,8 +84,8 @@ func newECKey(curve string, X, Y, D *big.Int) (pkey C.GO_EVP_PKEY_PTR, err error
 	if nid, err = curveNID(curve); err != nil {
 		return nil, err
 	}
-	var bx, by *C.BIGNUM
-	var key *C.EC_KEY
+	var bx, by C.GO_BIGNUM_PTR
+	var key C.GO_EC_KEY_PTR
 	defer func() {
 		if bx != nil {
 			C.go_openssl_BN_free(bx)
@@ -129,7 +129,7 @@ func newECKey(curve string, X, Y, D *big.Int) (pkey C.GO_EVP_PKEY_PTR, err error
 	if pkey = C.go_openssl_EVP_PKEY_new(); pkey == nil {
 		return nil, newOpenSSLError("EVP_PKEY_new failed")
 	}
-	if C.go_openssl_EVP_PKEY_assign(pkey, C.EVP_PKEY_EC, (unsafe.Pointer)(key)) != 1 {
+	if C.go_openssl_EVP_PKEY_assign(pkey, C.GO_EVP_PKEY_EC, (unsafe.Pointer)(key)) != 1 {
 		return nil, newOpenSSLError("EVP_PKEY_assign failed")
 	}
 	return pkey, nil
@@ -181,7 +181,7 @@ func VerifyECDSA(pub *PublicKeyECDSA, hash []byte, r, s *big.Int) bool {
 }
 
 func GenerateKeyECDSA(curve string) (X, Y, D *big.Int, err error) {
-	pkey, err := generateEVPPKey(C.EVP_PKEY_EC, 0, curve)
+	pkey, err := generateEVPPKey(C.GO_EVP_PKEY_EC, 0, curve)
 	if err != nil {
 		return nil, nil, nil, err
 	}

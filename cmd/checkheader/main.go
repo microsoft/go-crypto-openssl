@@ -20,6 +20,8 @@ import (
 // - Blank lines are discarded.
 // - Comments are discarded unless they contain a C directive, i.e #include, #if or #endif.
 // - Typedefs following this pattern "typedef void* GO_%name%_PTR" are translated into "#define %name% GO_%name%_PTR".
+// - Enums are validated against their definition in the OpenSSL headers. Example:
+//   "enum { GO_EVP_CTRL_GCM_SET_TAG = 0x11 }" => "_Static_assert(EVP_CTRL_GCM_SET_TAG == 0x11);"
 // - Function macros are validated against their definition in the OpenSSL headers. Example:
 //   "DEFINEFUNC(int, RAND_bytes, (unsigned char *a0, int a1), (a0, a1))" => "int(*__check_0)(unsigned char *, int) = RAND_bytes;"
 // - Function macros can be excluded when checking old OpenSSL versions by prepending '/*check:from=%version%*/', %version% being a version string such as '1.1.1' or '3.0.0'.
@@ -104,8 +106,21 @@ func generate(header string) (string, error) {
 	var b strings.Builder
 	sc := bufio.NewScanner(f)
 	var i int
+	var enum bool
 	for sc.Scan() {
 		l := strings.TrimSpace(sc.Text())
+		if enum {
+			if !strings.HasPrefix(l, "}") {
+				tryConvertEnum(&b, l)
+			} else {
+				enum = false
+			}
+			continue
+		}
+		if strings.HasPrefix(l, "enum {") {
+			enum = true
+			continue
+		}
 		if tryConvertDirective(&b, l) {
 			continue
 		}
@@ -132,7 +147,7 @@ func tryConvertDirective(w io.Writer, l string) bool {
 
 // tryConvertTypedef converts a typedef contained in the line l
 // into a #define pointing to the corresponding OpenSSL type.
-// Only void* typedefs starting with GO are converted.
+// Only void* typedefs starting with GO_ are converted.
 // If l does not contain a typedef it does nothing and returns false.
 func tryConvertTypedef(w io.Writer, l string) bool {
 	if !strings.HasPrefix(l, "typedef void* GO_") {
@@ -149,6 +164,28 @@ func tryConvertTypedef(w io.Writer, l string) bool {
 	name := l[i1+len("GO_") : i2]
 	fmt.Fprintf(w, "#define GO_%s_PTR %s*\n", name, name)
 	return true
+}
+
+// tryConvertEnum adds a static check which verifies that
+// the enum contained in the line l
+// matches the corresponding OpenSSL value.
+// Only enum names starting with GO_ are converted.
+func tryConvertEnum(w io.Writer, l string) {
+	if !strings.HasPrefix(l, "GO_") {
+		return
+	}
+	if l[len(l)-1] == ',' {
+		l = l[:len(l)-1]
+	}
+	split := strings.SplitN(l, " = ", 2)
+	if len(split) < 2 {
+		log.Printf("unexpected enum definition in function line: %s\n", l)
+		return
+	}
+	name := split[0][len("GO_"):]
+	fmt.Fprintf(w, "#ifdef %s\n", name)
+	fmt.Fprintf(w, "_Static_assert(%s == %s, \"%s\");\n", name, split[1], name)
+	fmt.Fprintln(w, "#endif")
 }
 
 // tryConvertDefineFunc adds a static check which verifies that

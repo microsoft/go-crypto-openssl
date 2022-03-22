@@ -242,7 +242,7 @@ type fail string
 
 func (e fail) Error() string { return "openssl: " + string(e) + " failed" }
 
-func bigToBN(x *big.Int) *C.BIGNUM {
+func bigToBN(x *big.Int) C.GO_BIGNUM_PTR {
 	if x == nil {
 		return nil
 	}
@@ -250,7 +250,7 @@ func bigToBN(x *big.Int) *C.BIGNUM {
 	return C.go_openssl_BN_bin2bn(base(raw), C.int(len(raw)), nil)
 }
 
-func bnToBig(bn *C.BIGNUM) *big.Int {
+func bnToBig(bn C.GO_BIGNUM_PTR) *big.Int {
 	if bn == nil {
 		return nil
 	}

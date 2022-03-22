@@ -48,6 +48,12 @@ The `libcrypto` shared library file name varies among different platforms, so a 
 
 This algorithm can be overridden by setting the environment variable `GO_OPENSSL_VERSION_OVERRIDE` to the desired version string. For example, `GO_OPENSSL_VERSION_OVERRIDE="1.1.1k-fips"` makes the runtime look for the shared library `libcrypto.so.1.1.1k-fips` before running the checks for well-known versions.
 
+### Building without OpenSSL headers
+
+The `openssl` package does not use any symbol from the OpenSSL headers. There is no need that have them installed to build an application which imports this library.
+
+Microsoft CI verifies that all the functions and constants defined in our headers match the ones in the OpenSSL headers for every supported OpenSSL version.
+
 ### Portable OpenSSL
 
 The OpenSSL bindings are implemented in such a way that the OpenSSL version used when building a program does not have to match with the OpenSSL version used when running it.

@@ -8,7 +8,6 @@
 
 #include <stdio.h>
 #include <pthread.h>
-#include <openssl/err.h>
 #include <sys/types.h>
 #include <sys/syscall.h>
 
@@ -21,7 +20,8 @@
 #define MUTEX_LOCK(x)    pthread_mutex_lock(&(x))
 #define MUTEX_UNLOCK(x)  pthread_mutex_unlock(&(x))
 #define THREAD_ID        pthread_self()
- 
+#define CRYPTO_LOCK      0x01
+
 /* This array will store all of the mutexes available to OpenSSL. */ 
 static MUTEX_TYPE *mutex_buf = NULL;
  
