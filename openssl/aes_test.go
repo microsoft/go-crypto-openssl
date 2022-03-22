@@ -61,6 +61,57 @@ func TestSealAndOpen(t *testing.T) {
 	}
 }
 
+func TestSealAndOpenTLS(t *testing.T) {
+	key := []byte("D249BF6DEC97B1EBD69BC4D6B3A3C49D")
+	ci, err := NewAESCipher(key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := ci.(*aesCipher)
+	gcm, err := c.NewGCMTLS()
+	if err != nil {
+		t.Fatal(err)
+	}
+	nonce := [12]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	nonce1 := [12]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}
+	nonce9 := [12]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9}
+	nonce10 := [12]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10}
+	nonceMax := [12]byte{0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255}
+	plainText := []byte{0x01, 0x02, 0x03}
+	additionalData := make([]byte, 13)
+	additionalData[11] = byte(len(plainText) >> 8)
+	additionalData[12] = byte(len(plainText))
+	sealed := gcm.Seal(nil, nonce[:], plainText, additionalData)
+	assertPanic(t, func() {
+		gcm.Seal(nil, nonce[:], plainText, additionalData)
+	})
+	sealed1 := gcm.Seal(nil, nonce1[:], plainText, additionalData)
+	gcm.Seal(nil, nonce10[:], plainText, additionalData)
+	assertPanic(t, func() {
+		gcm.Seal(nil, nonce9[:], plainText, additionalData)
+	})
+	assertPanic(t, func() {
+		gcm.Seal(nil, nonceMax[:], plainText, additionalData)
+	})
+	if bytes.Equal(sealed, sealed1) {
+		t.Errorf("different nonces should produce different outputs\ngot: %#v\nexp: %#v", sealed, sealed1)
+	}
+	decrypted, err := gcm.Open(nil, nonce[:], sealed, additionalData)
+	if err != nil {
+		t.Error(err)
+	}
+	decrypted1, err := gcm.Open(nil, nonce1[:], sealed1, additionalData)
+	if err != nil {
+		t.Error(err)
+	}
+	if !bytes.Equal(decrypted, plainText) {
+		t.Errorf("unexpected decrypted result\ngot: %#v\nexp: %#v", decrypted, plainText)
+	}
+	if !bytes.Equal(decrypted, decrypted1) {
+		t.Errorf("unexpected decrypted result\ngot: %#v\nexp: %#v", decrypted, decrypted1)
+	}
+}
+
 func TestSealAndOpenAuthenticationError(t *testing.T) {
 	key := []byte("D249BF6DEC97B1EBD69BC4D6B3A3C49D")
 	ci, err := NewAESCipher(key)
@@ -350,10 +401,8 @@ func BenchmarkAESGCM_Seal(b *testing.B) {
 	aesgcm, _ := c.(extraModes).NewGCM(gcmStandardNonceSize, gcmTagSize)
 	var out []byte
 
-	ct := aesgcm.Seal(nil, nonce[:], buf[:], ad[:])
-
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		out, _ = aesgcm.Open(out[:0], nonce[:], ct, ad[:])
+		out = aesgcm.Seal(out[:0], nonce[:], buf, ad[:])
 	}
 }
