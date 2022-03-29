@@ -17,6 +17,43 @@ import (
 	"unsafe"
 )
 
+var zero [1]byte
+
+func shaX(md C.GO_EVP_MD_PTR, p []byte, sum []byte) {
+	n := len(p)
+	if len(p) == 0 {
+		p = zero[:]
+	}
+	if C.go_shaX(md, noescape(unsafe.Pointer(&p[0])), C.size_t(n), noescape(unsafe.Pointer(&sum[0]))) == 0 {
+		panic("openssl: SHA failed")
+	}
+}
+
+func SHA1(p []byte) (sum [20]byte) {
+	shaX(C.go_openssl_EVP_sha1(), p, sum[:])
+	return
+}
+
+func SHA224(p []byte) (sum [28]byte) {
+	shaX(C.go_openssl_EVP_sha224(), p, sum[:])
+	return
+}
+
+func SHA256(p []byte) (sum [32]byte) {
+	shaX(C.go_openssl_EVP_sha256(), p, sum[:])
+	return
+}
+
+func SHA384(p []byte) (sum [48]byte) {
+	shaX(C.go_openssl_EVP_sha384(), p, sum[:])
+	return
+}
+
+func SHA512(p []byte) (sum [64]byte) {
+	shaX(C.go_openssl_EVP_sha512(), p, sum[:])
+	return
+}
+
 type evpHash struct {
 	md  C.GO_EVP_MD_PTR
 	ctx C.GO_EVP_MD_CTX_PTR
