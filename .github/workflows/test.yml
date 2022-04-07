@@ -20,13 +20,17 @@ jobs:
       uses: actions/checkout@v2
     - name: Install OpenSSL - Build
       run: sudo sh ./scripts/openssl.sh ${{ matrix.openssl-version-build }}
-    - name: Set OpenSSL config
-      run: sudo cp ./scripts/openssl-3.cnf /usr/local/ssl/openssl.cnf
-      if: ${{ matrix.openssl-version-build == '3.0.1' }}
     - name: Check headers
       working-directory: ./cmd/checkheader
       run: go run . --ossl-include /usr/local/src/openssl-${{ matrix.openssl-version-build }}/include ../../openssl/openssl_funcs.h
       if: ${{ matrix.openssl-version-build == matrix.openssl-version-test }}
+    - name: Set OpenSSL config and prove FIPS
+      run: |
+        sudo cp ./scripts/openssl-3.cnf /usr/local/ssl/openssl.cnf
+        go test -v -count 0 ./openssl | grep -q "FIPS enabled: true"
+      if: ${{ matrix.openssl-version-build == '3.0.1' }}
+      env:
+        GO_OPENSSL_VERSION_OVERRIDE: ${{ matrix.openssl-version-build }}
     - name: Run Test - Build
       run: go test -v ./...
       env:
