@@ -12,8 +12,6 @@ jobs:
     steps:
     - name: Install build tools
       run: sudo apt-get install -y build-essential
-    - name: Remove libssl-dev
-      run: sudo apt-get remove -y libssl-dev
     - name: Install Go
       uses: actions/setup-go@v2
       with:
@@ -23,8 +21,8 @@ jobs:
     - name: Install OpenSSL - Build
       run: sudo sh ./scripts/openssl.sh ${{ matrix.openssl-version-build }}
     - name: Set OpenSSL config
-      run: cp ./scripts/openssl-3.cnf /usr/local/ssl/openssl.cnf
-      if: ${{ matrix.openssl-version-build }} == "3.0.1"
+      run: sudo cp ./scripts/openssl-3.cnf /usr/local/ssl/openssl.cnf
+      if: ${{ matrix.openssl-version-build == '3.0.1' }}
     - name: Check headers
       working-directory: ./cmd/checkheader
       run: go run . --ossl-include /usr/local/src/openssl-${{ matrix.openssl-version-build }}/include ../../openssl/openssl_funcs.h
