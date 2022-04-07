@@ -24,7 +24,7 @@ jobs:
       run: sudo sh ./scripts/openssl.sh ${{ matrix.openssl-version-build }}
     - name: Set OpenSSL config
       run: cp ./scripts/openssl-3.cnf /usr/local/ssl/openssl.cnf
-      if: ${{ matrix.openssl-version-build == "3.0.1" }}
+      if: ${{ matrix.openssl-version-build }} == "3.0.1"
     - name: Check headers
       working-directory: ./cmd/checkheader
       run: go run . --ossl-include /usr/local/src/openssl-${{ matrix.openssl-version-build }}/include ../../openssl/openssl_funcs.h
