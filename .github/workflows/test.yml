@@ -12,8 +12,6 @@ jobs:
     steps:
     - name: Install build tools
       run: sudo apt-get install -y build-essential
-    - name: Remove libssl-dev
-      run: sudo apt-get remove -y libssl-dev
     - name: Install Go
       uses: actions/setup-go@v2
       with:
@@ -26,6 +24,13 @@ jobs:
       working-directory: ./cmd/checkheader
       run: go run . --ossl-include /usr/local/src/openssl-${{ matrix.openssl-version-build }}/include ../../openssl/openssl_funcs.h
       if: ${{ matrix.openssl-version-build == matrix.openssl-version-test }}
+    - name: Set OpenSSL config and prove FIPS
+      run: |
+        sudo cp ./scripts/openssl-3.cnf /usr/local/ssl/openssl.cnf
+        go test -v -count 0 ./openssl | grep -q "FIPS enabled: true"
+      if: ${{ matrix.openssl-version-build == '3.0.1' }}
+      env:
+        GO_OPENSSL_VERSION_OVERRIDE: ${{ matrix.openssl-version-build }}
     - name: Run Test - Build
       run: go test -v ./...
       env:
