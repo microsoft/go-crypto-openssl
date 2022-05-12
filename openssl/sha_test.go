@@ -66,7 +66,7 @@ func TestSha(t *testing.T) {
 	}
 }
 
-func TestSHA1(t *testing.T) {
+func TestSHA_OneShot(t *testing.T) {
 	msg := []byte("testing")
 	var tests = []struct {
 		name string
@@ -133,4 +133,21 @@ func BenchmarkSHA256(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		SHA256(buf[:size])
 	}
+}
+
+type cgoData struct {
+	Data [16]byte
+	Ptr  *cgoData
+}
+
+func TestCgo(t *testing.T) {
+	// Test that Write does not cause cgo to scan the entire cgoData struct for pointers.
+	// The scan (if any) should be limited to the [16]byte.
+	d := new(cgoData)
+	d.Ptr = d
+	h := NewSHA256()
+	h.Write(d.Data[:])
+	h.Sum(nil)
+
+	SHA256(d.Data[:])
 }

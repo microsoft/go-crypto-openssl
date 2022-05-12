@@ -17,40 +17,53 @@ import (
 	"unsafe"
 )
 
-var zero [1]byte
+// NOTE: Implementation ported from https://go-review.googlesource.com/c/go/+/404295.
+// The cgo calls in this file are arranged to avoid marking the parameters as escaping.
+// To do that, we call noescape (including via addr).
+// We must also make sure that the data pointer arguments have the form unsafe.Pointer(&...)
+// so that cgo does not annotate them with cgoCheckPointer calls. If it did that, it might look
+// beyond the byte slice and find Go pointers in unprocessed parts of a larger allocation.
+// To do both of these simultaneously, the idiom is unsafe.Pointer(&*addr(p)),
+// where addr returns the base pointer of p, substituting a non-nil pointer for nil,
+// and applying a noescape along the way.
+// This is all to preserve compatibility with the allocation behavior of the non-openssl implementations.
 
-func shaX(md C.GO_EVP_MD_PTR, p []byte, sum []byte) {
-	n := len(p)
-	if len(p) == 0 {
-		p = zero[:]
-	}
-	if C.go_shaX(md, noescape(unsafe.Pointer(&p[0])), C.size_t(n), noescape(unsafe.Pointer(&sum[0]))) == 0 {
-		panic("openssl: SHA failed")
-	}
+func shaX(md C.GO_EVP_MD_PTR, p []byte, sum []byte) bool {
+	return C.go_shaX(md, unsafe.Pointer(&*addr(p)), C.size_t(len(p)), unsafe.Pointer(&*addr(sum[:]))) != 0
 }
 
 func SHA1(p []byte) (sum [20]byte) {
-	shaX(C.go_openssl_EVP_sha1(), p, sum[:])
+	if !shaX(C.go_openssl_EVP_sha1(), p, sum[:]) {
+		panic("openssl: SHA1 failed")
+	}
 	return
 }
 
 func SHA224(p []byte) (sum [28]byte) {
-	shaX(C.go_openssl_EVP_sha224(), p, sum[:])
+	if !shaX(C.go_openssl_EVP_sha224(), p, sum[:]) {
+		panic("openssl: SHA224 failed")
+	}
 	return
 }
 
 func SHA256(p []byte) (sum [32]byte) {
-	shaX(C.go_openssl_EVP_sha256(), p, sum[:])
+	if !shaX(C.go_openssl_EVP_sha256(), p, sum[:]) {
+		panic("openssl: SHA256 failed")
+	}
 	return
 }
 
 func SHA384(p []byte) (sum [48]byte) {
-	shaX(C.go_openssl_EVP_sha384(), p, sum[:])
+	if !shaX(C.go_openssl_EVP_sha384(), p, sum[:]) {
+		panic("openssl: SHA384 failed")
+	}
 	return
 }
 
 func SHA512(p []byte) (sum [64]byte) {
-	shaX(C.go_openssl_EVP_sha512(), p, sum[:])
+	if !shaX(C.go_openssl_EVP_sha512(), p, sum[:]) {
+		panic("openssl: SHA512 failed")
+	}
 	return
 }
 
@@ -109,7 +122,7 @@ func (h *evpHash) Reset() {
 }
 
 func (h *evpHash) Write(p []byte) (int, error) {
-	if len(p) > 0 && C.go_openssl_EVP_DigestUpdate(h.noescapeCtx(), noescape(unsafe.Pointer(&p[0])), C.size_t(len(p))) != 1 {
+	if len(p) > 0 && C.go_openssl_EVP_DigestUpdate(h.noescapeCtx(), unsafe.Pointer(&*addr(p)), C.size_t(len(p))) != 1 {
 		panic("openssl: EVP_DigestUpdate failed")
 	}
 	runtime.KeepAlive(h)
