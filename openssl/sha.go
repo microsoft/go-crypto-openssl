@@ -98,31 +98,23 @@ func newEvpHash(ch crypto.Hash, size, blockSize int) *evpHash {
 }
 
 func (h *evpHash) finalize() {
-	C.go_openssl_EVP_MD_CTX_free(h.noescapeCtx())
-	C.go_openssl_EVP_MD_CTX_free(h.noescapeCtx2())
-}
-
-func (h *evpHash) noescapeCtx() C.GO_EVP_MD_CTX_PTR {
-	return (C.GO_EVP_MD_CTX_PTR)(noescape(unsafe.Pointer(h.ctx)))
-}
-
-func (h *evpHash) noescapeCtx2() C.GO_EVP_MD_CTX_PTR {
-	return (C.GO_EVP_MD_CTX_PTR)(noescape(unsafe.Pointer(h.ctx2)))
+	C.go_openssl_EVP_MD_CTX_free(h.ctx)
+	C.go_openssl_EVP_MD_CTX_free(h.ctx2)
 }
 
 func (h *evpHash) Reset() {
 	// There is no need to reset h.ctx2 because it is always reset after
 	// use in evpHash.sum.
-	C.go_openssl_EVP_MD_CTX_reset(h.noescapeCtx())
+	C.go_openssl_EVP_MD_CTX_reset(h.ctx)
 
-	if C.go_openssl_EVP_DigestInit_ex(h.noescapeCtx(), h.md, nil) != 1 {
+	if C.go_openssl_EVP_DigestInit_ex(h.ctx, h.md, nil) != 1 {
 		panic("openssl: EVP_DigestInit_ex failed")
 	}
 	runtime.KeepAlive(h)
 }
 
 func (h *evpHash) Write(p []byte) (int, error) {
-	if len(p) > 0 && C.go_openssl_EVP_DigestUpdate(h.noescapeCtx(), unsafe.Pointer(&*addr(p)), C.size_t(len(p))) != 1 {
+	if len(p) > 0 && C.go_openssl_EVP_DigestUpdate(h.ctx, unsafe.Pointer(&*addr(p)), C.size_t(len(p))) != 1 {
 		panic("openssl: EVP_DigestUpdate failed")
 	}
 	runtime.KeepAlive(h)
@@ -142,14 +134,14 @@ func (h *evpHash) sum(out []byte) {
 	// that Sum has no effect on the underlying stream.
 	// In particular it is OK to Sum, then Write more, then Sum again,
 	// and the second Sum acts as if the first didn't happen.
-	C.go_openssl_EVP_DigestInit_ex(h.noescapeCtx2(), h.md, nil)
-	if C.go_openssl_EVP_MD_CTX_copy_ex(h.noescapeCtx2(), h.noescapeCtx()) != 1 {
+	C.go_openssl_EVP_DigestInit_ex(h.ctx2, h.md, nil)
+	if C.go_openssl_EVP_MD_CTX_copy_ex(h.ctx2, h.ctx) != 1 {
 		panic("openssl: EVP_MD_CTX_copy_ex failed")
 	}
-	if C.go_openssl_EVP_DigestFinal_ex(h.noescapeCtx2(), (*C.uchar)(noescape(unsafe.Pointer(base(out)))), nil) != 1 {
+	if C.go_openssl_EVP_DigestFinal_ex(h.ctx2, (*C.uchar)(noescape(unsafe.Pointer(base(out)))), nil) != 1 {
 		panic("openssl: EVP_DigestFinal_ex failed")
 	}
-	C.go_openssl_EVP_MD_CTX_reset(h.noescapeCtx2())
+	C.go_openssl_EVP_MD_CTX_reset(h.ctx2)
 	runtime.KeepAlive(h)
 }
 
