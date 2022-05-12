@@ -14,6 +14,7 @@ import "C"
 import (
 	"errors"
 	"math/big"
+	"math/bits"
 	"strconv"
 	"strings"
 	"sync"
@@ -242,19 +243,30 @@ type fail string
 
 func (e fail) Error() string { return "openssl: " + string(e) + " failed" }
 
+const wordBytes = bits.UintSize / 8
+
+func wbase(b []big.Word) *C.uchar {
+	if len(b) == 0 {
+		return nil
+	}
+	return (*C.uchar)(unsafe.Pointer(&b[0]))
+}
+
 func bigToBN(x *big.Int) C.GO_BIGNUM_PTR {
 	if x == nil {
 		return nil
 	}
-	raw := x.Bytes()
-	return C.go_openssl_BN_bin2bn(base(raw), C.int(len(raw)), nil)
+	raw := x.Bits()
+	return C.go_openssl_BN_lebin2bn(wbase(raw), C.int(len(raw)*wordBytes), nil)
 }
 
 func bnToBig(bn C.GO_BIGNUM_PTR) *big.Int {
 	if bn == nil {
 		return nil
 	}
-	raw := make([]byte, (C.go_openssl_BN_num_bits(bn)+7)/8)
-	n := C.go_openssl_BN_bn2bin(bn, base(raw))
-	return new(big.Int).SetBytes(raw[:n])
+	raw := make([]big.Word, C.go_openssl_BN_num_bits(bn))
+	if C.go_openssl_BN_bn2lebinpad(bn, wbase(raw), C.int(len(raw)*wordBytes)) == 0 {
+		panic("openssl: bignum conversion failed")
+	}
+	return new(big.Int).SetBits(raw)
 }
