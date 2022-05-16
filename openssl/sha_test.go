@@ -69,9 +69,9 @@ func TestSha(t *testing.T) {
 func TestSHA_OneShot(t *testing.T) {
 	msg := []byte("testing")
 	var tests = []struct {
-		name string
-		fn   func() hash.Hash
-		fn2  func([]byte) []byte
+		name    string
+		want    func() hash.Hash
+		oneShot func([]byte) []byte
 	}{
 		{"sha1", NewSHA1, func(p []byte) []byte {
 			b := SHA1(p)
@@ -96,42 +96,14 @@ func TestSHA_OneShot(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.fn2(msg)
-			h := tt.fn()
+			got := tt.oneShot(msg)
+			h := tt.want()
 			h.Write(msg)
 			want := h.Sum(nil)
 			if !bytes.Equal(got[:], want) {
 				t.Errorf("got:%x want:%x", got, want)
 			}
 		})
-	}
-}
-
-func BenchmarkHash8Bytes(b *testing.B) {
-	b.StopTimer()
-	h := NewSHA256()
-	sum := make([]byte, h.Size())
-	buf := make([]byte, 8192)
-	size := 1024
-	b.StartTimer()
-	b.SetBytes(int64(size))
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		h.Reset()
-		h.Write(buf[:size])
-		h.Sum(sum[:0])
-	}
-}
-
-func BenchmarkSHA256(b *testing.B) {
-	b.StopTimer()
-	buf := make([]byte, 8192)
-	size := 1024
-	b.StartTimer()
-	b.SetBytes(int64(size))
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		SHA256(buf[:size])
 	}
 }
 
@@ -143,6 +115,11 @@ type cgoData struct {
 func TestCgo(t *testing.T) {
 	// Test that Write does not cause cgo to scan the entire cgoData struct for pointers.
 	// The scan (if any) should be limited to the [16]byte.
+	defer func() {
+		if err := recover(); err != nil {
+			t.Error(err)
+		}
+	}()
 	d := new(cgoData)
 	d.Ptr = d
 	h := NewSHA256()
@@ -150,4 +127,32 @@ func TestCgo(t *testing.T) {
 	h.Sum(nil)
 
 	SHA256(d.Data[:])
+}
+
+func BenchmarkHash8Bytes(b *testing.B) {
+	b.StopTimer()
+	h := NewSHA256()
+	sum := make([]byte, h.Size())
+	size := 8
+	buf := make([]byte, size)
+	b.StartTimer()
+	b.SetBytes(int64(size))
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		h.Reset()
+		h.Write(buf)
+		h.Sum(sum[:0])
+	}
+}
+
+func BenchmarkSHA256(b *testing.B) {
+	b.StopTimer()
+	size := 8
+	buf := make([]byte, size)
+	b.StartTimer()
+	b.SetBytes(int64(size))
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		SHA256(buf)
+	}
 }

@@ -29,7 +29,7 @@ import (
 // This is all to preserve compatibility with the allocation behavior of the non-openssl implementations.
 
 func shaX(md C.GO_EVP_MD_PTR, p []byte, sum []byte) bool {
-	return C.go_shaX(md, unsafe.Pointer(&*addr(p)), C.size_t(len(p)), unsafe.Pointer(&*addr(sum[:]))) != 0
+	return C.go_shaX(md, unsafe.Pointer(&*addr(p)), C.size_t(len(p)), unsafe.Pointer(&*addr(sum))) != 0
 }
 
 func SHA1(p []byte) (sum [20]byte) {
