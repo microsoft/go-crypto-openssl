@@ -32,7 +32,7 @@ jobs:
       env:
         GO_OPENSSL_VERSION_OVERRIDE: ${{ matrix.openssl-version-build }}
     - name: Run Test - Build
-      run: go test -v ./...
+      run: go test -gcflags=all=-d=checkptr -v ./...
       env:
         GO_OPENSSL_VERSION_OVERRIDE: ${{ matrix.openssl-version-build }}
     - name: Build Test - Build
