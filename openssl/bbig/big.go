@@ -26,7 +26,7 @@ func Enc(b *big.Int) openssl.BigInt {
 		return openssl.BigInt{}
 	}
 	// TODO: Use unsafe.Slice((*uint)(&x[0]), len(x)) once go1.16 is no longer supported.
-	return (*[1 << 30]uint)(unsafe.Pointer(&x[0]))[:len(x)]
+	return (*(*[]uint)(unsafe.Pointer(&x)))[:len(x)]
 }
 
 func Dec(b openssl.BigInt) *big.Int {
@@ -37,7 +37,7 @@ func Dec(b openssl.BigInt) *big.Int {
 		return new(big.Int)
 	}
 	// TODO: Use unsafe.Slice((*uint)(&b[0]), len(b)) once go1.16 is no longer supported.
-	x := (*[1 << 30]big.Word)(unsafe.Pointer(&b[0]))[:len(b)]
+	x := (*(*[]big.Word)(unsafe.Pointer(&b)))[:len(b)]
 	return new(big.Int).SetBits(x)
 }
 
