@@ -14,7 +14,7 @@ import (
 	"testing"
 
 	"github.com/microsoft/go-crypto-openssl/openssl"
-	"github.com/microsoft/go-crypto-openssl/openssl/bbig"
+	"github.com/microsoft/go-crypto-openssl/openssl/bbig/bridge"
 )
 
 func TestRSAKeyGeneration(t *testing.T) {
@@ -134,15 +134,15 @@ func TestSignVerifyRSAPSS(t *testing.T) {
 
 func newRSAKey(t *testing.T, size int) (*openssl.PrivateKeyRSA, *openssl.PublicKeyRSA) {
 	t.Helper()
-	N, E, D, P, Q, Dp, Dq, Qinv, err := bbig.GenerateKeyRSA(size)
+	N, E, D, P, Q, Dp, Dq, Qinv, err := bridge.GenerateKeyRSA(size)
 	if err != nil {
 		t.Fatalf("GenerateKeyRSA(%d): %v", size, err)
 	}
-	priv, err := bbig.NewPrivateKeyRSA(N, E, D, P, Q, Dp, Dq, Qinv)
+	priv, err := bridge.NewPrivateKeyRSA(N, E, D, P, Q, Dp, Dq, Qinv)
 	if err != nil {
 		t.Fatalf("NewPrivateKeyRSA(%d): %v", size, err)
 	}
-	pub, err := bbig.NewPublicKeyRSA(N, E)
+	pub, err := bridge.NewPublicKeyRSA(N, E)
 	if err != nil {
 		t.Fatalf("NewPublicKeyRSA(%d): %v", size, err)
 	}
@@ -161,7 +161,7 @@ func BenchmarkEncryptRSAPKCS1(b *testing.B) {
 	b.StopTimer()
 	// Public key length should be at least of 2048 bits, else OpenSSL will report an error when running in FIPS mode.
 	n := fromBase36("14314132931241006650998084889274020608918049032671858325988396851334124245188214251956198731333464217832226406088020736932173064754214329009979944037640912127943488972644697423190955557435910767690712778463524983667852819010259499695177313115447116110358524558307947613422897787329221478860907963827160223559690523660574329011927531289655711860504630573766609239332569210831325633840174683944553667352219670930408593321661375473885147973879086994006440025257225431977751512374815915392249179976902953721486040787792801849818254465486633791826766873076617116727073077821584676715609985777563958286637185868165868520557")
-	test2048PubKey, err := bbig.NewPublicKeyRSA(n, big.NewInt(3))
+	test2048PubKey, err := bridge.NewPublicKeyRSA(n, big.NewInt(3))
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -177,7 +177,7 @@ func BenchmarkEncryptRSAPKCS1(b *testing.B) {
 func BenchmarkGenerateKeyRSA(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		_, _, _, _, _, _, _, _, err := bbig.GenerateKeyRSA(2048)
+		_, _, _, _, _, _, _, _, err := bridge.GenerateKeyRSA(2048)
 		if err != nil {
 			b.Fatal(err)
 		}

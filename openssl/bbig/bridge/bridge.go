@@ -3,7 +3,7 @@
 
 // These wrappers only exist for code reuse in places where we need the old pre-go1.19 signature.
 
-package bbig
+package bridge
 
 import (
 	"encoding/asn1"

@@ -11,7 +11,7 @@ import (
 	"crypto/elliptic"
 	"testing"
 
-	"github.com/microsoft/go-crypto-openssl/openssl/bbig"
+	"github.com/microsoft/go-crypto-openssl/openssl/bbig/bridge"
 )
 
 func testAllCurves(t *testing.T, f func(*testing.T, elliptic.Curve)) {
@@ -57,32 +57,32 @@ func testECDSASignAndVerify(t *testing.T, c elliptic.Curve) {
 		t.Fatal(err)
 	}
 
-	priv, err := bbig.NewPrivateKeyECDSA(key.Params().Name, key.X, key.Y, key.D)
+	priv, err := bridge.NewPrivateKeyECDSA(key.Params().Name, key.X, key.Y, key.D)
 	if err != nil {
 		t.Fatal(err)
 	}
 	hashed := []byte("testing")
-	r, s, err := bbig.SignECDSA(priv, hashed)
+	r, s, err := bridge.SignECDSA(priv, hashed)
 	if err != nil {
 		t.Errorf("error signing: %s", err)
 		return
 	}
 
-	pub, err := bbig.NewPublicKeyECDSA(key.Params().Name, key.X, key.Y)
+	pub, err := bridge.NewPublicKeyECDSA(key.Params().Name, key.X, key.Y)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !bbig.VerifyECDSA(pub, hashed, r, s) {
+	if !bridge.VerifyECDSA(pub, hashed, r, s) {
 		t.Errorf("Verify failed")
 	}
 	hashed[0] ^= 0xff
-	if bbig.VerifyECDSA(pub, hashed, r, s) {
+	if bridge.VerifyECDSA(pub, hashed, r, s) {
 		t.Errorf("Verify succeeded despite intentionally invalid hash!")
 	}
 }
 
 func generateKeycurve(c elliptic.Curve) (*ecdsa.PrivateKey, error) {
-	x, y, d, err := bbig.GenerateKeyECDSA(c.Params().Name)
+	x, y, d, err := bridge.GenerateKeyECDSA(c.Params().Name)
 	if err != nil {
 		return nil, err
 	}
