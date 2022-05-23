@@ -9,16 +9,10 @@ package openssl
 // #include "goopenssl.h"
 import "C"
 import (
-	"encoding/asn1"
 	"errors"
-	"math/big"
 	"runtime"
 	"unsafe"
 )
-
-type ecdsaSignature struct {
-	R, S *big.Int
-}
 
 type PrivateKeyECDSA struct {
 	// _pkey MUST NOT be accessed directly. Instead, use the withKey method.
@@ -65,7 +59,7 @@ func curveNID(curve string) (C.int, error) {
 	return 0, errUnknownCurve
 }
 
-func NewPublicKeyECDSA(curve string, X, Y *big.Int) (*PublicKeyECDSA, error) {
+func NewPublicKeyECDSA(curve string, X, Y BigInt) (*PublicKeyECDSA, error) {
 	pkey, err := newECKey(curve, X, Y, nil)
 	if err != nil {
 		return nil, err
@@ -79,7 +73,7 @@ func NewPublicKeyECDSA(curve string, X, Y *big.Int) (*PublicKeyECDSA, error) {
 	return k, nil
 }
 
-func newECKey(curve string, X, Y, D *big.Int) (pkey C.GO_EVP_PKEY_PTR, err error) {
+func newECKey(curve string, X, Y, D BigInt) (pkey C.GO_EVP_PKEY_PTR, err error) {
 	var nid C.int
 	if nid, err = curveNID(curve); err != nil {
 		return nil, err
@@ -135,7 +129,7 @@ func newECKey(curve string, X, Y, D *big.Int) (pkey C.GO_EVP_PKEY_PTR, err error
 	return pkey, nil
 }
 
-func NewPrivateKeyECDSA(curve string, X, Y *big.Int, D *big.Int) (*PrivateKeyECDSA, error) {
+func NewPrivateKeyECDSA(curve string, X, Y, D BigInt) (*PrivateKeyECDSA, error) {
 	pkey, err := newECKey(curve, X, Y, D)
 	if err != nil {
 		return nil, err
@@ -149,38 +143,15 @@ func NewPrivateKeyECDSA(curve string, X, Y *big.Int, D *big.Int) (*PrivateKeyECD
 	return k, nil
 }
 
-func SignECDSA(priv *PrivateKeyECDSA, hash []byte) (r, s *big.Int, err error) {
-	// We could use ECDSA_do_sign instead but would need to convert
-	// the resulting BIGNUMs to *big.Int form. If we're going to do a
-	// conversion, converting the ASN.1 form is more convenient and
-	// likely not much more expensive.
-	sig, err := SignMarshalECDSA(priv, hash)
-	if err != nil {
-		return nil, nil, err
-	}
-	var esig ecdsaSignature
-	if _, err := asn1.Unmarshal(sig, &esig); err != nil {
-		return nil, nil, err
-	}
-	return esig.R, esig.S, nil
-}
-
 func SignMarshalECDSA(priv *PrivateKeyECDSA, hash []byte) ([]byte, error) {
 	return evpSign(priv.withKey, 0, 0, 0, hash)
 }
 
-func VerifyECDSA(pub *PublicKeyECDSA, hash []byte, r, s *big.Int) bool {
-	// We could use ECDSA_do_verify instead but would need to convert
-	// r and s to BIGNUM form. If we're going to do a conversion, marshaling
-	// to ASN.1 is more convenient and likely not much more expensive.
-	sig, err := asn1.Marshal(ecdsaSignature{r, s})
-	if err != nil {
-		return false
-	}
+func VerifyECDSA(pub *PublicKeyECDSA, hash []byte, sig []byte) bool {
 	return evpVerify(pub.withKey, 0, 0, 0, sig, hash) == nil
 }
 
-func GenerateKeyECDSA(curve string) (X, Y, D *big.Int, err error) {
+func GenerateKeyECDSA(curve string) (X, Y, D BigInt, err error) {
 	pkey, err := generateEVPPKey(C.GO_EVP_PKEY_EC, 0, curve)
 	if err != nil {
 		return nil, nil, nil, err

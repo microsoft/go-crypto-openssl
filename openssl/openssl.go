@@ -13,7 +13,6 @@ package openssl
 import "C"
 import (
 	"errors"
-	"math/big"
 	"math/bits"
 	"strconv"
 	"strings"
@@ -21,6 +20,11 @@ import (
 	"syscall"
 	"unsafe"
 )
+
+// A BigInt is the raw words from a BigInt.
+// This definition allows us to avoid importing math/big.
+// Conversion between BigInt and *big.Int is in openssl/bbig.
+type BigInt []uint
 
 var (
 	providerNameFips    = C.CString("fips")
@@ -245,30 +249,29 @@ func (e fail) Error() string { return "openssl: " + string(e) + " failed" }
 
 const wordBytes = bits.UintSize / 8
 
-func wbase(b []big.Word) *C.uchar {
+func wbase(b BigInt) *C.uchar {
 	if len(b) == 0 {
 		return nil
 	}
 	return (*C.uchar)(unsafe.Pointer(&b[0]))
 }
 
-func bigToBN(x *big.Int) C.GO_BIGNUM_PTR {
-	if x == nil {
+func bigToBN(x BigInt) C.GO_BIGNUM_PTR {
+	if len(x) == 0 {
 		return nil
 	}
-	raw := x.Bits()
-	return C.go_openssl_BN_lebin2bn(wbase(raw), C.int(len(raw)*wordBytes), nil)
+	return C.go_openssl_BN_lebin2bn(wbase(x), C.int(len(x)*wordBytes), nil)
 }
 
-func bnToBig(bn C.GO_BIGNUM_PTR) *big.Int {
+func bnToBig(bn C.GO_BIGNUM_PTR) BigInt {
 	if bn == nil {
 		return nil
 	}
-	raw := make([]big.Word, C.go_openssl_BN_num_bits(bn))
-	if C.go_openssl_BN_bn2lebinpad(bn, wbase(raw), C.int(len(raw)*wordBytes)) == 0 {
+	x := make(BigInt, C.go_openssl_BN_num_bits(bn))
+	if C.go_openssl_BN_bn2lebinpad(bn, wbase(x), C.int(len(x)*wordBytes)) == 0 {
 		panic("openssl: bignum conversion failed")
 	}
-	return new(big.Int).SetBits(raw)
+	return x
 }
 
 // noescape hides a pointer from escape analysis. noescape is
