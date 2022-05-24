@@ -21,11 +21,6 @@ import (
 	"unsafe"
 )
 
-// A BigInt is the raw words from a BigInt.
-// This definition allows us to avoid importing math/big.
-// Conversion between BigInt and *big.Int is in openssl/bbig.
-type BigInt []uint
-
 var (
 	providerNameFips    = C.CString("fips")
 	providerNameDefault = C.CString("default")
