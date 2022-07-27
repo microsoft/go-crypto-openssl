@@ -91,13 +91,16 @@ go_openssl_EVP_CIPHER_CTX_seal_wrapper(const GO_EVP_CIPHER_CTX_PTR ctx,
                                        unsigned char *out,
                                        const unsigned char *nonce,
                                        const unsigned char *in, int in_len,
-                                       const unsigned char *add, int add_len)
+                                       const unsigned char *aad, int aad_len)
 {
+    if (in_len == 0) in = "";
+    if (aad_len == 0) aad = "";
+
     if (go_openssl_EVP_CipherInit_ex(ctx, NULL, NULL, NULL, nonce, GO_AES_ENCRYPT) != 1)
         return 0;
 
     int discard_len, out_len;
-    if (go_openssl_EVP_EncryptUpdate(ctx, NULL, &discard_len, add, add_len) != 1
+    if (go_openssl_EVP_EncryptUpdate(ctx, NULL, &discard_len, aad, aad_len) != 1
         || go_openssl_EVP_EncryptUpdate(ctx, out, &out_len, in, in_len) != 1
         || go_openssl_EVP_EncryptFinal_ex(ctx, out + out_len, &discard_len) != 1)
     {
@@ -115,14 +118,17 @@ go_openssl_EVP_CIPHER_CTX_open_wrapper(const GO_EVP_CIPHER_CTX_PTR ctx,
                                        unsigned char *out,
                                        const unsigned char *nonce,
                                        const unsigned char *in, int in_len,
-                                       const unsigned char *add, int add_len,
+                                       const unsigned char *aad, int aad_len,
                                        const unsigned char *tag)
 {
+    if (in_len == 0) in = "";
+    if (aad_len == 0) aad = "";
+
     if (go_openssl_EVP_CipherInit_ex(ctx, NULL, NULL, NULL, nonce, GO_AES_DECRYPT) != 1)
         return 0;
 
     int discard_len, out_len;
-    if (go_openssl_EVP_DecryptUpdate(ctx, NULL, &discard_len, add, add_len) != 1
+    if (go_openssl_EVP_DecryptUpdate(ctx, NULL, &discard_len, aad, aad_len) != 1
         || go_openssl_EVP_DecryptUpdate(ctx, out, &out_len, in, in_len) != 1)
     {
         return 0;
