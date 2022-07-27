@@ -61,6 +61,28 @@ func TestSealAndOpen(t *testing.T) {
 	}
 }
 
+func TestSealAndOpen_Empty(t *testing.T) {
+	key := []byte("D249BF6DEC97B1EBD69BC4D6B3A3C49D")
+	ci, err := NewAESCipher(key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := ci.(*aesCipher)
+	gcm, err := c.NewGCM(gcmStandardNonceSize, gcmTagSize)
+	if err != nil {
+		t.Fatal(err)
+	}
+	nonce := []byte{0x91, 0xc7, 0xa7, 0x54, 0x52, 0xef, 0x10, 0xdb, 0x91, 0xa8, 0x6c, 0xf9}
+	sealed := gcm.Seal(nil, nonce, []byte{}, []byte{})
+	decrypted, err := gcm.Open(nil, nonce, sealed, []byte{})
+	if err != nil {
+		t.Error(err)
+	}
+	if !bytes.Equal(decrypted, plainText) {
+		t.Errorf("unexpected decrypted result\ngot: %#v\nexp: %#v", decrypted, plainText)
+	}
+}
+
 func TestSealAndOpenTLS(t *testing.T) {
 	key := []byte("D249BF6DEC97B1EBD69BC4D6B3A3C49D")
 	ci, err := NewAESCipher(key)
