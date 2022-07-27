@@ -78,8 +78,8 @@ func TestSealAndOpen_Empty(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if !bytes.Equal(decrypted, plainText) {
-		t.Errorf("unexpected decrypted result\ngot: %#v\nexp: %#v", decrypted, plainText)
+	if !bytes.Equal(decrypted, []byte{}) {
+		t.Errorf("unexpected decrypted result\ngot: %#v\nexp: %#v", decrypted, []byte{})
 	}
 }
 
