@@ -202,7 +202,7 @@ func SignRSAPSS(priv *PrivateKeyRSA, h crypto.Hash, hashed []byte, saltLen int) 
 func VerifyRSAPSS(pub *PublicKeyRSA, h crypto.Hash, hashed, sig []byte, saltLen int) error {
 	slen, err := saltLength(saltLen, false)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	return evpVerify(pub.withKey, C.GO_RSA_PKCS1_PSS_PADDING, slen, h, sig, hashed)
 }
