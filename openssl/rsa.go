@@ -181,8 +181,14 @@ func saltLength(golen int, sign bool) (C.int, error) {
 	// but the values don't fully match for rsa.PSSSaltLengthAuto (0).
 	if golen == 0 {
 		if sign {
-			// OpenSSL uses -3 to mean maximal size when signing where Go use 0.
-			clen = C.GO_RSA_PSS_SALTLEN_MAX
+			if vMajor == 1 {
+				// OpenSSL 1.x uses -2 to mean maximal size when signing where Go use 0.
+				clen = C.GO_RSA_PSS_SALTLEN_MAX_SIGN
+			} else {
+				// OpenSSL 3.x deprecated RSA_PSS_SALTLEN_MAX_SIGN
+				// and uses -3 to mean maximal size when signing where Go use 0.
+				clen = C.GO_RSA_PSS_SALTLEN_MAX
+			}
 		} else {
 			// OpenSSL uses -2 to mean auto-detect size when verifying where Go use 0.
 			clen = C.GO_RSA_PSS_SALTLEN_AUTO
