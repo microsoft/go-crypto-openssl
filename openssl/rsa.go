@@ -182,14 +182,14 @@ func saltLength(saltLen int, sign bool) (C.int, error) {
 		if sign {
 			if vMajor == 1 {
 				// OpenSSL 1.x uses -2 to mean maximal size when signing where Go crypto uses 0.
-				return C.GO_RSA_PSS_SALTLEN_MAX_SIGN
+				return C.GO_RSA_PSS_SALTLEN_MAX_SIGN, nil
 			}
 			// OpenSSL 3.x deprecated RSA_PSS_SALTLEN_MAX_SIGN
 			// and uses -3 to mean maximal size when signing where Go crypto uses 0.
-			return C.GO_RSA_PSS_SALTLEN_MAX
+			return C.GO_RSA_PSS_SALTLEN_MAX, nil
 		}
 		// OpenSSL uses -2 to mean auto-detect size when verifying where Go crypto uses 0.
-		return C.GO_RSA_PSS_SALTLEN_AUTO
+		return C.GO_RSA_PSS_SALTLEN_AUTO, nil
 	}
 	return C.int(saltLen), nil
 }
