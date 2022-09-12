@@ -177,20 +177,20 @@ func saltLength(golen int, sign bool) (C.int, error) {
 		return 0, errors.New("crypto/rsa: PSSOptions.SaltLength cannot be negative")
 	}
 	clen := C.int(golen)
-	// OpenSSL uses sentinel salt length values like Go do,
+	// OpenSSL uses sentinel salt length values like Go crypto does,
 	// but the values don't fully match for rsa.PSSSaltLengthAuto (0).
 	if golen == 0 {
 		if sign {
 			if vMajor == 1 {
-				// OpenSSL 1.x uses -2 to mean maximal size when signing where Go use 0.
+				// OpenSSL 1.x uses -2 to mean maximal size when signing where Go crypto uses 0.
 				clen = C.GO_RSA_PSS_SALTLEN_MAX_SIGN
 			} else {
 				// OpenSSL 3.x deprecated RSA_PSS_SALTLEN_MAX_SIGN
-				// and uses -3 to mean maximal size when signing where Go use 0.
+				// and uses -3 to mean maximal size when signing where Go crypto uses 0.
 				clen = C.GO_RSA_PSS_SALTLEN_MAX
 			}
 		} else {
-			// OpenSSL uses -2 to mean auto-detect size when verifying where Go use 0.
+			// OpenSSL uses -2 to mean auto-detect size when verifying where Go crypto uses 0.
 			clen = C.GO_RSA_PSS_SALTLEN_AUTO
 		}
 	}
