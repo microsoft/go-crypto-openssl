@@ -170,47 +170,44 @@ func EncryptRSANoPadding(pub *PublicKeyRSA, msg []byte) ([]byte, error) {
 	return evpEncrypt(pub.withKey, C.GO_RSA_NO_PADDING, nil, nil, msg)
 }
 
-func saltLength(golen int, sign bool) (C.int, error) {
+func saltLength(saltLen int, sign bool) (C.int, error) {
 	// A salt length of -2 is valid in OpenSSL, but not in crypto/rsa, so reject
 	// it, and lengths < -2, before we convert to the OpenSSL sentinel values.
-	if golen <= -2 {
+	if saltLen <= -2 {
 		return 0, errors.New("crypto/rsa: PSSOptions.SaltLength cannot be negative")
 	}
-	clen := C.int(golen)
 	// OpenSSL uses sentinel salt length values like Go crypto does,
 	// but the values don't fully match for rsa.PSSSaltLengthAuto (0).
-	if golen == 0 {
+	if saltLen == 0 {
 		if sign {
 			if vMajor == 1 {
 				// OpenSSL 1.x uses -2 to mean maximal size when signing where Go crypto uses 0.
-				clen = C.GO_RSA_PSS_SALTLEN_MAX_SIGN
-			} else {
-				// OpenSSL 3.x deprecated RSA_PSS_SALTLEN_MAX_SIGN
-				// and uses -3 to mean maximal size when signing where Go crypto uses 0.
-				clen = C.GO_RSA_PSS_SALTLEN_MAX
+				return C.GO_RSA_PSS_SALTLEN_MAX_SIGN
 			}
-		} else {
-			// OpenSSL uses -2 to mean auto-detect size when verifying where Go crypto uses 0.
-			clen = C.GO_RSA_PSS_SALTLEN_AUTO
+			// OpenSSL 3.x deprecated RSA_PSS_SALTLEN_MAX_SIGN
+			// and uses -3 to mean maximal size when signing where Go crypto uses 0.
+			return C.GO_RSA_PSS_SALTLEN_MAX
 		}
+		// OpenSSL uses -2 to mean auto-detect size when verifying where Go crypto uses 0.
+		return C.GO_RSA_PSS_SALTLEN_AUTO
 	}
-	return clen, nil
+	return C.int(saltLen), nil
 }
 
 func SignRSAPSS(priv *PrivateKeyRSA, h crypto.Hash, hashed []byte, saltLen int) ([]byte, error) {
-	slen, err := saltLength(saltLen, true)
+	cSaltLen, err := saltLength(saltLen, true)
 	if err != nil {
 		return nil, err
 	}
-	return evpSign(priv.withKey, C.GO_RSA_PKCS1_PSS_PADDING, slen, h, hashed)
+	return evpSign(priv.withKey, C.GO_RSA_PKCS1_PSS_PADDING, cSaltLen, h, hashed)
 }
 
 func VerifyRSAPSS(pub *PublicKeyRSA, h crypto.Hash, hashed, sig []byte, saltLen int) error {
-	slen, err := saltLength(saltLen, false)
+	cSaltLen, err := saltLength(saltLen, false)
 	if err != nil {
 		return err
 	}
-	return evpVerify(pub.withKey, C.GO_RSA_PKCS1_PSS_PADDING, slen, h, sig, hashed)
+	return evpVerify(pub.withKey, C.GO_RSA_PKCS1_PSS_PADDING, cSaltLen, h, sig, hashed)
 }
 
 func SignRSAPKCS1v15(priv *PrivateKeyRSA, h crypto.Hash, hashed []byte) ([]byte, error) {
