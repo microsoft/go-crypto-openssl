@@ -45,6 +45,7 @@ func NewHMAC(h func() hash.Hash, key []byte) hash.Hash {
 		key:       hkey,
 		ctx:       hmacCtxNew(),
 	}
+	runtime.SetFinalizer(hmac, (*opensslHMAC).finalize)
 	hmac.Reset()
 	return hmac
 }
