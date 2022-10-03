@@ -170,7 +170,7 @@ func hmac1CtxFree(ctx C.GO_HMAC_CTX_PTR) {
 type hmac3 struct {
 	md        C.GO_EVP_MAC_PTR
 	ctx       C.GO_EVP_MAC_CTX_PTR
-	params    [2]C.GO_OSSL_PARAM
+	params    [2]C.OSSL_PARAM
 	size      int
 	blockSize int
 	key       []byte
@@ -184,7 +184,7 @@ func newHMAC3(key []byte, h hash.Hash, md C.GO_EVP_MD_PTR) *hmac3 {
 		panic("openssl: EVP_MAC_CTX_new failed")
 	}
 	digest := C.go_openssl_EVP_MD_get0_name(md)
-	params := [2]C.GO_OSSL_PARAM{
+	params := [2]C.OSSL_PARAM{
 		C.go_openssl_OSSL_PARAM_construct_utf8_string(paramDigest, digest, 0),
 		C.go_openssl_OSSL_PARAM_construct_end(),
 	}
