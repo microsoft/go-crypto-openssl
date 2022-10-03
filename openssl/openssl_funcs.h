@@ -83,6 +83,18 @@ typedef void* GO_EC_KEY_PTR;
 typedef void* GO_EC_POINT_PTR;
 typedef void* GO_EC_GROUP_PTR;
 typedef void* GO_RSA_PTR;
+typedef void* GO_EVP_MAC_PTR;
+typedef void* GO_EVP_MAC_CTX_PTR;
+
+// GO_OSSL_PARAMS is copied from
+// https://github.com/openssl/openssl/blob/fcae2ae4f675def607d338b7945b9af1dd9bb746/include/openssl/core.h#L82-L88.
+typedef struct {
+    const char *key;
+    unsigned int data_type;
+    void *data;
+    size_t data_size;
+    size_t return_size;
+} GO_OSSL_PARAM;
 
 // List of all functions from the libcrypto that are used in this package.
 // Forgetting to add a function here results in build failure with message reporting the function
@@ -158,6 +170,7 @@ DEFINEFUNC_RENAMED_1_1(void, EVP_MD_CTX_free, EVP_MD_CTX_destroy, (GO_EVP_MD_CTX
 DEFINEFUNC(int, EVP_MD_CTX_copy_ex, (GO_EVP_MD_CTX_PTR out, const GO_EVP_MD_CTX_PTR in), (out, in)) \
 DEFINEFUNC(int, EVP_MD_CTX_copy, (GO_EVP_MD_CTX_PTR out, const GO_EVP_MD_CTX_PTR in), (out, in)) \
 DEFINEFUNC_RENAMED_1_1(int, EVP_MD_CTX_reset, EVP_MD_CTX_cleanup, (GO_EVP_MD_CTX_PTR ctx), (ctx)) \
+DEFINEFUNC_3_0(const char *, EVP_MD_get0_name, (const GO_EVP_MD_PTR md), (md)) \
 DEFINEFUNC(const GO_EVP_MD_PTR, EVP_md5, (void), ()) \
 DEFINEFUNC(const GO_EVP_MD_PTR, EVP_sha1, (void), ()) \
 DEFINEFUNC(const GO_EVP_MD_PTR, EVP_sha224, (void), ()) \
@@ -249,4 +262,14 @@ DEFINEFUNC(int, EVP_PKEY_decrypt_init, (GO_EVP_PKEY_CTX_PTR arg0), (arg0)) \
 DEFINEFUNC(int, EVP_PKEY_encrypt_init, (GO_EVP_PKEY_CTX_PTR arg0), (arg0)) \
 DEFINEFUNC(int, EVP_PKEY_sign_init, (GO_EVP_PKEY_CTX_PTR arg0), (arg0)) \
 DEFINEFUNC(int, EVP_PKEY_verify_init, (GO_EVP_PKEY_CTX_PTR arg0), (arg0)) \
-DEFINEFUNC(int, EVP_PKEY_sign, (GO_EVP_PKEY_CTX_PTR arg0, unsigned char *arg1, size_t *arg2, const unsigned char *arg3, size_t arg4), (arg0, arg1, arg2, arg3, arg4))
+DEFINEFUNC(int, EVP_PKEY_sign, (GO_EVP_PKEY_CTX_PTR arg0, unsigned char *arg1, size_t *arg2, const unsigned char *arg3, size_t arg4), (arg0, arg1, arg2, arg3, arg4)) \
+DEFINEFUNC_3_0(GO_EVP_MAC_PTR, EVP_MAC_fetch, (GO_OSSL_LIB_CTX_PTR ctx, const char *algorithm, const char *properties), (ctx, algorithm, properties)) \
+DEFINEFUNC_3_0(GO_EVP_MAC_CTX_PTR, EVP_MAC_CTX_new, (GO_EVP_MAC_PTR arg0), (arg0)) \
+DEFINEFUNC_3_0(void, EVP_MAC_CTX_free, (GO_EVP_MAC_CTX_PTR arg0), (arg0)) \
+DEFINEFUNC_3_0(GO_EVP_MAC_CTX_PTR, EVP_MAC_CTX_dup, (GO_EVP_MAC_CTX_PTR arg0), (arg0)) \
+DEFINEFUNC_3_0(int, EVP_MAC_init, (GO_EVP_MAC_CTX_PTR ctx, const unsigned char *key, size_t keylen, const GO_OSSL_PARAM params[]), (ctx, key, keylen, params)) \
+DEFINEFUNC_3_0(int, EVP_MAC_update, (GO_EVP_MAC_CTX_PTR ctx, const unsigned char *data, size_t datalen), (ctx, data, datalen)) \
+DEFINEFUNC_3_0(int, EVP_MAC_final, (GO_EVP_MAC_CTX_PTR ctx, unsigned char *out, size_t *outl, size_t outsize), (ctx, out, outl, outsize)) \
+DEFINEFUNC_3_0(GO_OSSL_PARAM, OSSL_PARAM_construct_utf8_string, (const char *key, char *buf, size_t bsize), (key, buf, bsize)) \
+DEFINEFUNC_3_0(GO_OSSL_PARAM, OSSL_PARAM_construct_end, (void), ()) \
+
