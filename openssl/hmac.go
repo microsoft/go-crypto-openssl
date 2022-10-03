@@ -45,16 +45,7 @@ func NewHMAC(h func() hash.Hash, key []byte) hash.Hash {
 	}
 	switch vMajor {
 	case 1:
-		hmac := &hmac1{
-			md:        md,
-			size:      ch.Size(),
-			blockSize: ch.BlockSize(),
-			key:       hkey,
-			ctx:       hmac1CtxNew(),
-		}
-		runtime.SetFinalizer(hmac, (*hmac1).finalize)
-		hmac.Reset()
-		return hmac
+		return newHMAC1(hkey, ch, md)
 	case 3:
 		return newHMAC3(hkey, ch, md)
 	default:
@@ -62,6 +53,8 @@ func NewHMAC(h func() hash.Hash, key []byte) hash.Hash {
 	}
 }
 
+// hmac1 implements hash.Hash
+// using functions available in OpenSSL 1.
 type hmac1 struct {
 	md        C.GO_EVP_MD_PTR
 	ctx       C.GO_HMAC_CTX_PTR
@@ -69,6 +62,19 @@ type hmac1 struct {
 	blockSize int
 	key       []byte
 	sum       []byte
+}
+
+func newHMAC1(key []byte, h hash.Hash, md C.GO_EVP_MD_PTR) *hmac1 {
+	hmac := &hmac1{
+		md:        md,
+		size:      h.Size(),
+		blockSize: h.BlockSize(),
+		key:       key,
+		ctx:       hmac1CtxNew(),
+	}
+	runtime.SetFinalizer(hmac, (*hmac1).finalize)
+	hmac.Reset()
+	return hmac
 }
 
 func (h *hmac1) Reset() {
@@ -159,6 +165,8 @@ func hmac1CtxFree(ctx C.GO_HMAC_CTX_PTR) {
 	C.go_openssl_HMAC_CTX_free(ctx)
 }
 
+// hmac3 implements hash.Hash
+// using functions available in OpenSSL 3.
 type hmac3 struct {
 	md        C.GO_EVP_MAC_PTR
 	ctx       C.GO_EVP_MAC_CTX_PTR
