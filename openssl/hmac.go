@@ -188,9 +188,6 @@ func newHMAC3(key []byte, h hash.Hash, md C.GO_EVP_MD_PTR) *hmac3 {
 		C.go_openssl_OSSL_PARAM_construct_utf8_string(paramDigest, digest, 0),
 		C.go_openssl_OSSL_PARAM_construct_end(),
 	}
-	if C.go_openssl_EVP_MAC_init(ctx, base(key), C.size_t(len(key)), &params[0]) == 0 {
-		panic(newOpenSSLError("EVP_MAC_init failed"))
-	}
 	hmac := &hmac3{
 		md:        mac,
 		ctx:       ctx,
@@ -200,11 +197,12 @@ func newHMAC3(key []byte, h hash.Hash, md C.GO_EVP_MD_PTR) *hmac3 {
 		key:       key,
 	}
 	runtime.SetFinalizer(hmac, (*hmac3).finalize)
+	hmac.Reset()
 	return hmac
 }
 
 func (h *hmac3) Reset() {
-	if C.go_openssl_EVP_MAC_init(h.ctx, base(h.key), C.size_t(len(h.key)), nil) == 0 {
+	if C.go_openssl_EVP_MAC_init(h.ctx, base(h.key), C.size_t(len(h.key)), &h.params[0]) == 0 {
 		panic(newOpenSSLError("EVP_MAC_init failed"))
 	}
 	runtime.KeepAlive(h) // Next line will keep h alive too; just making doubly sure.
