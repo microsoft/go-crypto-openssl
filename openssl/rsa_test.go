@@ -55,6 +55,34 @@ func TestEncryptDecryptOAEP(t *testing.T) {
 	if !bytes.Equal(dec, msg) {
 		t.Errorf("got:%x want:%x", dec, msg)
 	}
+	sha1 := openssl.NewSHA1()
+	_, err = openssl.DecryptRSAOAEP(sha1, priv, enc, label)
+	if err == nil {
+		t.Error("decrypt failure expected due to hash mismatch")
+	}
+}
+
+func TestEncryptDecryptOAEP_MJF1(t *testing.T) {
+	sha1 := openssl.NewSHA1()
+	sha256 := openssl.NewSHA256()
+	msg := []byte("hi!")
+	label := []byte("ho!")
+	priv, pub := newRSAKey(t, 2048)
+	enc, err := openssl.EncryptRSAOAEP_MGF1(sha256, sha1, pub, msg, label)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dec, err := openssl.DecryptRSAOAEP_MGF1(sha256, sha1, priv, enc, label)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(dec, msg) {
+		t.Errorf("got:%x want:%x", dec, msg)
+	}
+	_, err = openssl.DecryptRSAOAEP_MGF1(sha256, sha256, priv, enc, label)
+	if err == nil {
+		t.Error("decrypt failure expected due to mgf1 hash mismatch")
+	}
 }
 
 func TestEncryptDecryptOAEP_WrongLabel(t *testing.T) {
