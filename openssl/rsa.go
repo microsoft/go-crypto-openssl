@@ -134,11 +134,11 @@ func EncryptRSAOAEP(h hash.Hash, pub *PublicKeyRSA, msg, label []byte) ([]byte, 
 	return evpEncrypt(pub.withKey, C.GO_RSA_PKCS1_OAEP_PADDING, h, nil, label, msg)
 }
 
-func DecryptRSAOAEP_MGF1(h, mgfHash hash.Hash, priv *PrivateKeyRSA, ciphertext, label []byte) ([]byte, error) {
+func DecryptRSAOAEPWithMGF1Hash(h, mgfHash hash.Hash, priv *PrivateKeyRSA, ciphertext, label []byte) ([]byte, error) {
 	return evpDecrypt(priv.withKey, C.GO_RSA_PKCS1_OAEP_PADDING, h, mgfHash, label, ciphertext)
 }
 
-func EncryptRSAOAEP_MGF1(h, mgfHash hash.Hash, pub *PublicKeyRSA, msg, label []byte) ([]byte, error) {
+func EncryptRSAOAEPWithMGF1Hash(h, mgfHash hash.Hash, pub *PublicKeyRSA, msg, label []byte) ([]byte, error) {
 	return evpEncrypt(pub.withKey, C.GO_RSA_PKCS1_OAEP_PADDING, h, mgfHash, label, msg)
 }
 
