@@ -83,7 +83,6 @@ func NewPrivateKeyECDH(curve string, bytes []byte) (*PrivateKeyECDH, error) {
 		return nil, newOpenSSLError("EC_KEY_set_private_key")
 	}
 	k := &PrivateKeyECDH{curve, key}
-	// Note: Same as in NewPublicKeyECDH regarding finalizer and KeepAlive.
 	runtime.SetFinalizer(k, (*PrivateKeyECDH).finalize)
 	return k, nil
 }
@@ -208,7 +207,6 @@ func GenerateKeyECDH(curve string) (*PrivateKeyECDH, []byte, error) {
 	}
 
 	k := &PrivateKeyECDH{curve, key}
-	// Note: Same as in NewPublicKeyECDH regarding finalizer and KeepAlive.
 	runtime.SetFinalizer(k, (*PrivateKeyECDH).finalize)
 	return k, bytes, nil
 }

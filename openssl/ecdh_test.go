@@ -15,7 +15,7 @@ import (
 )
 
 // The following tests has been copied from
-// https://github.com/golang/go/blob/master/src/crypto/ecdh/ecdh_test.go.
+// https://github.com/golang/go/blob/bb0d8297d76cb578baad8fa1485565d9acf44cc5/src/crypto/ecdh/ecdh_test.go.
 
 func TestECDH(t *testing.T) {
 	for _, tt := range []string{"P-256", "P-384", "P-521"} {
