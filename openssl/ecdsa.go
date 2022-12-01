@@ -102,7 +102,7 @@ func newECKey(curve string, X, Y, D BigInt) (pkey C.GO_EVP_PKEY_PTR, err error) 
 	bx = bigToBN(X)
 	by = bigToBN(Y)
 	if bx == nil || by == nil {
-		return nil, newOpenSSLError("BN_bin2bn failed")
+		return nil, newOpenSSLError("BN_lebin2bn failed")
 	}
 	if key = C.go_openssl_EC_KEY_new_by_curve_name(nid); key == nil {
 		return nil, newOpenSSLError("EC_KEY_new_by_curve_name failed")
@@ -113,7 +113,7 @@ func newECKey(curve string, X, Y, D BigInt) (pkey C.GO_EVP_PKEY_PTR, err error) 
 	if D != nil {
 		bd := bigToBN(D)
 		if bd == nil {
-			return nil, newOpenSSLError("BN_bin2bn failed")
+			return nil, newOpenSSLError("BN_lebin2bn failed")
 		}
 		defer C.go_openssl_BN_free(bd)
 		if C.go_openssl_EC_KEY_set_private_key(key, bd) != 1 {
