@@ -11,7 +11,6 @@ import "C"
 import (
 	"errors"
 	"runtime"
-	"unsafe"
 )
 
 type PrivateKeyECDSA struct {
@@ -73,13 +72,12 @@ func NewPublicKeyECDSA(curve string, X, Y BigInt) (*PublicKeyECDSA, error) {
 	return k, nil
 }
 
-func newECKey(curve string, X, Y, D BigInt) (pkey C.GO_EVP_PKEY_PTR, err error) {
-	var nid C.int
-	if nid, err = curveNID(curve); err != nil {
+func newECKey(curve string, X, Y, D BigInt) (C.GO_EVP_PKEY_PTR, error) {
+	nid, err := curveNID(curve)
+	if err != nil {
 		return nil, err
 	}
-	var bx, by C.GO_BIGNUM_PTR
-	var key C.GO_EC_KEY_PTR
+	var bx, by, bd C.GO_BIGNUM_PTR
 	defer func() {
 		if bx != nil {
 			C.go_openssl_BN_free(bx)
@@ -87,44 +85,32 @@ func newECKey(curve string, X, Y, D BigInt) (pkey C.GO_EVP_PKEY_PTR, err error) 
 		if by != nil {
 			C.go_openssl_BN_free(by)
 		}
-		if err != nil {
-			if key != nil {
-				C.go_openssl_EC_KEY_free(key)
-			}
-			if pkey != nil {
-				C.go_openssl_EVP_PKEY_free(pkey)
-				// pkey is a named return, so in case of error
-				// it have to be cleared before returing.
-				pkey = nil
-			}
+		if bd != nil {
+			C.go_openssl_BN_free(bd)
 		}
 	}()
 	bx = bigToBN(X)
 	by = bigToBN(Y)
-	if bx == nil || by == nil {
+	bd = bigToBN(D)
+	if bx == nil || by == nil || (D != nil && bd == nil) {
 		return nil, newOpenSSLError("BN_lebin2bn failed")
 	}
-	if key = C.go_openssl_EC_KEY_new_by_curve_name(nid); key == nil {
+	key := C.go_openssl_EC_KEY_new_by_curve_name(nid)
+	if key == nil {
 		return nil, newOpenSSLError("EC_KEY_new_by_curve_name failed")
 	}
 	if C.go_openssl_EC_KEY_set_public_key_affine_coordinates(key, bx, by) != 1 {
+		C.go_openssl_EC_KEY_free(key)
 		return nil, newOpenSSLError("EC_KEY_set_public_key_affine_coordinates failed")
 	}
-	if D != nil {
-		bd := bigToBN(D)
-		if bd == nil {
-			return nil, newOpenSSLError("BN_lebin2bn failed")
-		}
-		defer C.go_openssl_BN_free(bd)
-		if C.go_openssl_EC_KEY_set_private_key(key, bd) != 1 {
-			return nil, newOpenSSLError("EC_KEY_set_private_key failed")
-		}
+	if D != nil && C.go_openssl_EC_KEY_set_private_key(key, bd) != 1 {
+		C.go_openssl_EC_KEY_free(key)
+		return nil, newOpenSSLError("EC_KEY_set_private_key failed")
 	}
-	if pkey = C.go_openssl_EVP_PKEY_new(); pkey == nil {
-		return nil, newOpenSSLError("EVP_PKEY_new failed")
-	}
-	if C.go_openssl_EVP_PKEY_assign(pkey, C.GO_EVP_PKEY_EC, (unsafe.Pointer)(key)) != 1 {
-		return nil, newOpenSSLError("EVP_PKEY_assign failed")
+	pkey, err := newEVPPKEY(key)
+	if err != nil {
+		C.go_openssl_EC_KEY_free(key)
+		return nil, err
 	}
 	return pkey, nil
 }
