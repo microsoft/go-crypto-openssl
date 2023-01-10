@@ -83,15 +83,15 @@ func NewPrivateKeyECDH(curve string, bytes []byte) (*PrivateKeyECDH, error) {
 	if err != nil {
 		return nil, err
 	}
-	key := C.go_openssl_EC_KEY_new_by_curve_name(nid)
-	if key == nil {
-		return nil, newOpenSSLError("EC_KEY_new_by_curve_name")
-	}
 	b := bytesToBN(bytes)
 	if b == nil {
 		return nil, newOpenSSLError("BN_bin2bn failed")
 	}
 	defer C.go_openssl_BN_free(b)
+	key := C.go_openssl_EC_KEY_new_by_curve_name(nid)
+	if key == nil {
+		return nil, newOpenSSLError("EC_KEY_new_by_curve_name")
+	}
 	if C.go_openssl_EC_KEY_set_private_key(key, b) != 1 {
 		C.go_openssl_EC_KEY_free(key)
 		return nil, newOpenSSLError("EC_KEY_set_private_key")
@@ -131,14 +131,15 @@ func (k *PrivateKeyECDH) PublicKey() (*PublicKeyECDH, error) {
 		defer C.go_openssl_EC_POINT_free(pt)
 		kbig := C.go_openssl_EC_KEY_get0_private_key(key)
 		if C.go_openssl_EC_POINT_mul(group, pt, kbig, nil, nil, nil) == 0 {
-			C.go_openssl_EC_POINT_free(pt)
 			return nil, newOpenSSLError("EC_POINT_mul")
 		}
 	}
-	bits := C.go_openssl_EVP_PKEY_get_bits(k._pkey)
-	// bytes must hold one byte for the compression prefix and the X/Y coordinates.
-	bytes := make([]byte, 1+2*((bits+7)/8))
-	n := C.go_openssl_EC_POINT_point2oct(group, pt, C.GO_POINT_CONVERSION_UNCOMPRESSED, base(bytes), C.size_t(len(bytes)), nil)
+	n := C.go_openssl_EC_POINT_point2oct(group, pt, C.GO_POINT_CONVERSION_UNCOMPRESSED, nil, 0, nil)
+	if n == 0 {
+		return nil, newOpenSSLError("EC_POINT_point2oct")
+	}
+	bytes := make([]byte, n)
+	n = C.go_openssl_EC_POINT_point2oct(group, pt, C.GO_POINT_CONVERSION_UNCOMPRESSED, base(bytes), C.size_t(len(bytes)), nil)
 	if int(n) != len(bytes) {
 		return nil, newOpenSSLError("EC_POINT_point2oct")
 	}
@@ -178,6 +179,12 @@ func GenerateKeyECDH(curve string) (*PrivateKeyECDH, []byte, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	var k *PrivateKeyECDH
+	defer func() {
+		if k == nil {
+			defer C.go_openssl_EVP_PKEY_free(pkey)
+		}
+	}()
 	key := C.go_openssl_EVP_PKEY_get1_EC_KEY(pkey)
 	if key == nil {
 		return nil, nil, newOpenSSLError("EVP_PKEY_get1_EC_KEY")
@@ -192,7 +199,7 @@ func GenerateKeyECDH(curve string) (*PrivateKeyECDH, []byte, error) {
 	if C.go_openssl_BN_bn2binpad(b, base(out), C.int(len(out))) == 0 {
 		return nil, nil, newOpenSSLError("BN_bn2binpad")
 	}
-	k := &PrivateKeyECDH{pkey}
+	k = &PrivateKeyECDH{pkey}
 	runtime.SetFinalizer(k, (*PrivateKeyECDH).finalize)
 	return k, out, nil
 }
