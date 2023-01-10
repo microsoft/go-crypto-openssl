@@ -42,36 +42,37 @@ func NewPublicKeyECDH(curve string, bytes []byte) (*PublicKeyECDH, error) {
 	if key == nil {
 		return nil, newOpenSSLError("EC_KEY_new_by_curve_name")
 	}
+	var k *PublicKeyECDH
+	defer func() {
+		if k == nil {
+			C.go_openssl_EC_KEY_free(key)
+		}
+	}()
 	if vMajor == 1 && vMinor == 0 {
 		// EC_KEY_oct2key does not exist on OpenSSL 1.0.2,
 		// we have to simulate it.
 		group := C.go_openssl_EC_KEY_get0_group(key)
 		pt := C.go_openssl_EC_POINT_new(group)
 		if pt == nil {
-			err = newOpenSSLError("EC_POINT_new")
+			return nil, newOpenSSLError("EC_POINT_new")
 		}
 		defer C.go_openssl_EC_POINT_free(pt)
 		if C.go_openssl_EC_POINT_oct2point(group, pt, base(bytes), C.size_t(len(bytes)), nil) != 1 {
-			err = errors.New("point not on curve")
+			return nil, errors.New("point not on curve")
 		}
 		if C.go_openssl_EC_KEY_set_public_key(key, pt) != 1 {
-			err = newOpenSSLError("EC_KEY_set_public_key")
+			return nil, newOpenSSLError("EC_KEY_set_public_key")
 		}
 	} else {
 		if C.go_openssl_EC_KEY_oct2key(key, base(bytes), C.size_t(len(bytes)), nil) != 1 {
-			err = newOpenSSLError("EC_KEY_oct2key")
+			return nil, newOpenSSLError("EC_KEY_oct2key")
 		}
-	}
-	if err != nil {
-		C.go_openssl_EC_KEY_free(key)
-		return nil, err
 	}
 	pkey, err := newEVPPKEY(key)
 	if err != nil {
-		C.go_openssl_EC_KEY_free(key)
 		return nil, err
 	}
-	k := &PublicKeyECDH{pkey, append([]byte(nil), bytes...)}
+	k = &PublicKeyECDH{pkey, append([]byte(nil), bytes...)}
 	runtime.SetFinalizer(k, (*PublicKeyECDH).finalize)
 	return k, nil
 }
