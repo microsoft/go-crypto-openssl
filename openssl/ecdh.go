@@ -122,9 +122,10 @@ func (k *PrivateKeyECDH) PublicKey() (*PublicKeyECDH, error) {
 	if pt == nil {
 		// The public key will be nil if k has been generated using
 		// NewPrivateKeyECDH instead of GenerateKeyECDH.
+		//
 		// OpenSSL does not expose any method to generate the public
-		// key from the private key, so we have to calculate it here.
-		// Notice that this path bypasses OpenSSL FIPS module.
+		// key from the private key [1], so we have to calculate it here
+		// https://github.com/openssl/openssl/issues/18437#issuecomment-1144717206
 		pt = C.go_openssl_EC_POINT_new(group)
 		if pt == nil {
 			return nil, newOpenSSLError("EC_POINT_new")
