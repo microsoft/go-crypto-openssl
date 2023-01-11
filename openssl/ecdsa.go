@@ -99,17 +99,20 @@ func newECKey(curve string, X, Y, D BigInt) (C.GO_EVP_PKEY_PTR, error) {
 	if key == nil {
 		return nil, newOpenSSLError("EC_KEY_new_by_curve_name failed")
 	}
+	var pkey C.GO_EVP_PKEY_PTR
+	defer func() {
+		if pkey == nil {
+			defer C.go_openssl_EC_KEY_free(key)
+		}
+	}()
 	if C.go_openssl_EC_KEY_set_public_key_affine_coordinates(key, bx, by) != 1 {
-		C.go_openssl_EC_KEY_free(key)
 		return nil, newOpenSSLError("EC_KEY_set_public_key_affine_coordinates failed")
 	}
 	if D != nil && C.go_openssl_EC_KEY_set_private_key(key, bd) != 1 {
-		C.go_openssl_EC_KEY_free(key)
 		return nil, newOpenSSLError("EC_KEY_set_private_key failed")
 	}
-	pkey, err := newEVPPKEY(key)
+	pkey, err = newEVPPKEY(key)
 	if err != nil {
-		C.go_openssl_EC_KEY_free(key)
 		return nil, err
 	}
 	return pkey, nil
