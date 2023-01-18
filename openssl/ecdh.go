@@ -184,7 +184,7 @@ func GenerateKeyECDH(curve string) (*PrivateKeyECDH, []byte, error) {
 	var k *PrivateKeyECDH
 	defer func() {
 		if k == nil {
-			defer C.go_openssl_EVP_PKEY_free(pkey)
+			C.go_openssl_EVP_PKEY_free(pkey)
 		}
 	}()
 	key := C.go_openssl_EVP_PKEY_get1_EC_KEY(pkey)
