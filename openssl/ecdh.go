@@ -93,13 +93,17 @@ func NewPrivateKeyECDH(curve string, bytes []byte) (*PrivateKeyECDH, error) {
 	if key == nil {
 		return nil, newOpenSSLError("EC_KEY_new_by_curve_name")
 	}
+	var pkey C.GO_EVP_PKEY_PTR
+	defer func() {
+		if pkey == nil {
+			C.go_openssl_EC_KEY_free(key)
+		}
+	}()
 	if C.go_openssl_EC_KEY_set_private_key(key, b) != 1 {
-		C.go_openssl_EC_KEY_free(key)
 		return nil, newOpenSSLError("EC_KEY_set_private_key")
 	}
-	pkey, err := newEVPPKEY(key)
+	pkey, err = newEVPPKEY(key)
 	if err != nil {
-		C.go_openssl_EC_KEY_free(key)
 		return nil, err
 	}
 	k := &PrivateKeyECDH{pkey}
