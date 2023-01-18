@@ -86,7 +86,7 @@ func NewPrivateKeyECDH(curve string, bytes []byte) (*PrivateKeyECDH, error) {
 	}
 	b := bytesToBN(bytes)
 	if b == nil {
-		return nil, newOpenSSLError("BN_bin2bn failed")
+		return nil, newOpenSSLError("BN_bin2bn")
 	}
 	defer C.go_openssl_BN_free(b)
 	key := C.go_openssl_EC_KEY_new_by_curve_name(nid)
