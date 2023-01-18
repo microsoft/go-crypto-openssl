@@ -311,3 +311,15 @@ func evpVerify(withKey withKeyFunc, padding C.int, saltLen C.int, h crypto.Hash,
 	}
 	return verifyEVP(withKey, padding, nil, nil, saltLen, h, verifyInit, verify, sig, hashed)
 }
+
+func newEVPPKEY(key C.GO_EC_KEY_PTR) (C.GO_EVP_PKEY_PTR, error) {
+	pkey := C.go_openssl_EVP_PKEY_new()
+	if pkey == nil {
+		return nil, newOpenSSLError("EVP_PKEY_new failed")
+	}
+	if C.go_openssl_EVP_PKEY_assign(pkey, C.GO_EVP_PKEY_EC, (unsafe.Pointer)(key)) != 1 {
+		C.go_openssl_EVP_PKEY_free(pkey)
+		return nil, newOpenSSLError("EVP_PKEY_assign failed")
+	}
+	return pkey, nil
+}
