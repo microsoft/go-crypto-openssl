@@ -17,10 +17,10 @@ type PublicKeyECDH struct {
 	_pkey C.GO_EVP_PKEY_PTR
 	bytes []byte
 
-	// priv is only set when _pkey is derived from a private key,
-	// in which case the private key is responsible of freeing _pkey.
-	// This also ensures that priv is not finalized meanwhile
-	// the public key is alive.
+	// priv is only set when PublicKeyECDH is derived from a private key,
+	// in which case priv's finalizer is responsible for freeing _pkey.
+	// This ensures priv is not finalized while the public key is alive,
+	// which could cause use-after-free and double-free behavior.
 	//
 	// We could avoid this altogether if using EVP_PKEY_up_ref
 	// when instantiating a derived public key, unfortunately
