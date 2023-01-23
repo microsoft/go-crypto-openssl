@@ -16,10 +16,22 @@ import (
 type PublicKeyECDH struct {
 	_pkey C.GO_EVP_PKEY_PTR
 	bytes []byte
+
+	// priv is only set when PublicKeyECDH is derived from a private key,
+	// in which case priv's finalizer is responsible for freeing _pkey.
+	// This ensures priv is not finalized while the public key is alive,
+	// which could cause use-after-free and double-free behavior.
+	//
+	// We could avoid this altogether if using EVP_PKEY_up_ref
+	// when instantiating a derived public key, unfortunately
+	// it is not available on OpenSSL 1.0.2.
+	priv *PrivateKeyECDH
 }
 
 func (k *PublicKeyECDH) finalize() {
-	C.go_openssl_EVP_PKEY_free(k._pkey)
+	if k.priv == nil {
+		C.go_openssl_EVP_PKEY_free(k._pkey)
+	}
 }
 
 type PrivateKeyECDH struct {
@@ -72,7 +84,7 @@ func NewPublicKeyECDH(curve string, bytes []byte) (*PublicKeyECDH, error) {
 	if err != nil {
 		return nil, err
 	}
-	k = &PublicKeyECDH{pkey, append([]byte(nil), bytes...)}
+	k = &PublicKeyECDH{pkey, append([]byte(nil), bytes...), nil}
 	runtime.SetFinalizer(k, (*PublicKeyECDH).finalize)
 	return k, nil
 }
@@ -149,7 +161,7 @@ func (k *PrivateKeyECDH) PublicKey() (*PublicKeyECDH, error) {
 	if int(n) != len(bytes) {
 		return nil, newOpenSSLError("EC_POINT_point2oct")
 	}
-	pub := &PublicKeyECDH{k._pkey, bytes}
+	pub := &PublicKeyECDH{k._pkey, bytes, k}
 	// Note: Same as in NewPublicKeyECDH regarding finalizer and KeepAlive.
 	runtime.SetFinalizer(pub, (*PublicKeyECDH).finalize)
 	return pub, nil
