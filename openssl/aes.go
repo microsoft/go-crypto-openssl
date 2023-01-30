@@ -116,8 +116,12 @@ func (c *aesCipher) Decrypt(dst, src []byte) {
 		if err != nil {
 			panic(err)
 		}
+		// Disable standard block padding detection,
+		// src is always multiple of the block size.
+		if C.go_openssl_EVP_CIPHER_CTX_set_padding(c.dec_ctx, 0) != 1 {
+			panic("crypto/cipher: unable to set padding")
+		}
 	}
-
 	C.go_openssl_EVP_DecryptUpdate_wrapper(c.dec_ctx, base(dst), base(src), aesBlockSize)
 	runtime.KeepAlive(c)
 }
