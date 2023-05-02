@@ -12,7 +12,9 @@
 		"GO_OPENSSL_VERSION_OVERRIDE": "1.1.0",
 	},
 	"onCreateCommand": "sh ${containerWorkspaceFolder}/scripts/openssl.sh ${GO_OPENSSL_VERSION_OVERRIDE}",
-	"extensions": [
-		"golang.go"
-	]
+	"customizations": {
+		"vscode": {
+			"extensions": ["golang.go"]
+		}
+	},
 }
