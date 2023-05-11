@@ -290,4 +290,5 @@ DEFINEFUNC_3_0(int, EVP_MAC_update, (GO_EVP_MAC_CTX_PTR ctx, const unsigned char
 DEFINEFUNC_3_0(int, EVP_MAC_final, (GO_EVP_MAC_CTX_PTR ctx, unsigned char *out, size_t *outl, size_t outsize), (ctx, out, outl, outsize)) \
 DEFINEFUNC_3_0(OSSL_PARAM, OSSL_PARAM_construct_utf8_string, (const char *key, char *buf, size_t bsize), (key, buf, bsize)) \
 DEFINEFUNC_3_0(OSSL_PARAM, OSSL_PARAM_construct_end, (void), ()) \
+DEFINEFUNC_3_0(int, EVP_PKEY_CTX_set0_rsa_oaep_label, (GO_EVP_PKEY_CTX_PTR ctx, void *label, int len), (ctx, label, len)) \
 

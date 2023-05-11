@@ -105,8 +105,10 @@ func (h *evpHash) finalize() {
 func (h *evpHash) Reset() {
 	// There is no need to reset h.ctx2 because it is always reset after
 	// use in evpHash.sum.
-	if C.go_openssl_EVP_DigestInit(h.ctx, h.md) != 1 {
-		panic("openssl: EVP_DigestInit failed")
+	// Calling EVP_DigestInit on an already initialized EVP_MD_CTX results in
+	// memory leak on OpenSSL 1.0.2, use EVP_DigestInit_ex  instead.
+	if C.go_openssl_EVP_DigestInit_ex(h.ctx, h.md, nil) != 1 {
+		panic("openssl: EVP_DigestInit_ex failed")
 	}
 	runtime.KeepAlive(h)
 }
