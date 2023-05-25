@@ -8,12 +8,5 @@
 	"features": {
 		"ghcr.io/devcontainers/features/go:1": {}
 	},
-	"onCreateCommand": "sudo sh ${containerWorkspaceFolder}/scripts/openssl.sh ${GO_OPENSSL_VERSION_OVERRIDE}",
-	"customizations": {
-		"vscode": {
-			"extensions": [
-				"golang.go"
-			]
-		}
-	}
+	"onCreateCommand": "sudo sh ${containerWorkspaceFolder}/scripts/openssl.sh ${GO_OPENSSL_VERSION_OVERRIDE}"
 }
