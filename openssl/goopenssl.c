@@ -9,6 +9,27 @@
 #include <dlfcn.h>
 #include <stdio.h>
 
+int
+go_openssl_fips_enabled(void* handle)
+{
+    // For OpenSSL 1.x.
+    int (*FIPS_mode)(void);
+    FIPS_mode = (int (*)(void))dlsym(handle, "FIPS_mode");
+    if (FIPS_mode != NULL)
+        return FIPS_mode();
+
+    // For OpenSSL 3.x.
+    int (*EVP_default_properties_is_fips_enabled)(void*);
+    int (*OSSL_PROVIDER_available)(void*, const char*);
+    EVP_default_properties_is_fips_enabled = (int (*)(void*))dlsym(handle, "EVP_default_properties_is_fips_enabled"); 
+    OSSL_PROVIDER_available = (int (*)(void*, const char*))dlsym(handle, "OSSL_PROVIDER_available"); 
+    if (EVP_default_properties_is_fips_enabled != NULL && OSSL_PROVIDER_available != NULL &&
+        EVP_default_properties_is_fips_enabled(NULL) == 1 && OSSL_PROVIDER_available(NULL, "fips") == 1)
+            return 1;
+
+    return 0;
+}
+
 static unsigned long
 version_num(void* handle)
 {

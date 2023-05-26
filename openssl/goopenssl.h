@@ -7,6 +7,7 @@
 
 #include "openssl_funcs.h"
 
+int go_openssl_fips_enabled(void* handle);
 int go_openssl_version_major(void* handle);
 int go_openssl_version_minor(void* handle);
 int go_openssl_thread_setup(void);
