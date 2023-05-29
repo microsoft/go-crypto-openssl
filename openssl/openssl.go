@@ -123,29 +123,31 @@ func loadLibrary(version string) (unsafe.Pointer, error) {
 		}
 		return handle, nil
 	}
-	fallbackIdx := -1
-	for i, v := range knownVersions {
+	var fallbackHandle unsafe.Pointer
+	for _, v := range knownVersions {
 		handle := dlopen(v)
 		if handle == nil {
 			continue
 		}
 		if C.go_openssl_fips_enabled(handle) == 1 {
 			// Found a FIPS enabled version, use it.
+			if fallbackHandle != nil {
+				// If we found a FIPS enabled version but we already have a fallback
+				// version, close the fallback version.
+				C.dlclose(fallbackHandle)
+			}
 			return handle, nil
 		}
-		C.dlclose(handle)
-		if fallbackIdx == -1 {
+		if fallbackHandle == nil {
 			// Remember the first version that exists but is not FIPS enabled
 			// in case we don't find any FIPS enabled version.
-			fallbackIdx = i
+			fallbackHandle = handle
+		} else {
+			C.dlclose(handle)
 		}
 	}
-	if fallbackIdx != -1 {
-		handle := dlopen(knownVersions[fallbackIdx])
-		if handle != nil {
-			return handle, nil
-		}
-		// The fallback version should always exist, but if it doesn't, return an error.
+	if fallbackHandle != nil {
+		return fallbackHandle, nil
 	}
 	return nil, errors.New("openssl: can't load libcrypto.so using any known version suffix")
 }
