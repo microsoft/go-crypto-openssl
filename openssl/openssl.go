@@ -171,9 +171,8 @@ func FIPS() bool {
 
 // SetFIPS enables or disables FIPS mode.
 //
-// It implements the following provider fallback logic for OpenSSL 3:
-//   - The "fips" provider is loaded if enabled=true and no loaded provider matches "fips=yes".
-//   - The "default" provider is loaded if enabled=false and no loaded provider matches "fips=no".
+// For OpenSSL 3, the `fips` provider is loaded if enabled is true,
+// else the `default` provider is loaded
 func SetFIPS(enabled bool) error {
 	var mode C.int
 	if enabled {
