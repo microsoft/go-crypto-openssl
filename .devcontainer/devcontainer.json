@@ -2,19 +2,11 @@
 
 {
 	"name": "Go",
-	"build": {
-		"dockerfile": "Dockerfile",
-		"args": {
-			"VARIANT": "1.17-bullseye",
-		}
-	},
 	"containerEnv": {
-		"GO_OPENSSL_VERSION_OVERRIDE": "1.1.0",
+		"GO_OPENSSL_VERSION_OVERRIDE": "1.1.1"
 	},
-	"onCreateCommand": "sh ${containerWorkspaceFolder}/scripts/openssl.sh ${GO_OPENSSL_VERSION_OVERRIDE}",
-	"customizations": {
-		"vscode": {
-			"extensions": ["golang.go"]
-		}
+	"features": {
+		"ghcr.io/devcontainers/features/go:1": {}
 	},
+	"onCreateCommand": "sudo sh ${containerWorkspaceFolder}/scripts/openssl.sh ${GO_OPENSSL_VERSION_OVERRIDE}"
 }
