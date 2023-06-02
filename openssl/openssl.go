@@ -24,9 +24,6 @@ import (
 var (
 	providerNameFips    = C.CString("fips")
 	providerNameDefault = C.CString("default")
-	propFipsYes         = C.CString("fips=yes")
-	propFipsNo          = C.CString("fips=no")
-	algProve            = C.CString("SHA2-256")
 )
 
 var (
@@ -126,26 +123,33 @@ func loadLibrary(version string) (unsafe.Pointer, error) {
 		}
 		return handle, nil
 	}
+	var fallbackHandle unsafe.Pointer
 	for _, v := range knownVersions {
 		handle := dlopen(v)
-		if handle != nil {
+		if handle == nil {
+			continue
+		}
+		if C.go_openssl_fips_enabled(handle) == 1 {
+			// Found a FIPS enabled version, use it.
+			if fallbackHandle != nil {
+				// If we found a FIPS enabled version but we already have a fallback
+				// version, close the fallback version.
+				C.dlclose(fallbackHandle)
+			}
 			return handle, nil
 		}
+		if fallbackHandle == nil {
+			// Remember the first version that exists but is not FIPS enabled
+			// in case we don't find any FIPS enabled version.
+			fallbackHandle = handle
+		} else {
+			C.dlclose(handle)
+		}
+	}
+	if fallbackHandle != nil {
+		return fallbackHandle, nil
 	}
 	return nil, errors.New("openssl: can't load libcrypto.so using any known version suffix")
-}
-
-// providerAvailable looks through provider's digests
-// checking if there is any that matches the props query.
-func providerAvailable(props *C.char) bool {
-	C.go_openssl_ERR_set_mark()
-	md := C.go_openssl_EVP_MD_fetch(nil, algProve, props)
-	C.go_openssl_ERR_pop_to_mark()
-	if md == nil {
-		return false
-	}
-	C.go_openssl_EVP_MD_free(md)
-	return true
 }
 
 // FIPS returns true if OpenSSL is running in FIPS mode, else returns false.
@@ -159,7 +163,7 @@ func FIPS() bool {
 		}
 		// EVP_default_properties_is_fips_enabled can return true even if the FIPS provider isn't loaded,
 		// it is only based on the default properties.
-		return providerAvailable(propFipsYes)
+		return C.go_openssl_OSSL_PROVIDER_available(nil, providerNameFips) == 1
 	default:
 		panic(errUnsuportedVersion())
 	}
@@ -167,45 +171,41 @@ func FIPS() bool {
 
 // SetFIPS enables or disables FIPS mode.
 //
-// It implements the following provider fallback logic for OpenSSL 3:
-//    - The "fips" provider is loaded if enabled=true and no loaded provider matches "fips=yes".
-//    - The "default" provider is loaded if enabled=false and no loaded provider matches "fips=no".
-// This logic allows advanced users to define their own providers that match "fips=yes" and "fips=no" using the OpenSSL config file.
+// On OpenSSL 3, the `fips` provider is loaded if enabled is true,
+// else the `default` provider is loaded.
 func SetFIPS(enabled bool) error {
+	var mode C.int
+	if enabled {
+		mode = C.int(1)
+	} else {
+		mode = C.int(0)
+	}
 	switch vMajor {
 	case 1:
-		var mode C.int
-		if enabled {
-			mode = C.int(1)
-		} else {
-			mode = C.int(0)
-		}
 		if C.go_openssl_FIPS_mode_set(mode) != 1 {
 			return newOpenSSLError("openssl: FIPS_mode_set")
 		}
 		return nil
 	case 3:
-		var props, provName *C.char
+		var provName *C.char
 		if enabled {
-			props = propFipsYes
 			provName = providerNameFips
 		} else {
-			props = propFipsNo
 			provName = providerNameDefault
 		}
-		// Check if there is any provider that matches props.
-		if !providerAvailable(props) {
+		// Check if provName is not loaded.
+		if C.go_openssl_OSSL_PROVIDER_available(nil, provName) == 0 {
 			// If not, fallback to provName provider.
 			if C.go_openssl_OSSL_PROVIDER_load(nil, provName) == nil {
-				return newOpenSSLError("openssl: OSSL_PROVIDER_try_load")
+				return newOpenSSLError("openssl: OSSL_PROVIDER_load")
 			}
 			// Make sure we now have a provider available.
-			if !providerAvailable(props) {
+			if C.go_openssl_OSSL_PROVIDER_available(nil, provName) == 0 {
 				return fail("SetFIPS(" + strconv.FormatBool(enabled) + ") not supported")
 			}
 		}
-		if C.go_openssl_EVP_set_default_properties(nil, props) != 1 {
-			return newOpenSSLError("openssl: EVP_set_default_properties")
+		if C.go_openssl_EVP_default_properties_enable_fips(nil, mode) != 1 {
+			return newOpenSSLError("openssl: EVP_default_properties_enable_fips")
 		}
 		return nil
 	default:
@@ -281,6 +281,7 @@ func bnToBig(bn C.GO_BIGNUM_PTR) BigInt {
 // output depends on the input. noescape is inlined and currently
 // compiles down to zero instructions.
 // USE CAREFULLY!
+//
 //go:nosplit
 func noescape(p unsafe.Pointer) unsafe.Pointer {
 	x := uintptr(p)

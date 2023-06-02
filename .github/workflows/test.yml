@@ -38,6 +38,8 @@ jobs:
       run: go test -gcflags=all=-d=checkptr -count 10 -v ./...
       env:
         GO_OPENSSL_VERSION_OVERRIDE: ${{ matrix.openssl-version-build }}
+    - name: Run Test - Build - No version override
+      run: go test -gcflags=all=-d=checkptr -v ./...
     - name: Run Test - Misc
       run: go test -gcflags=all=-d=checkptr -v .
       working-directory: ./misc
