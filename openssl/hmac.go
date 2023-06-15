@@ -210,6 +210,7 @@ func (h *hmac3) Reset() {
 }
 
 func (h *hmac3) finalize() {
+	C.go_openssl_EVP_MAC_free(h.md)
 	if h.ctx == nil {
 		return
 	}
