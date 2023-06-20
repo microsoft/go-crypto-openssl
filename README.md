@@ -2,7 +2,7 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/microsoft/go-crypto-openssl/openssl.svg)](https://pkg.go.dev/github.com/microsoft/go-crypto-openssl/openssl)
 
-The `openssl` package implements Go crypto primitives using OpenSSL shared libraries and cgo. When configured correctly, OpenSSL can be executed in FIPS mode, making the `openssl` package FIPS compliant.
+The `openssl` package implements Go crypto primitives using OpenSSL shared libraries and cgo. When configured correctly, OpenSSL can be executed in FIPS mode, making the `openssl` package FIPS 140-2 and FIPS 140-3 (hereinafter FIPS) compliant.
 
 The `openssl` package is designed to be used as a drop-in replacement for the [boring](https://pkg.go.dev/crypto/internal/boring) package in order to facilitate integrating `openssl` inside a forked Go toolchain.
 
@@ -12,7 +12,7 @@ A program directly or indirectly using this package in FIPS mode can claim it is
 
 ## Background
 
-FIPS 140-2 is a U.S. government computer security standard used to approve cryptographic modules. FIPS compliance may come up when working with U.S. government and other regulated industries.
+FIPS is a U.S. government computer security standard used to approve cryptographic modules. FIPS compliance may come up when working with U.S. government and other regulated industries.
 
 ### Go FIPS compliance
 
@@ -20,7 +20,7 @@ The Go `crypto` package is not FIPS certified, and the Go team has stated that i
 
 > The status of FIPS 140 for Go itself remains "no plans, basically zero chance".
 
-On the other hand, Google maintains a branch that uses cgo and BoringSSL to implement various crypto primitives: https://github.com/golang/go/blob/dev.boringcrypto/README.boringcrypto.md. As BoringSSL is FIPS 140-2 certified, an application using that branch is more likely to be FIPS 140-2 compliant, yet Google does not provide any liability about the suitability of this code in relation to the FIPS 140-2 standard.
+On the other hand, Google maintains a branch that uses cgo and BoringSSL to implement various crypto primitives: https://github.com/golang/go/blob/dev.boringcrypto/README.boringcrypto.md. As BoringSSL is FIPS certified, an application using that branch is more likely to be FIPS compliant, yet Google does not provide any liability about the suitability of this code in relation to the FIPS standard.
 
 ## Features
 
