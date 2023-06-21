@@ -34,7 +34,7 @@ case "$version" in
         sha256="2a9dcf05531e8be96c296259e817edc41619017a4bf3e229b4618a70103251d5"
         config="enable-fips"
         make="build_libs"
-        install="install_fips"
+        install="install"
         ;;
     *)
         echo >&2 "error: unsupported OpenSSL version '$version'"

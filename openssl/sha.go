@@ -39,6 +39,13 @@ func SHA1(p []byte) (sum [20]byte) {
 	return
 }
 
+func MD5(p []byte) (sum [16]byte) {
+	if !shaX(C.go_openssl_EVP_md5(), p, sum[:]) {
+		panic("openssl: MD5 failed")
+	}
+	return
+}
+
 func SHA224(p []byte) (sum [28]byte) {
 	if !shaX(C.go_openssl_EVP_sha224(), p, sum[:]) {
 		panic("openssl: SHA224 failed")
@@ -191,6 +198,22 @@ func (h *evpHash) shaState() unsafe.Pointer {
 	default:
 		panic(errUnsuportedVersion())
 	}
+}
+
+func NewMD5() hash.Hash {
+	return &md5Hash{
+		evpHash: newEvpHash(crypto.MD5, 16, 64),
+	}
+}
+
+type md5Hash struct {
+	*evpHash
+	out [16]byte
+}
+
+func (h *md5Hash) Sum(in []byte) []byte {
+	h.sum(h.out[:])
+	return append(in, h.out[:]...)
 }
 
 // NewSHA1 returns a new SHA1 hash.

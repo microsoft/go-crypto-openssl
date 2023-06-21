@@ -9,6 +9,7 @@ package openssl
 import (
 	"bytes"
 	"encoding"
+	"fmt"
 	"hash"
 	"io"
 	"testing"
@@ -109,6 +110,34 @@ func TestSHA_OneShot(t *testing.T) {
 		}},
 		{"sha512", NewSHA512, func(p []byte) []byte {
 			b := SHA512(p)
+			return b[:]
+		}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.oneShot(msg)
+			h := tt.want()
+			h.Write(msg)
+			want := h.Sum(nil)
+			if !bytes.Equal(got[:], want) {
+				t.Errorf("got:%x want:%x", got, want)
+			}
+		})
+	}
+}
+
+func TestMD5OneShot(t *testing.T) {
+	SetFIPS(false)
+	fmt.Println("OpenSSL version:", VersionText())
+	fmt.Println("FIPS enabled:", FIPS())
+	msg := []byte("testing")
+	var tests = []struct {
+		name    string
+		want    func() hash.Hash
+		oneShot func([]byte) []byte
+	}{
+		{"md5", NewMD5, func(p []byte) []byte {
+			b := MD5(p)
 			return b[:]
 		}},
 	}
