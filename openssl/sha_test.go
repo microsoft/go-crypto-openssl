@@ -11,6 +11,7 @@ import (
 	"encoding"
 	"hash"
 	"io"
+	"strings"
 	"testing"
 )
 
@@ -25,10 +26,18 @@ func TestSha(t *testing.T) {
 		{"sha256", NewSHA256},
 		{"sha384", NewSHA384},
 		{"sha512", NewSHA512},
+		{"sha3_224", NewSHA3_224},
+		{"sha3_256", NewSHA3_256},
+		{"sha3_384", NewSHA3_384},
+		{"sha3_512", NewSHA3_512},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+			if strings.HasPrefix(tt.name, "sha3_") && vMajor == 1 && (vMinor == 0 || vFeature == 0) {
+				t.Skip("crypto/sha3: only supported with openssl-1.1.1+")
+			}
 			h := tt.fn()
 			initSum := h.Sum(nil)
 			n, err := h.Write(msg)
@@ -45,7 +54,6 @@ func TestSha(t *testing.T) {
 			if bytes.Equal(sum, initSum) {
 				t.Error("Write didn't change internal hash state")
 			}
-
 			state, err := h.(encoding.BinaryMarshaler).MarshalBinary()
 			if err != nil {
 				t.Errorf("could not marshal: %v", err)
@@ -57,7 +65,6 @@ func TestSha(t *testing.T) {
 			if actual, actual2 := h.Sum(nil), h2.Sum(nil); !bytes.Equal(actual, actual2) {
 				t.Errorf("0x%x != marshaled 0x%x", actual, actual2)
 			}
-
 			h.Reset()
 			sum = h.Sum(nil)
 			if !bytes.Equal(sum, initSum) {
@@ -111,9 +118,28 @@ func TestSHA_OneShot(t *testing.T) {
 			b := SHA512(p)
 			return b[:]
 		}},
+		{"sha3_224", NewSHA3_224, func(p []byte) []byte {
+			b := SHA3_224(p)
+			return b[:]
+		}},
+		{"sha3_256", NewSHA3_256, func(p []byte) []byte {
+			b := SHA3_256(p)
+			return b[:]
+		}},
+		{"sha3_384", NewSHA3_384, func(p []byte) []byte {
+			b := SHA3_384(p)
+			return b[:]
+		}},
+		{"sha3_512", NewSHA3_512, func(p []byte) []byte {
+			b := SHA3_512(p)
+			return b[:]
+		}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if strings.HasPrefix(tt.name, "sha3_") && vMajor == 1 && (vMinor == 0 || vFeature == 0) {
+				t.Skip("crypto/sha3: only supported with openssl-1.1.1+")
+			}
 			got := tt.oneShot(msg)
 			h := tt.want()
 			h.Write(msg)

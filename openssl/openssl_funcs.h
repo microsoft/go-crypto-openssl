@@ -184,6 +184,10 @@ DEFINEFUNC(const GO_EVP_MD_PTR, EVP_sha224, (void), ()) \
 DEFINEFUNC(const GO_EVP_MD_PTR, EVP_sha256, (void), ()) \
 DEFINEFUNC(const GO_EVP_MD_PTR, EVP_sha384, (void), ()) \
 DEFINEFUNC(const GO_EVP_MD_PTR, EVP_sha512, (void), ()) \
+DEFINEFUNC_1_1_1(const GO_EVP_MD_PTR, EVP_sha3_224, (void), ()) \
+DEFINEFUNC_1_1_1(const GO_EVP_MD_PTR, EVP_sha3_256, (void), ()) \
+DEFINEFUNC_1_1_1(const GO_EVP_MD_PTR, EVP_sha3_384, (void), ()) \
+DEFINEFUNC_1_1_1(const GO_EVP_MD_PTR, EVP_sha3_512, (void), ()) \
 DEFINEFUNC_1_1(const GO_EVP_MD_PTR, EVP_md5_sha1, (void), ()) \
 DEFINEFUNC_RENAMED_3_0(int, EVP_MD_get_size, EVP_MD_size, (const GO_EVP_MD_PTR arg0), (arg0)) \
 DEFINEFUNC_LEGACY_1_0(void, HMAC_CTX_init, (GO_HMAC_CTX_PTR arg0), (arg0)) \

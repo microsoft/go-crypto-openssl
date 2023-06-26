@@ -68,12 +68,12 @@ int
 go_openssl_version_minor(void* handle)
 {
     unsigned int (*fn)(void);
-    // OPENSSL_version_major is supported since OpenSSL 3.
+    // OPENSSL_version_minor is supported since OpenSSL 3.
     fn = (unsigned int (*)(void))dlsym(handle, "OPENSSL_version_minor");
     if (fn != NULL)
         return (int)fn();
 
-    // If OPENSSL_version_major is not defined, try with OpenSSL 1 functions.
+    // If OPENSSL_version_minor is not defined, try with OpenSSL 1 functions.
     unsigned long num = version_num(handle);
     // OpenSSL version number follows this schema:
     // MNNFFPPS: major minor fix patch status.
@@ -91,6 +91,24 @@ go_openssl_version_minor(void* handle)
     return 0;
 }
 
+int
+go_openssl_version_feature(void* handle)
+{
+    unsigned int (*fn)(void);
+    // OPENSSL_version_minor is supported since OpenSSL 3.
+    // OpenSSL 3 has feature level always set to zero
+    fn = (unsigned int (*)(void))dlsym(handle, "OPENSSL_version_minor");
+    if (fn != NULL)
+        return 0;
+
+    // If OPENSSL_version_minor is not defined, try with OpenSSL 1 functions.
+    unsigned long num = version_num(handle);
+    // OpenSSL version number follows this schema:
+    // MNNFFPPS: major minor feature patch status.
+
+    return (num >> 12) & 0xff;
+}
+
 // Approach taken from .Net System.Security.Cryptography.Native
 // https://github.com/dotnet/runtime/blob/f64246ce08fb7a58221b2b7c8e68f69c02522b0d/src/libraries/Native/Unix/System.Security.Cryptography.Native/opensslshim.c
 
@@ -98,6 +116,7 @@ go_openssl_version_minor(void* handle)
 #define DEFINEFUNC_LEGACY_1_0(ret, func, args, argscall)       DEFINEFUNC(ret, func, args, argscall)
 #define DEFINEFUNC_LEGACY_1(ret, func, args, argscall)         DEFINEFUNC(ret, func, args, argscall)
 #define DEFINEFUNC_1_1(ret, func, args, argscall)              DEFINEFUNC(ret, func, args, argscall)
+#define DEFINEFUNC_1_1_1(ret, func, args, argscall)            DEFINEFUNC(ret, func, args, argscall)
 #define DEFINEFUNC_3_0(ret, func, args, argscall)              DEFINEFUNC(ret, func, args, argscall)
 #define DEFINEFUNC_RENAMED_1_1(ret, func, oldfunc, args, argscall) DEFINEFUNC(ret, func, args, argscall)
 #define DEFINEFUNC_RENAMED_3_0(ret, func, oldfunc, args, argscall) DEFINEFUNC(ret, func, args, argscall)
@@ -108,6 +127,7 @@ FOR_ALL_OPENSSL_FUNCTIONS
 #undef DEFINEFUNC_LEGACY_1_0
 #undef DEFINEFUNC_LEGACY_1
 #undef DEFINEFUNC_1_1
+#undef DEFINEFUNC_1_1_1
 #undef DEFINEFUNC_3_0
 #undef DEFINEFUNC_RENAMED_1_1
 #undef DEFINEFUNC_RENAMED_3_0
@@ -116,7 +136,7 @@ FOR_ALL_OPENSSL_FUNCTIONS
 // and assign them to their corresponding function pointer
 // defined in goopenssl.h.
 void
-go_openssl_load_functions(void* handle, int major, int minor)
+go_openssl_load_functions(void* handle, int major, int minor, int feature)
 {
 #define DEFINEFUNC_INTERNAL(name, func) \
     _g_##name = dlsym(handle, func);         \
@@ -135,6 +155,11 @@ go_openssl_load_functions(void* handle, int major, int minor)
     }
 #define DEFINEFUNC_1_1(ret, func, args, argscall)     \
     if (major == 3 || (major == 1 && minor == 1))     \
+    {                                                 \
+        DEFINEFUNC_INTERNAL(func, #func)              \
+    }
+#define DEFINEFUNC_1_1_1(ret, func, args, argscall)     \
+    if (major == 3 || (major == 1 && minor == 1 && feature == 1))     \
     {                                                 \
         DEFINEFUNC_INTERNAL(func, #func)              \
     }
@@ -168,6 +193,7 @@ FOR_ALL_OPENSSL_FUNCTIONS
 #undef DEFINEFUNC_LEGACY_1_0
 #undef DEFINEFUNC_LEGACY_1
 #undef DEFINEFUNC_1_1
+#undef DEFINEFUNC_1_1_1
 #undef DEFINEFUNC_3_0
 #undef DEFINEFUNC_RENAMED_1_1
 #undef DEFINEFUNC_RENAMED_3_0

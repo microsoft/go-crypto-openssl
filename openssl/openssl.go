@@ -30,9 +30,10 @@ var (
 	initOnce sync.Once
 	// errInit is set when first calling Init().
 	errInit error
-	// vMajor and vMinor hold the major/minor OpenSSL version.
-	// It is only populated if Init has been called.
-	vMajor, vMinor int
+	// vMajor, vMinor and vFeature hold the major/minor/feature
+	// OpenSSL version. It is only populated if Init has been
+	// called.
+	vMajor, vMinor, vFeature int
 )
 
 // knownVersions is a list of supported and well-known libcrypto.so suffixes in decreasing version order.
@@ -46,7 +47,7 @@ var (
 var knownVersions = [...]string{"3", "1.1", "11", "111", "1.0.2", "1.0.0", "10"}
 
 func errUnsuportedVersion() error {
-	return errors.New("openssl: OpenSSL version: " + strconv.Itoa(vMajor) + "." + strconv.Itoa(vMinor))
+	return errors.New("openssl: OpenSSL version: " + strconv.Itoa(vMajor) + "." + strconv.Itoa(vMinor) + "." + strconv.Itoa(vFeature))
 }
 
 // Init loads and initializes OpenSSL.
@@ -71,7 +72,8 @@ func Init() error {
 
 		vMajor = int(C.go_openssl_version_major(handle))
 		vMinor = int(C.go_openssl_version_minor(handle))
-		if vMajor == -1 || vMinor == -1 {
+		vFeature = int(C.go_openssl_version_feature(handle))
+		if vMajor == -1 || vMinor == -1 || vFeature == -1 {
 			errInit = errors.New("openssl: can't retrieve OpenSSL version")
 			return
 		}
@@ -87,7 +89,7 @@ func Init() error {
 			return
 		}
 
-		C.go_openssl_load_functions(handle, C.int(vMajor), C.int(vMinor))
+		C.go_openssl_load_functions(handle, C.int(vMajor), C.int(vMinor), C.int(vFeature))
 		C.go_openssl_OPENSSL_init()
 		if vMajor == 1 && vMinor == 0 {
 			if C.go_openssl_thread_setup() != 1 {
