@@ -263,16 +263,38 @@ func (c *aesCTR) finalize() {
 	C.go_openssl_EVP_CIPHER_CTX_free(c.ctx)
 }
 
+type cipherGCMTLS uint8
+
+const (
+	cipherGCMTLSNone cipherGCMTLS = iota
+	cipherGCMTLS12
+	cipherGCMTLS13
+)
+
 type aesGCM struct {
-	ctx          C.GO_EVP_CIPHER_CTX_PTR
-	tls          bool
+	ctx C.GO_EVP_CIPHER_CTX_PTR
+	tls cipherGCMTLS
+	// minNextNonce is the minimum value that the next nonce can be, enforced by
+	// all TLS modes.
 	minNextNonce uint64
+	// mask is the nonce mask used in TLS 1.3 mode.
+	mask uint64
+	// maskInitialized is true if mask has been initialized. This happens during
+	// the first Seal. The initialized mask may be 0. Used by TLS 1.3 mode.
+	maskInitialized bool
 }
 
 const (
 	gcmTagSize           = 16
 	gcmStandardNonceSize = 12
-	gcmTlsAddSize        = 13
+	// TLS 1.2 additional data is constructed as:
+	//
+	//     additional_data = seq_num(8) + TLSCompressed.type(1) + TLSCompressed.version(2) + TLSCompressed.length(2);
+	gcmTls12AddSize = 13
+	// TLS 1.3 additional data is constructed as:
+	//
+	//     additional_data = TLSCiphertext.opaque_type(1) || TLSCiphertext.legacy_record_version(2) || TLSCiphertext.length(2)
+	gcmTls13AddSize      = 5
 	gcmTlsFixedNonceSize = 4
 )
 
@@ -297,7 +319,7 @@ func (c *aesCipher) NewGCM(nonceSize, tagSize int) (cipher.AEAD, error) {
 	if tagSize != gcmTagSize {
 		return cipher.NewGCMWithTagSize(&noGCM{c}, tagSize)
 	}
-	return c.newGCM(false)
+	return c.newGCM(cipherGCMTLSNone)
 }
 
 // NewGCMTLS returns a GCM cipher specific to TLS
@@ -307,10 +329,20 @@ func NewGCMTLS(c cipher.Block) (cipher.AEAD, error) {
 }
 
 func (c *aesCipher) NewGCMTLS() (cipher.AEAD, error) {
-	return c.newGCM(true)
+	return c.newGCM(cipherGCMTLS12)
 }
 
-func (c *aesCipher) newGCM(tls bool) (cipher.AEAD, error) {
+// NewGCMTLS13 returns a GCM cipher specific to TLS 1.3 and should not be used
+// for non-TLS purposes.
+func NewGCMTLS13(c cipher.Block) (cipher.AEAD, error) {
+	return c.(*aesCipher).NewGCMTLS13()
+}
+
+func (c *aesCipher) NewGCMTLS13() (cipher.AEAD, error) {
+	return c.newGCM(cipherGCMTLS13)
+}
+
+func (c *aesCipher) newGCM(tls cipherGCMTLS) (cipher.AEAD, error) {
 	var cipher C.GO_EVP_CIPHER_PTR
 	switch len(c.key) * 8 {
 	case 128:
@@ -362,15 +394,41 @@ func (g *aesGCM) Seal(dst, nonce, plaintext, additionalData []byte) []byte {
 	if len(dst)+len(plaintext)+gcmTagSize < len(dst) {
 		panic("cipher: message too large for buffer")
 	}
-	if g.tls {
-		if len(additionalData) != gcmTlsAddSize {
-			panic("cipher: incorrect additional data length given to GCM TLS")
+	if g.tls != cipherGCMTLSNone {
+		if g.tls == cipherGCMTLS12 && len(additionalData) != gcmTls12AddSize {
+			panic("cipher: incorrect additional data length given to GCM TLS 1.2")
+		} else if g.tls == cipherGCMTLS13 && len(additionalData) != gcmTls13AddSize {
+			panic("cipher: incorrect additional data length given to GCM TLS 1.3")
+		}
+		counter := bigUint64(nonce[gcmTlsFixedNonceSize:])
+		if g.tls == cipherGCMTLS13 {
+			// In TLS 1.3, the counter in the nonce has a mask and requires
+			// further decoding.
+			if !g.maskInitialized {
+				// According to TLS 1.3 nonce construction details at
+				// https://tools.ietf.org/html/rfc8446#section-5.3:
+				//
+				//   the first record transmitted under a particular traffic
+				//   key MUST use sequence number 0.
+				//
+				//   The padded sequence number is XORed with [a mask].
+				//
+				//   The resulting quantity (of length iv_length) is used as
+				//   the per-record nonce.
+				//
+				// We need to convert from the given nonce to sequence numbers
+				// to keep track of minNextNonce and enforce the counter
+				// maximum. On the first call, we know counter^mask is 0^mask,
+				// so we can simply store it as the mask.
+				g.mask = counter
+				g.maskInitialized = true
+			}
+			counter ^= g.mask
 		}
 		// BoringCrypto enforces strictly monotonically increasing explicit nonces
 		// and to fail after 2^64 - 1 keys as per FIPS 140-2 IG A.5,
 		// but OpenSSL does not perform this check, so it is implemented here.
 		const maxUint64 = 1<<64 - 1
-		counter := bigUint64(nonce[gcmTlsFixedNonceSize:])
 		if counter == maxUint64 {
 			panic("cipher: nonce counter must be less than 2^64 - 1")
 		}
