@@ -9,9 +9,6 @@
 #include <dlfcn.h>
 #include <stdio.h>
 
-// Required by CodeQL analysis.
-int main() { return 0; }
-
 int
 go_openssl_fips_enabled(void* handle)
 {
