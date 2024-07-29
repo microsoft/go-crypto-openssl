@@ -6,36 +6,40 @@ The `openssl` package implements Go crypto primitives using OpenSSL shared libra
 
 The `openssl` package is designed to be used as a drop-in replacement for the [boring](https://pkg.go.dev/crypto/internal/boring) package in order to facilitate integrating `openssl` inside a forked Go toolchain.
 
+> [!IMPORTANT]
+> Starting with Go 1.21, the [Microsoft Go](https://github.com/microsoft/go) toolchain uses [golang-fips/openssl](https://github.com/golang-fips/openssl) instead of this module.
+>
+> This module was used by Microsoft Go 1.20 and earlier.
+> These versions are all unsupported as of 2024-02-06.
+
 ## Disclaimer
 
 A program directly or indirectly using this package in FIPS mode can claim it is using a FIPS-certified cryptographic module (OpenSSL), but it can't claim the program as a whole is FIPS certified without passing the certification process, nor claim it is FIPS compliant without ensuring all crypto APIs and workflows are implemented in a FIPS-compliant manner.
 
 ## Background
 
-FIPS 140-2 is a U.S. government computer security standard used to approve cryptographic modules. FIPS compliance may come up when working with U.S. government and other regulated industries.
-
-### Go FIPS compliance
-
-The Go `crypto` package is not FIPS certified, and the Go team has stated that it won't be, e.g. in [golang/go/issues/21734](https://github.com/golang/go/issues/21734#issuecomment-326980213) Adam Langley says:
-
-> The status of FIPS 140 for Go itself remains "no plans, basically zero chance".
-
-On the other hand, Google maintains a branch that uses cgo and BoringSSL to implement various crypto primitives: https://github.com/golang/go/blob/dev.boringcrypto/README.boringcrypto.md. As BoringSSL is FIPS 140-2 certified, an application using that branch is more likely to be FIPS 140-2 compliant, yet Google does not provide any liability about the suitability of this code in relation to the FIPS 140-2 standard.
+See [the golang-fips/openssl README.md](https://github.com/golang-fips/openssl/blob/v2/README.md) for more information about the history and motivation behind this package.
 
 ## Features
 
 ### Multiple OpenSSL versions supported
 
-The `openssl` package has support for multiple OpenSSL versions, namely 1.0.2, 1.1.0, 1.1.1 and 3.0.2.
+The `openssl` package has support for multiple OpenSSL versions.
 
-All supported OpenSSL versions passes an small set of automatic tests that ensure they can be built and that there are no major regressions.
+OpenSSL versions 1.0.2, 1.1.0, 1.1.1 and 3.0.1 pass a small set of automatic tests that ensure they can be built and that there are no major regressions.
 These tests do not validate the cryptographic correctness of the `openssl` package.
 
-On top of that, the Microsoft CI builds and tests a subset of the supported OpenSSL versions as part of the [Microsoft Go fork](https://github.com/microsoft/go) release process.
-These tests are much more exhaustive and validate a specific OpenSSL version can produce working applications.
-Currently only OpenSSL 1.1.1 goes through this process.
+On top of that, the Microsoft CI built and tested a subset of the supported OpenSSL versions as part of the [Microsoft Go fork](https://github.com/microsoft/go) release process.
+These tests were much more exhaustive and validated that a specific OpenSSL version can produce working applications.
+Only OpenSSL 1.1.1 went through this process.
 
-Versions not listed above are not supported at all.
+> [!NOTE]
+> This module is not used by any active branches of the Microsoft Go fork, so those Microsoft CI tests no longer run.
+> Microsoft Go 1.21+ uses and tests [golang-fips/openssl](https://github.com/golang-fips/openssl).
+
+Versions not listed above are not supported by this module.
+
+Due to the stronger API stability promises of OpenSSL 3.x, this module may work with untested 3.x versions.
 
 ### Dynamic OpenSSL loading
 
