@@ -227,6 +227,11 @@ func tryConvertDefineFunc(w io.Writer, l string, i int) bool {
 	if !strings.HasPrefix(l, "DEFINEFUNC") {
 		return false
 	}
+	if strings.HasPrefix(l, "DEFINEFUNC_VARIADIC") {
+		// Variadic functions are not supported. There is not enough
+		// information in the macro to create use it in writeDefineFunc.
+		return false
+	}
 	i1 := strings.IndexByte(l, '(')
 	// The first ")," match is always the end of the argument list parameter.
 	// We are not interested in the last parameter and parsing them would complicate the algorithm.
