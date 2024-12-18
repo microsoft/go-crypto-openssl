@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/golang-fips/openssl/v2"
@@ -193,7 +194,61 @@ func TestRSAEncryptDecryptOAEP_WrongLabel(t *testing.T) {
 	}
 }
 
+// These are all the hashes supported by Go's crypto/rsa package
+// as of Go 1.24.
+var stdHashes = [...]crypto.Hash{
+	crypto.MD5SHA1,
+	crypto.MD5,
+	crypto.SHA1,
+	crypto.SHA224,
+	crypto.SHA256,
+	crypto.SHA512,
+	crypto.SHA512_224,
+	crypto.SHA512_256,
+	crypto.SHA3_224,
+	crypto.SHA3_256,
+	crypto.SHA3_512,
+	crypto.RIPEMD160,
+}
+
 func TestRSASignVerifyPKCS1v15(t *testing.T) {
+	priv, pub := newRSAKey(t, 2048)
+	for _, hash := range append([]crypto.Hash{0}, stdHashes[:]...) {
+		var name string
+		if hash == 0 {
+			name = "unhashed"
+		} else {
+			name = hash.String()
+		}
+		t.Run(name, func(t *testing.T) {
+			if hash != 0 && !openssl.SupportsHash(hash) {
+				t.Skip("skipping test because hash is not supported")
+			}
+			// Construct a fake hashed data.
+			size := 1
+			if hash != 0 {
+				size = hash.Size()
+			}
+			hashed := make([]byte, size)
+			hashed[0] = 0x30
+			signed, err := openssl.SignRSAPKCS1v15(priv, hash, hashed)
+			if err != nil {
+				if strings.Contains(err.Error(), "invalid digest") || strings.Contains(err.Error(), "digest not allowed") {
+					// Can happen if the hash is supported by EVP_MD_CTX but not by EVP_PKEY_CTX.
+					// There is nothing we can do about it.
+					t.Skip("skipping test because hash is not supported")
+				}
+				t.Fatal(err)
+			}
+			err = openssl.VerifyRSAPKCS1v15(pub, hash, hashed, signed)
+			if err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
+func TestRSAHashSignVerifyPKCS1v15(t *testing.T) {
 	sha256 := openssl.NewSHA256()
 	priv, pub := newRSAKey(t, 2048)
 	msg := []byte("hi!")
@@ -220,23 +275,6 @@ func TestRSASignVerifyPKCS1v15(t *testing.T) {
 	}
 }
 
-func TestRSASignVerifyPKCS1v15_Unhashed(t *testing.T) {
-	if openssl.SymCryptProviderAvailable() {
-		t.Skip("SymCrypt provider does not support unhashed PKCS1v15")
-	}
-
-	msg := []byte("hi!")
-	priv, pub := newRSAKey(t, 2048)
-	signed, err := openssl.SignRSAPKCS1v15(priv, 0, msg)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = openssl.VerifyRSAPKCS1v15(pub, 0, msg, signed)
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
 func TestRSASignVerifyPKCS1v15_Invalid(t *testing.T) {
 	sha256 := openssl.NewSHA256()
 	msg := []byte("hi!")
@@ -254,6 +292,37 @@ func TestRSASignVerifyPKCS1v15_Invalid(t *testing.T) {
 }
 
 func TestRSASignVerifyRSAPSS(t *testing.T) {
+	priv, pub := newRSAKey(t, 2048)
+	for _, hash := range stdHashes {
+		t.Run(hash.String(), func(t *testing.T) {
+			if !openssl.SupportsHash(hash) {
+				t.Skip("skipping test because hash is not supported")
+			}
+			// Construct a fake hashed data.
+			size := 1
+			if hash != 0 {
+				size = hash.Size()
+			}
+			hashed := make([]byte, size)
+			hashed[0] = 0x30
+			signed, err := openssl.SignRSAPSS(priv, hash, hashed, rsa.PSSSaltLengthEqualsHash)
+			if err != nil {
+				if strings.Contains(err.Error(), "invalid digest") || strings.Contains(err.Error(), "digest not allowed") {
+					// Can happen if the hash is supported by EVP_MD_CTX but not by EVP_PKEY_CTX.
+					// There is nothing we can do about it.
+					t.Skip("skipping test because hash is not supported")
+				}
+				t.Fatal(err)
+			}
+			err = openssl.VerifyRSAPSS(pub, hash, hashed, signed, rsa.PSSSaltLengthEqualsHash)
+			if err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
+func TestRSASignVerifyRSAPSS_SaltLength(t *testing.T) {
 	// Test cases taken from
 	// https://github.com/golang/go/blob/54182ff54a687272dd7632c3a963e036ce03cb7c/src/crypto/rsa/pss_test.go#L200.
 	const keyBits = 2048
