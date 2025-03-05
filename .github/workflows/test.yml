@@ -7,7 +7,7 @@ jobs:
       matrix:
         go-version: [1.23.x, 1.24.x]
         openssl-version: [1.1.0, 1.1.1, 3.0.1, 3.0.13, 3.1.5, 3.2.1, 3.3.0, 3.3.1]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Install build tools
       run: sudo apt-get install -y build-essential
@@ -17,13 +17,16 @@ jobs:
         go-version: ${{ matrix.go-version }}
     - name: Checkout code
       uses: actions/checkout@v4
+    - name: Verify go generate leaves no changes
+      run: |
+        go generate .
+        git diff --exit-code
     - name: Install OpenSSL
       run: sudo sh ./scripts/openssl.sh ${{ matrix.openssl-version }}
     - name: Check headers
       working-directory: ./cmd/checkheader
       run: |
         go run . --ossl-include /usr/local/src/openssl-${{ matrix.openssl-version }}/include -shim ../../shims.h
-        go run . --ossl-include /usr/local/src/openssl-${{ matrix.openssl-version }}/include -shim ../../const.go
     - name: Set OpenSSL config and prove FIPS
       run: |
         sudo cp ./scripts/openssl-3.cnf /usr/local/ssl/openssl.cnf
