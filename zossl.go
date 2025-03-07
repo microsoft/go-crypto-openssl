@@ -6,9 +6,23 @@ package openssl
 #cgo CFLAGS: -Wno-attributes
 #include "shims.h"
 void __mkcgoLoad_(void* handle);
+void __mkcgoUnload_();
 void __mkcgoLoad_111(void* handle);
+void __mkcgoUnload_111();
 void __mkcgoLoad_3(void* handle);
+void __mkcgoUnload_3();
+void __mkcgoLoad_init_1(void* handle);
+void __mkcgoUnload_init_1();
+void __mkcgoLoad_init_3(void* handle);
+void __mkcgoUnload_init_3();
 void __mkcgoLoad_legacy_1(void* handle);
+void __mkcgoUnload_legacy_1();
+void __mkcgoLoad_version(void* handle);
+void __mkcgoUnload_version();
+int OPENSSL_version_major_Available();
+int OPENSSL_version_minor_Available();
+int OPENSSL_version_patch_Available();
+int OpenSSL_version_num_Available();
 */
 import "C"
 import "unsafe"
@@ -96,16 +110,56 @@ func mkcgoLoad_(handle unsafe.Pointer) {
 	C.__mkcgoLoad_(handle)
 }
 
+func mkcgoUnload_() {
+	C.__mkcgoUnload_()
+}
+
 func mkcgoLoad_111(handle unsafe.Pointer) {
 	C.__mkcgoLoad_111(handle)
+}
+
+func mkcgoUnload_111() {
+	C.__mkcgoUnload_111()
 }
 
 func mkcgoLoad_3(handle unsafe.Pointer) {
 	C.__mkcgoLoad_3(handle)
 }
 
+func mkcgoUnload_3() {
+	C.__mkcgoUnload_3()
+}
+
+func mkcgoLoad_init_1(handle unsafe.Pointer) {
+	C.__mkcgoLoad_init_1(handle)
+}
+
+func mkcgoUnload_init_1() {
+	C.__mkcgoUnload_init_1()
+}
+
+func mkcgoLoad_init_3(handle unsafe.Pointer) {
+	C.__mkcgoLoad_init_3(handle)
+}
+
+func mkcgoUnload_init_3() {
+	C.__mkcgoUnload_init_3()
+}
+
 func mkcgoLoad_legacy_1(handle unsafe.Pointer) {
 	C.__mkcgoLoad_legacy_1(handle)
+}
+
+func mkcgoUnload_legacy_1() {
+	C.__mkcgoUnload_legacy_1()
+}
+
+func mkcgoLoad_version(handle unsafe.Pointer) {
+	C.__mkcgoLoad_version(handle)
+}
+
+func mkcgoUnload_version() {
+	C.__mkcgoUnload_version()
 }
 
 func go_openssl_BN_bin2bn(arg0 *byte, arg1 int32, arg2 _BIGNUM_PTR) _BIGNUM_PTR {
@@ -868,6 +922,30 @@ func go_openssl_OPENSSL_init_crypto(ops uint64, settings _OPENSSL_INIT_SETTINGS_
 	return int32(C.OPENSSL_init_crypto(C.uint64_t(ops), settings))
 }
 
+func go_openssl_OPENSSL_version_major_Available() bool {
+	return C.OPENSSL_version_major_Available() != 0
+}
+
+func go_openssl_OPENSSL_version_major() uint32 {
+	return uint32(C.OPENSSL_version_major())
+}
+
+func go_openssl_OPENSSL_version_minor_Available() bool {
+	return C.OPENSSL_version_minor_Available() != 0
+}
+
+func go_openssl_OPENSSL_version_minor() uint32 {
+	return uint32(C.OPENSSL_version_minor())
+}
+
+func go_openssl_OPENSSL_version_patch_Available() bool {
+	return C.OPENSSL_version_patch_Available() != 0
+}
+
+func go_openssl_OPENSSL_version_patch() uint32 {
+	return uint32(C.OPENSSL_version_patch())
+}
+
 func go_openssl_OSSL_PARAM_BLD_free(bld _OSSL_PARAM_BLD_PTR) {
 	C.OSSL_PARAM_BLD_free(bld)
 }
@@ -914,6 +992,14 @@ func go_openssl_OSSL_PROVIDER_try_load(libctx _OSSL_LIB_CTX_PTR, name *byte, ret
 
 func go_openssl_OpenSSL_version(__type int32) *byte {
 	return (*byte)(unsafe.Pointer(C.OpenSSL_version(C.int(__type))))
+}
+
+func go_openssl_OpenSSL_version_num_Available() bool {
+	return C.OpenSSL_version_num_Available() != 0
+}
+
+func go_openssl_OpenSSL_version_num() uint32 {
+	return uint32(C.OpenSSL_version_num())
 }
 
 func go_openssl_PKCS5_PBKDF2_HMAC(pass *byte, passlen int32, salt *byte, saltlen int32, iter int32, digest _EVP_MD_PTR, keylen int32, out *byte) int32 {
