@@ -18,31 +18,11 @@ var osslHandle unsafe.Pointer
 // See Init() for details about file.
 func opensslInit(file string) error {
 	// Load the OpenSSL shared library using dlopen.
-	handle, err := openLibrary(file)
+	handle, close, err := openLibrary(file)
 	if err != nil {
 		return err
 	}
 
-	loadOpenSSLFuncs(handle)
-
-	// Initialize OpenSSL.
-	go_openssl_OPENSSL_init()
-	if go_openssl_OPENSSL_init_crypto(
-		_OPENSSL_INIT_ADD_ALL_CIPHERS|
-			_OPENSSL_INIT_ADD_ALL_DIGESTS|
-			_OPENSSL_INIT_LOAD_CONFIG|
-			_OPENSSL_INIT_LOAD_CRYPTO_STRINGS,
-		nil) != 1 {
-		dlclose(handle)
-		return fail("init crypto")
-	}
-	osslHandle = handle
-	return nil
-}
-
-// loadFuncs loads and initialize the OpenSSL functions.
-// See shims.go for the complete list of supported functions.
-func loadOpenSSLFuncs(handle unsafe.Pointer) {
 	mkcgoLoad_(handle)
 	if vMajor == 1 {
 		mkcgoLoad_legacy_1(handle)
@@ -53,6 +33,20 @@ func loadOpenSSLFuncs(handle unsafe.Pointer) {
 		mkcgoLoad_111(handle)
 		mkcgoLoad_3(handle)
 	}
+
+	// Initialize OpenSSL.
+	go_openssl_OPENSSL_init()
+	if go_openssl_OPENSSL_init_crypto(
+		_OPENSSL_INIT_ADD_ALL_CIPHERS|
+			_OPENSSL_INIT_ADD_ALL_DIGESTS|
+			_OPENSSL_INIT_LOAD_CONFIG|
+			_OPENSSL_INIT_LOAD_CRYPTO_STRINGS,
+		nil) != 1 {
+		close()
+		return fail("init crypto")
+	}
+	osslHandle = handle
+	return nil
 }
 
 // initForCheckVersion loads and initialize only the
@@ -61,62 +55,61 @@ func loadOpenSSLFuncs(handle unsafe.Pointer) {
 // The function leaves all the global variables in the same state as they were
 // before the call.
 func initForCheckVersion(file string) (func(), error) {
-	// This function can be called when the
 	prevMajor, prevMinor, prevPatch := vMajor, vMinor, vPatch
-	// Load the OpenSSL shared library using dlopen.
-	handle, err := openLibrary(file)
+	handle, close, err := openLibrary(file)
 	if err != nil {
 		vMajor, vMinor, vPatch = prevMajor, prevMinor, prevPatch
 		return nil, err
 	}
-
+	var loadX func(unsafe.Pointer)
+	var unloadX func()
 	switch vMajor {
 	case 1:
-		mkcgoLoad_init_1(handle)
+		loadX = mkcgoLoad_init_1
+		unloadX = mkcgoUnload_init_1
 	case 3:
-		mkcgoLoad_init_3(handle)
+		loadX = mkcgoLoad_init_3
+		unloadX = mkcgoUnload_init_3
 	default:
 		// We shouldn't get here: openLibrary should have already returned an error.
 		panic(errUnsupportedVersion())
 	}
+	loadX(handle)
 	return func() {
-		dlclose(handle)
-		// Undo all the changes made in this function.
-		mkcgoUnload_version()
-		switch vMajor {
-		case 1:
-			mkcgoUnload_init_1()
-		case 3:
-			mkcgoUnload_init_3()
-		default:
-			panic(errUnsupportedVersion())
+		close()
+		if osslHandle != nil {
+			loadX(osslHandle)
+		} else {
+			unloadX()
 		}
 		vMajor, vMinor, vPatch = prevMajor, prevMinor, prevPatch
-		if osslHandle != nil {
-			loadOpenSSLFuncs(osslHandle)
-		}
 	}, nil
 }
 
 // openLibrary loads and initialize the version of OpenSSL.
-func openLibrary(file string) (unsafe.Pointer, error) {
-	handle, err := dlopen(file)
-	if err != nil {
-		return nil, err
-	}
-	if err := initVersion(handle); err != nil {
-		return nil, err
-	}
-	return handle, nil
-}
-
-func initVersion(handle unsafe.Pointer) error {
+// It returns the handle to the OpenSSL shared library
+// and a function that can be called to release the resources.
+func openLibrary(file string) (handle unsafe.Pointer, close func(), err error) {
 	vMajor, vMinor, vPatch = 0, 0, 0
+	handle, err = dlopen(file)
+	if err != nil {
+		return nil, nil, err
+	}
 	// Retrieve the loaded OpenSSL version and check if it is supported.
 	// Notice that major and minor could not match with the version parameter
 	// in case the name of the shared library file differs from the OpenSSL
 	// version it contains.
 	mkcgoLoad_version(handle)
+	close = func() {
+		dlclose(handle)
+		mkcgoUnload_version()
+	}
+	defer func() {
+		if err != nil {
+			close()
+		}
+	}()
+
 	if go_openssl_OPENSSL_version_major_Available() &&
 		go_openssl_OPENSSL_version_minor_Available() &&
 		go_openssl_OPENSSL_version_patch_Available() {
@@ -131,7 +124,7 @@ func initVersion(handle unsafe.Pointer) error {
 		vMinor = uint(ver >> 20 & 0xFF)
 		vPatch = uint(ver >> 12 & 0xFF)
 	} else {
-		return errors.New("openssl: version not available")
+		return handle, nil, errors.New("openssl: version not available")
 	}
 	var supported bool
 	if vMajor == 1 {
@@ -141,7 +134,7 @@ func initVersion(handle unsafe.Pointer) error {
 		supported = true
 	}
 	if !supported {
-		return errUnsupportedVersion()
+		return handle, nil, errUnsupportedVersion()
 	}
-	return nil
+	return handle, close, nil
 }
