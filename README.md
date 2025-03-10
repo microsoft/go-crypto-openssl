@@ -7,9 +7,9 @@ The `openssl` package implements Go crypto primitives using OpenSSL shared libra
 The `openssl` package is designed to be used as a drop-in replacement for the [boring](https://pkg.go.dev/crypto/internal/boring) package in order to facilitate integrating `openssl` inside a forked Go toolchain.
 
 > [!IMPORTANT]
-> Starting with Go 1.21, the [Microsoft Go](https://github.com/microsoft/go) toolchain uses [golang-fips/openssl](https://github.com/golang-fips/openssl) instead of this module.
+> Starting with Go 1.21, the [Microsoft build of Go](https://github.com/microsoft/go) uses [golang-fips/openssl](https://github.com/golang-fips/openssl) instead of this module.
 >
-> This module was used by Microsoft Go 1.20 and earlier.
+> This module was used by the Microsoft build of Go in 1.20 and earlier.
 > These versions are all unsupported as of 2024-02-06.
 
 ## Disclaimer
@@ -29,13 +29,13 @@ The `openssl` package has support for multiple OpenSSL versions.
 OpenSSL versions 1.0.2, 1.1.0, 1.1.1 and 3.0.1 pass a small set of automatic tests that ensure they can be built and that there are no major regressions.
 These tests do not validate the cryptographic correctness of the `openssl` package.
 
-On top of that, the Microsoft CI built and tested a subset of the supported OpenSSL versions as part of the [Microsoft Go fork](https://github.com/microsoft/go) release process.
+On top of that, the Microsoft CI built and tested a subset of the supported OpenSSL versions as part of the [Microsoft build of Go](https://github.com/microsoft/go) release process.
 These tests were much more exhaustive and validated that a specific OpenSSL version can produce working applications.
 Only OpenSSL 1.1.1 went through this process.
 
 > [!NOTE]
-> This module is not used by any active branches of the Microsoft Go fork, so those Microsoft CI tests no longer run.
-> Microsoft Go 1.21+ uses and tests [golang-fips/openssl](https://github.com/golang-fips/openssl).
+> This module is not used by any active branches of the Microsoft build of Go, so those Microsoft CI tests no longer run.
+> Active branches use and test [golang-fips/openssl](https://github.com/golang-fips/openssl).
 
 Versions not listed above are not supported by this module.
 
