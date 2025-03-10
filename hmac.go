@@ -182,13 +182,11 @@ func (h *opensslHMAC) Reset() {
 }
 
 func (h *opensslHMAC) finalize() {
-	switch vMajor {
-	case 1:
+	if h.ctx1.ctx != nil {
 		go_openssl_HMAC_CTX_free(h.ctx1.ctx)
-	case 3:
+	}
+	if h.ctx3.ctx != nil {
 		go_openssl_EVP_MAC_CTX_free(h.ctx3.ctx)
-	default:
-		panic(errUnsupportedVersion())
 	}
 }
 
