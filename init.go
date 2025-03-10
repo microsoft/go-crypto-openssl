@@ -36,14 +36,14 @@ func opensslInit(file string) error {
 
 	// Initialize OpenSSL.
 	go_openssl_OPENSSL_init()
-	if go_openssl_OPENSSL_init_crypto(
+	if _, err = go_openssl_OPENSSL_init_crypto(
 		_OPENSSL_INIT_ADD_ALL_CIPHERS|
 			_OPENSSL_INIT_ADD_ALL_DIGESTS|
 			_OPENSSL_INIT_LOAD_CONFIG|
 			_OPENSSL_INIT_LOAD_CRYPTO_STRINGS,
-		nil) != 1 {
+		nil); err != nil {
 		close()
-		return fail("init crypto")
+		return err
 	}
 	osslHandle = handle
 	return nil
