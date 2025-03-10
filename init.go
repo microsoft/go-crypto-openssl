@@ -11,7 +11,7 @@ import (
 // osslHandle is the handle to the OpenSSL shared library loaded in the [Init] function.
 var osslHandle unsafe.Pointer
 
-// opensslInit loads and initialize OpenSSL..
+// opensslInit loads and initializes OpenSSL.
 //
 // See [Init] for details about file.
 func opensslInit(file string) error {
