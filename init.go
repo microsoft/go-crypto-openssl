@@ -11,11 +11,9 @@ import (
 // osslHandle is the handle to the OpenSSL shared library loaded in the [Init] function.
 var osslHandle unsafe.Pointer
 
-// opensslInit loads and initialize OpenSSL.
-// If successful, it returns the major and minor OpenSSL version
-// as reported by the OpenSSL API.
+// opensslInit loads and initialize OpenSSL..
 //
-// See Init() for details about file.
+// See [Init] for details about file.
 func opensslInit(file string) error {
 	// Load the OpenSSL shared library using dlopen.
 	handle, close, err := openLibrary(file)
@@ -61,33 +59,41 @@ func opensslInit(file string) error {
 // before returning.
 func initForCheckVersion(file string) (func(), error) {
 	prevMajor, prevMinor, prevPatch := vMajor, vMinor, vPatch
+	restoreVersion := func() {
+		vMajor, vMinor, vPatch = prevMajor, prevMinor, prevPatch
+	}
 	handle, close, err := openLibrary(file)
 	if err != nil {
-		vMajor, vMinor, vPatch = prevMajor, prevMinor, prevPatch
+		restoreVersion()
 		return nil, err
 	}
-	var loadX func(unsafe.Pointer)
-	var unloadX func()
-	switch vMajor {
-	case 1:
-		loadX = mkcgoLoad_init_1
-		unloadX = mkcgoUnload_init_1
-	case 3:
-		loadX = mkcgoLoad_init_3
-		unloadX = mkcgoUnload_init_3
-	default:
-		// We shouldn't get here: openLibrary should have already returned an error.
-		panic(errUnsupportedVersion())
+	initFuncs := func() (loadX func(unsafe.Pointer), unloadX func()) {
+		switch vMajor {
+		case 1:
+			loadX = mkcgoLoad_init_1
+			unloadX = mkcgoUnload_init_1
+		case 3:
+			loadX = mkcgoLoad_init_3
+			unloadX = mkcgoUnload_init_3
+		default:
+			// We shouldn't get here: openLibrary should have already returned an error.
+			panic(errUnsupportedVersion())
+		}
+		return
 	}
+	loadX, unloadX := initFuncs()
 	loadX(handle)
 	return func() {
+		restoreVersion()
 		close()
+		unloadX()
 		if osslHandle != nil {
+			// If osslHandle is not nil, it means that the library was already loaded
+			// and initialized. In this case, we need to reload the functions from
+			// the original handle.
+			loadX, _ = initFuncs()
 			loadX(osslHandle)
-		} else {
-			unloadX()
 		}
-		vMajor, vMinor, vPatch = prevMajor, prevMinor, prevPatch
 	}, nil
 }
 
