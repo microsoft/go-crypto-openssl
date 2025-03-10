@@ -51,9 +51,14 @@ func opensslInit(file string) error {
 
 // initForCheckVersion loads and initialize only the
 // functions required in [CheckVersion].
-// It returns a function that must be called to release the resources.
-// The function leaves all the global variables in the same state as they were
-// before the call.
+// It returns a close function that must be called to release the resources.
+//
+// This function modifies the vMajor, vMinor, and vPatch global variables as
+// well as other internal global variables that facilitate OpenSSL calls.
+//
+// If the function succeeds, calling the close function restores the previous
+// state of the global variables. If it fails, the global variables are restored
+// before returning.
 func initForCheckVersion(file string) (func(), error) {
 	prevMajor, prevMinor, prevPatch := vMajor, vMinor, vPatch
 	handle, close, err := openLibrary(file)
