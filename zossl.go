@@ -4,7 +4,9 @@ package openssl
 
 /*
 #cgo CFLAGS: -Wno-attributes
+
 #include "shims.h"
+
 void __mkcgoLoad_(void* handle);
 void __mkcgoUnload_();
 void __mkcgoLoad_111(void* handle);
@@ -19,6 +21,7 @@ void __mkcgoLoad_legacy_1(void* handle);
 void __mkcgoUnload_legacy_1();
 void __mkcgoLoad_version(void* handle);
 void __mkcgoUnload_version();
+
 int OPENSSL_version_major_Available();
 int OPENSSL_version_minor_Available();
 int OPENSSL_version_patch_Available();

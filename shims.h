@@ -117,6 +117,11 @@ typedef int point_conversion_form_t;
 // - 3: OpenSSL 3.0 or later
 // - 111: OpenSSL 1.1.1 or later
 
+// The noescape/nocallback attributes are performance optimizations.
+// Only add functions that have been observed to benefit from these
+// directives, not every function that is merely expected to meet
+// the noescape/nocallback criteria.
+
 // ERR API
 void ERR_error_string_n(unsigned long e, char *buf, size_t len);
 void ERR_clear_error(void) __attribute__((tag(""),tag("init_3")));
@@ -150,7 +155,7 @@ _OSSL_PROVIDER_PTR OSSL_PROVIDER_try_load(_OSSL_LIB_CTX_PTR libctx, const char *
 const char *OSSL_PROVIDER_get0_name(const _OSSL_PROVIDER_PTR prov) __attribute__((tag("3"),noerror));
 
 // RAND API
-int RAND_bytes(unsigned char *arg0, int arg1);
+int RAND_bytes(unsigned char *arg0, int arg1) __attribute__((noescape,nocallback));
 
 // EVP_MD API
 _EVP_MD_PTR EVP_MD_fetch(_OSSL_LIB_CTX_PTR ctx, const char *algorithm, const char *properties) __attribute__((tag("3"),tag("init_3")));
@@ -180,12 +185,12 @@ _EVP_MD_CTX_PTR EVP_MD_CTX_new(void);
 void EVP_MD_CTX_free(_EVP_MD_CTX_PTR ctx);
 int EVP_MD_CTX_copy(_EVP_MD_CTX_PTR out, const _EVP_MD_CTX_PTR in);
 int EVP_MD_CTX_copy_ex(_EVP_MD_CTX_PTR out, const _EVP_MD_CTX_PTR in);
-int EVP_Digest(const void *data, size_t count, unsigned char *md, unsigned int *size, const _EVP_MD_PTR type, _ENGINE_PTR impl);
+int EVP_Digest(const void *data, size_t count, unsigned char *md, unsigned int *size, const _EVP_MD_PTR type, _ENGINE_PTR impl) __attribute__((noescape,nocallback));
 int EVP_DigestInit_ex(_EVP_MD_CTX_PTR ctx, const _EVP_MD_PTR type, _ENGINE_PTR impl);
 int EVP_DigestInit(_EVP_MD_CTX_PTR ctx, const _EVP_MD_PTR type);
-int EVP_DigestUpdate(_EVP_MD_CTX_PTR ctx, const void *d, size_t cnt);
+int EVP_DigestUpdate(_EVP_MD_CTX_PTR ctx, const void *d, size_t cnt) __attribute__((noescape,nocallback));
 int EVP_DigestFinal_ex(_EVP_MD_CTX_PTR ctx, unsigned char *md, unsigned int *s);
-int EVP_DigestSign(_EVP_MD_CTX_PTR ctx, unsigned char *sigret, size_t *siglen, const unsigned char *tbs, size_t tbslen) __attribute__((tag("111")));
+int EVP_DigestSign(_EVP_MD_CTX_PTR ctx, unsigned char *sigret, size_t *siglen, const unsigned char *tbs, size_t tbslen) __attribute__((tag("111"),noescape,nocallback));
 int EVP_DigestSignInit(_EVP_MD_CTX_PTR ctx, _EVP_PKEY_CTX_PTR *pctx, const _EVP_MD_PTR type, _ENGINE_PTR e, _EVP_PKEY_PTR pkey);
 int EVP_DigestSignFinal(_EVP_MD_CTX_PTR ctx, unsigned char *sig, size_t *siglen);
 int EVP_DigestVerifyInit(_EVP_MD_CTX_PTR ctx, _EVP_PKEY_CTX_PTR *pctx, const _EVP_MD_PTR type, _ENGINE_PTR e, _EVP_PKEY_PTR pkey);
@@ -229,13 +234,13 @@ int EVP_CIPHER_CTX_set_key_length(_EVP_CIPHER_CTX_PTR x, int keylen);
 void EVP_CIPHER_CTX_free(_EVP_CIPHER_CTX_PTR arg0);
 int EVP_CIPHER_CTX_ctrl(_EVP_CIPHER_CTX_PTR ctx, int type, int arg, void *ptr);
 int EVP_CipherInit_ex(_EVP_CIPHER_CTX_PTR ctx, const _EVP_CIPHER_PTR type, _ENGINE_PTR impl, const unsigned char *key, const unsigned char *iv, int enc);
-int EVP_CipherUpdate(_EVP_CIPHER_CTX_PTR ctx, unsigned char *out, int *outl, const unsigned char *in, int inl);
+int EVP_CipherUpdate(_EVP_CIPHER_CTX_PTR ctx, unsigned char *out, int *outl, const unsigned char *in, int inl) __attribute__((noescape,nocallback));
 int EVP_EncryptInit_ex(_EVP_CIPHER_CTX_PTR ctx, const _EVP_CIPHER_PTR type, _ENGINE_PTR impl, const unsigned char *key, const unsigned char *iv);
-int EVP_EncryptUpdate(_EVP_CIPHER_CTX_PTR ctx, unsigned char *out, int *outl, const unsigned char *in, int inl);
-int EVP_EncryptFinal_ex(_EVP_CIPHER_CTX_PTR ctx, unsigned char *out, int *outl);
+int EVP_EncryptUpdate(_EVP_CIPHER_CTX_PTR ctx, unsigned char *out, int *outl, const unsigned char *in, int inl) __attribute__((noescape,nocallback));
+int EVP_EncryptFinal_ex(_EVP_CIPHER_CTX_PTR ctx, unsigned char *out, int *outl) __attribute__((noescape,nocallback));
 int EVP_DecryptInit_ex(_EVP_CIPHER_CTX_PTR ctx, const _EVP_CIPHER_PTR type, _ENGINE_PTR impl, const unsigned char *key, const unsigned char *iv);
-int EVP_DecryptUpdate(_EVP_CIPHER_CTX_PTR ctx, unsigned char *out, int *outl, const unsigned char *in, int inl);
-int EVP_DecryptFinal_ex(_EVP_CIPHER_CTX_PTR ctx, unsigned char *outm, int *outl);
+int EVP_DecryptUpdate(_EVP_CIPHER_CTX_PTR ctx, unsigned char *out, int *outl, const unsigned char *in, int inl) __attribute__((noescape,nocallback));
+int EVP_DecryptFinal_ex(_EVP_CIPHER_CTX_PTR ctx, unsigned char *outm, int *outl) __attribute__((noescape,nocallback));
 
 // EVP_PKEY API
 _EVP_PKEY_PTR EVP_PKEY_new(void);
@@ -254,8 +259,8 @@ int EVP_PKEY_get_bn_param(const _EVP_PKEY_PTR pkey, const char *key_name, _BIGNU
 int EVP_PKEY_up_ref(_EVP_PKEY_PTR key) __attribute__((tag("3")));
 int EVP_PKEY_set1_EC_KEY(_EVP_PKEY_PTR pkey, _EC_KEY_PTR key) __attribute__((tag("legacy_1")));
 int EVP_PKEY_CTX_set0_rsa_oaep_label(_EVP_PKEY_CTX_PTR ctx, void *label, int len) __attribute__((tag("3")));
-int EVP_PKEY_get_raw_public_key(const _EVP_PKEY_PTR pkey, unsigned char *pub, size_t *len) __attribute__((tag("111")));
-int EVP_PKEY_get_raw_private_key(const _EVP_PKEY_PTR pkey, unsigned char *priv, size_t *len) __attribute__((tag("111")));
+int EVP_PKEY_get_raw_public_key(const _EVP_PKEY_PTR pkey, unsigned char *pub, size_t *len) __attribute__((tag("111"),noescape,nocallback));
+int EVP_PKEY_get_raw_private_key(const _EVP_PKEY_PTR pkey, unsigned char *priv, size_t *len) __attribute__((tag("111"),noescape,nocallback));
 int EVP_PKEY_fromdata_init(_EVP_PKEY_CTX_PTR ctx) __attribute__((tag("3")));
 int EVP_PKEY_fromdata(_EVP_PKEY_CTX_PTR ctx, _EVP_PKEY_PTR *pkey, int selection, _OSSL_PARAM_PTR params) __attribute__((tag("3")));
 int EVP_PKEY_paramgen_init(_EVP_PKEY_CTX_PTR ctx);
@@ -272,7 +277,7 @@ int EVP_PKEY_sign(_EVP_PKEY_CTX_PTR arg0, unsigned char *arg1, size_t *arg2, con
 int EVP_PKEY_verify(_EVP_PKEY_CTX_PTR ctx, const unsigned char *sig, size_t siglen, const unsigned char *tbs, size_t tbslen);
 int EVP_PKEY_derive_init(_EVP_PKEY_CTX_PTR ctx);
 int EVP_PKEY_derive_set_peer(_EVP_PKEY_CTX_PTR ctx, _EVP_PKEY_PTR peer);
-int EVP_PKEY_derive(_EVP_PKEY_CTX_PTR ctx, unsigned char *key, size_t *keylen);
+int EVP_PKEY_derive(_EVP_PKEY_CTX_PTR ctx, unsigned char *key, size_t *keylen) __attribute__((noescape,nocallback));
 int EVP_PKEY_public_check_quick(_EVP_PKEY_CTX_PTR ctx) __attribute__((tag("3")));
 int EVP_PKEY_private_check(_EVP_PKEY_CTX_PTR ctx) __attribute__((tag("3")));
 _EVP_PKEY_PTR EVP_PKEY_Q_keygen(_OSSL_LIB_CTX_PTR ctx, const char *propq, const char *type, ...) __attribute__((tag("3")));
