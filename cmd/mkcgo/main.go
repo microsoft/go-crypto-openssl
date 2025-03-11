@@ -40,41 +40,38 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var buf, cbuf bytes.Buffer
-	generateGo(src, &buf)
+	var gobuf, go124buf, cbuf bytes.Buffer
+	generateGo(src, &gobuf)
+	generateGo124(src, &go124buf)
 	generateC(src, &cbuf)
 
 	// Format the generated Go source code.
-	data, err := format.Source(buf.Bytes())
-	if err != nil {
-		log.Printf("failed to format source: %v", err)
-		f, err := writeTempSourceFile(buf.Bytes())
-		if err != nil {
-			log.Fatalf("failed to write unformatted source to file: %v", err)
-		}
-		log.Fatalf("for diagnosis, wrote unformatted source to %v", f)
+	godata := goformat(gobuf.Bytes())
+	go124data := goformat(go124buf.Bytes())
+
+	var baseName string
+	if *fileName == "" {
+		baseName = "mkcgo"
+	} else {
+		baseName = strings.TrimSuffix(*fileName, ".go")
 	}
 
-	// Write output. If no explicit output file is specified,
-	// // write both Go and C output to stdout.
-	if *fileName == "" {
-		for _, d := range []struct {
-			name string
-			data []byte
-		}{
-			{"Go", data},
-			{"C", cbuf.Bytes()},
-		} {
+	for _, d := range []struct {
+		name string
+		data []byte
+	}{
+		{baseName + ".go", godata},
+		{baseName + "_go124.go", go124data},
+		{baseName + ".c", cbuf.Bytes()},
+	} {
+		var err error
+		if *fileName == "" {
+			// Write output. If no explicit output file is specified,
+			// // write both Go and C output to stdout.
 			os.Stdout.WriteString("// === " + d.name + " ===\n\n")
-			if _, err = os.Stdout.Write(d.data); err != nil {
-				log.Fatal(err)
-			}
-		}
-	} else {
-		err = os.WriteFile(*fileName, data, 0o644)
-		if err == nil {
-			cfileName := strings.TrimSuffix(*fileName, ".go") + ".c"
-			err = os.WriteFile(cfileName, cbuf.Bytes(), 0o644)
+			_, err = os.Stdout.Write(d.data)
+		} else {
+			err = os.WriteFile(d.name, d.data, 0o644)
 		}
 		if err != nil {
 			log.Fatal(err)
@@ -96,4 +93,17 @@ func writeTempSourceFile(data []byte) (string, error) {
 		return "", err
 	}
 	return f.Name(), nil
+}
+
+func goformat(data []byte) []byte {
+	data, err := format.Source(data)
+	if err != nil {
+		log.Printf("failed to format source: %v", err)
+		f, err := writeTempSourceFile(data)
+		if err != nil {
+			log.Fatalf("failed to write unformatted source to file: %v", err)
+		}
+		log.Fatalf("for diagnosis, wrote unformatted source to %v", f)
+	}
+	return data
 }

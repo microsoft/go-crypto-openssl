@@ -17,6 +17,8 @@ type FuncAttributes struct {
 	Optional     bool
 	NoError      bool
 	ErrCond      string
+	NoEscape     bool
+	NoCallback   bool
 }
 
 type attribute struct {
@@ -74,6 +76,22 @@ var attributes = [...]attribute{
 				return errors.New("errcond attribute is not allowed with noerror attribute")
 			}
 			opts.ErrCond = s[0]
+			return nil
+		},
+	},
+	{
+		name:        "noescape",
+		description: "The C function does not keep a copy of the Go pointer.",
+		handle: func(opts *FuncAttributes, s ...string) error {
+			opts.NoEscape = true
+			return nil
+		},
+	},
+	{
+		name:        "nocallback",
+		description: "The C function does not call back into Go.",
+		handle: func(opts *FuncAttributes, s ...string) error {
+			opts.NoCallback = true
 			return nil
 		},
 	},
@@ -370,6 +388,10 @@ func extractFunctionAttributes(s string, fnAttrs *FuncAttributes) (string, error
 			_, args, body, found = extractSection(body[idxParen:], "(", ")")
 			if !found {
 				return "", errors.New("unbalanced parentheses in line: " + s)
+			}
+			body = trim(body)
+			if len(body) > 0 && body[0] != ',' {
+				return "", errors.New("parameters must be separated by commas in line: " + s)
 			}
 			body = strings.TrimPrefix(body, ",")
 		} else if idxComma == -1 && idxParen == -1 {
