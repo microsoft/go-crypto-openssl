@@ -27,7 +27,6 @@ import (
 	"errors"
 	"math/bits"
 	"strconv"
-	"strings"
 	"sync"
 	"unsafe"
 )
@@ -266,35 +265,6 @@ func base(b []byte) *byte {
 		return nil
 	}
 	return unsafe.SliceData(b)
-}
-
-func newOpenSSLError(msg string) error {
-	var b strings.Builder
-	b.WriteString(msg)
-	b.WriteString("\nopenssl error(s):")
-	for {
-		var (
-			e    uint32
-			file *byte
-			line int32
-		)
-		switch vMajor {
-		case 1:
-			e = go_openssl_ERR_get_error_line(&file, &line)
-		case 3:
-			e = go_openssl_ERR_get_error_all(&file, &line, nil, nil, nil)
-		default:
-			panic(errUnsupportedVersion())
-		}
-		if e == 0 {
-			break
-		}
-		b.WriteByte('\n')
-		var buf [256]byte
-		go_openssl_ERR_error_string_n(e, base(buf[:]), len(buf))
-		b.WriteString(string(buf[:]) + "\n\t" + C.GoString((*C.char)(unsafe.Pointer(file))) + ":" + strconv.Itoa(int(line)))
-	}
-	return errors.New(b.String())
 }
 
 // cryptoMalloc allocates n bytes of memory on the OpenSSL heap, which may be
