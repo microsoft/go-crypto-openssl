@@ -363,6 +363,29 @@ func TestCgo(t *testing.T) {
 	openssl.SHA256(d.Data[:])
 }
 
+func verifySHA256(token, salt string) [32]byte {
+	return openssl.SHA256([]byte(token + salt))
+}
+
+func TestIssue71943(t *testing.T) {
+	// https://github.com/golang/go/issues/71943
+	if Asan() {
+		t.Skip("skipping allocations test with sanitizers")
+	}
+	n := int(testing.AllocsPerRun(10, func() {
+		runtime.KeepAlive(verifySHA256("teststring", "test"))
+	}))
+	want := 2
+	if compareCurrentVersion("go1.25") >= 0 {
+		want = 0
+	} else if compareCurrentVersion("go1.24") >= 0 {
+		want = 1
+	}
+	if n > want {
+		t.Errorf("allocs = %d, want %d", n, want)
+	}
+}
+
 func TestHashAllocations(t *testing.T) {
 	if Asan() {
 		t.Skip("skipping allocations test with sanitizers")
@@ -385,23 +408,39 @@ func TestHashAllocations(t *testing.T) {
 	}
 }
 
-func verifySHA256(token, salt string) [32]byte {
-	return openssl.SHA256([]byte(token + salt))
-}
-
-func TestIssue71943(t *testing.T) {
-	// https://github.com/golang/go/issues/71943
+func TestHashStructAllocations(t *testing.T) {
 	if Asan() {
 		t.Skip("skipping allocations test with sanitizers")
 	}
+	msg := []byte("testing")
+
+	sha1Hash := openssl.NewSHA1()
+	sha224Hash := openssl.NewSHA1()
+	sha256Hash := openssl.NewSHA256()
+	sha512Hash := openssl.NewSHA512()
+
+	sum := make([]byte, sha512Hash.Size())
 	n := int(testing.AllocsPerRun(10, func() {
-		runtime.KeepAlive(verifySHA256("teststring", "test"))
+		sha1Hash.Write(msg)
+		sha224Hash.Write(msg)
+		sha256Hash.Write(msg)
+		sha512Hash.Write(msg)
+
+		sha1Hash.Sum(sum[:0])
+		sha224Hash.Sum(sum[:0])
+		sha256Hash.Sum(sum[:0])
+		sha512Hash.Sum(sum[:0])
+
+		sha1Hash.Reset()
+		sha224Hash.Reset()
+		sha256Hash.Reset()
+		sha512Hash.Reset()
 	}))
-	want := 2
-	if compareCurrentVersion("go1.25") >= 0 {
+	want := 4
+	if compareCurrentVersion("go1.24") >= 0 {
+		// The go1.24 compiler is able to optimize the allocation away.
+		// See cgo_go124.go for more information.
 		want = 0
-	} else if compareCurrentVersion("go1.24") >= 0 {
-		want = 1
 	}
 	if n > want {
 		t.Errorf("allocs = %d, want %d", n, want)

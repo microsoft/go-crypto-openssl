@@ -249,6 +249,7 @@ type evpHash struct {
 	// the state of ctx. Having it here allows reusing the
 	// same allocated object multiple times.
 	ctx2 ossl.EVP_MD_CTX_PTR
+	out  [maxHashSize]byte
 }
 
 func newEvpHash(ch crypto.Hash) *evpHash {
@@ -351,12 +352,13 @@ func (h *evpHash) BlockSize() int {
 
 func (h *evpHash) Sum(in []byte) []byte {
 	h.init()
-	out := make([]byte, h.Size(), maxHashSize) // explicit cap to allow stack allocation
-	if err := ossl.HashSum(h.ctx, h.ctx2, out); err != nil {
+	tmp := h.out[:h.Size()] // Create slice view
+	clear(tmp)
+	if err := ossl.HashSum(h.ctx, h.ctx2, tmp); err != nil {
 		panic(err)
 	}
 	runtime.KeepAlive(h)
-	return append(in, out...)
+	return append(in, tmp...)
 }
 
 // Clone returns a new evpHash object that is a deep clone of itself.
