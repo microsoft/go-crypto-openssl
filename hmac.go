@@ -6,6 +6,7 @@ import "C"
 import (
 	"hash"
 	"runtime"
+	"slices"
 	"sync"
 	"unsafe"
 
@@ -241,4 +242,42 @@ func (h *opensslHMAC) Sum(in []byte) []byte {
 		panic(errUnsupportedVersion())
 	}
 	return append(in, h.sum[:h.size]...)
+}
+
+func (h *opensslHMAC) Clone() (HashCloner, error) {
+	switch vMajor {
+	case 1:
+		ctx2, err := ossl.HMAC_CTX_new()
+		if err != nil {
+			panic(err)
+		}
+		if _, err := ossl.HMAC_CTX_copy(ctx2, h.ctx1.ctx); err != nil {
+			ossl.HMAC_CTX_free(ctx2)
+			panic(err)
+		}
+		cl := &opensslHMAC{
+			ctx1:      hmacCtx1{ctx: ctx2},
+			size:      h.size,
+			blockSize: h.blockSize,
+		}
+		runtime.SetFinalizer(cl, (*opensslHMAC).finalize)
+		return cl, nil
+
+	case 3:
+		ctx2, err := ossl.EVP_MAC_CTX_dup(h.ctx3.ctx)
+		if err != nil {
+			panic(err)
+		}
+
+		cl := &opensslHMAC{
+			ctx3:      hmacCtx3{ctx: ctx2, key: slices.Clone(h.ctx3.key)},
+			size:      h.size,
+			blockSize: h.blockSize,
+		}
+		runtime.SetFinalizer(cl, (*opensslHMAC).finalize)
+		return cl, nil
+
+	default:
+		panic(errUnsupportedVersion())
+	}
 }
