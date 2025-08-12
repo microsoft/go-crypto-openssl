@@ -17,7 +17,7 @@ jobs:
       with:
         go-version: ${{ matrix.go-version }}
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Install OpenSSL - Build
       run: sudo sh ./scripts/openssl.sh ${{ matrix.openssl-version-build }}
     - name: Check headers
