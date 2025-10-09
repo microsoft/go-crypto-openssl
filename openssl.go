@@ -1,26 +1,8 @@
-//go:build !cmd_go_bootstrap
+//go:build !cmd_go_bootstrap && cgo
 
 // Package openssl provides access to OpenSSL cryptographic functions.
 package openssl
 
-/*
-#include <stdlib.h> // for free()
-
-static inline void
-go_openssl_do_leak_check(void)
-{
-#ifndef __has_feature
-#define __has_feature(x) 0
-#endif
-
-#if (defined(__SANITIZE_ADDRESS__) && __SANITIZE_ADDRESS__) ||	\
-    __has_feature(address_sanitizer)
-    extern void __lsan_do_leak_check(void);
-    __lsan_do_leak_check();
-#endif
-}
-*/
-import "C"
 import (
 	"errors"
 	"math/bits"
@@ -105,7 +87,7 @@ func (e fail) Error() string { return "openssl: " + string(e) + " failed" }
 
 // VersionText returns the version text of the OpenSSL currently loaded.
 func VersionText() string {
-	return C.GoString((*C.char)(unsafe.Pointer(ossl.OpenSSL_version(0))))
+	return goString(ossl.OpenSSL_version(0))
 }
 
 // FIPS returns true if OpenSSL is running in FIPS mode and there is
@@ -172,9 +154,7 @@ func isProviderAvailable(name string) bool {
 	if vMajor == 1 {
 		return false
 	}
-	providerName := C.CString(name)
-	defer C.free(unsafe.Pointer(providerName))
-	return ossl.OSSL_PROVIDER_available(nil, (*byte)(unsafe.Pointer(providerName))) == 1
+	return ossl.OSSL_PROVIDER_available(nil, unsafe.StringData(name+"\x00")) == 1
 }
 
 // SetFIPS enables or disables FIPS mode.
@@ -273,6 +253,9 @@ func base(b []byte) *byte {
 	return unsafe.SliceData(b)
 }
 
+//go:linkname throw runtime.throw
+func throw(string)
+
 // cryptoMalloc allocates n bytes of memory on the OpenSSL heap, which may be
 // different from the heap which C.malloc allocates on. The allocated object
 // must be freed using cryptoFree. cryptoMalloc is equivalent to the
@@ -289,7 +272,7 @@ func cryptoMalloc(n int) unsafe.Pointer {
 	if p == nil {
 		// Un-recover()-ably crash the program in the same manner as the
 		// C.malloc() wrapper function.
-		runtime_throw("openssl: CRYPTO_malloc failed")
+		throw("openssl: CRYPTO_malloc failed")
 	}
 	return p
 }
@@ -364,10 +347,6 @@ func bnToBig(bn ossl.BIGNUM_PTR) BigInt {
 func bnToBinPad(bn ossl.BIGNUM_PTR, to []byte) error {
 	_, err := ossl.BN_bn2binpad(bn, base(to), int32(len(to)))
 	return err
-}
-
-func CheckLeaks() {
-	C.go_openssl_do_leak_check()
 }
 
 // versionAtOrAbove returns true when
