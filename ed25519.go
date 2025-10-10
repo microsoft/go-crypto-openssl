@@ -1,4 +1,4 @@
-//go:build !cmd_go_bootstrap && cgo
+//go:build !cmd_go_bootstrap && (cgo || goexperiment.ms_nocgo_opensslcrypto)
 
 package openssl
 
