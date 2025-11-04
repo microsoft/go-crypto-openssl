@@ -33,6 +33,7 @@ type EVP_MAC_CTX_PTR unsafe.Pointer
 type OSSL_PARAM_BLD_PTR unsafe.Pointer
 type OSSL_PARAM_PTR unsafe.Pointer
 type EVP_SIGNATURE_PTR unsafe.Pointer
+type EVP_KEYMGMT_PTR unsafe.Pointer
 type DSA_PTR unsafe.Pointer
 type EVP_KDF_PTR unsafe.Pointer
 type EVP_KDF_CTX_PTR unsafe.Pointer
@@ -610,6 +611,20 @@ func EVP_KDF_free(kdf EVP_KDF_PTR) {
 	syscallN(0, _mkcgo_EVP_KDF_free, uintptr(kdf))
 }
 
+var _mkcgo_EVP_KEYMGMT_fetch uintptr
+
+func EVP_KEYMGMT_fetch(libctx OSSL_LIB_CTX_PTR, algorithm *byte, properties *byte) (EVP_KEYMGMT_PTR, error) {
+	var _err uintptr
+	r0, _ := syscallN(1, _mkcgo_EVP_KEYMGMT_fetch, uintptr(libctx), uintptr(unsafe.Pointer(algorithm)), uintptr(unsafe.Pointer(properties)), uintptr(unsafe.Pointer(&_err)))
+	return EVP_KEYMGMT_PTR(r0), newMkcgoErr("EVP_KEYMGMT_fetch", _err)
+}
+
+var _mkcgo_EVP_KEYMGMT_free uintptr
+
+func EVP_KEYMGMT_free(keymgmt EVP_KEYMGMT_PTR) {
+	syscallN(0, _mkcgo_EVP_KEYMGMT_free, uintptr(keymgmt))
+}
+
 var _mkcgo_EVP_MAC_CTX_dup uintptr
 
 func EVP_MAC_CTX_dup(arg0 EVP_MAC_CTX_PTR) (EVP_MAC_CTX_PTR, error) {
@@ -888,6 +903,12 @@ func EVP_PKEY_Q_keygen_ED25519(ctx OSSL_LIB_CTX_PTR, propq *byte, __type *byte) 
 	return EVP_PKEY_PTR(r0), newMkcgoErr("EVP_PKEY_Q_keygen_ED25519", _err)
 }
 
+func EVP_PKEY_Q_keygen_MLKEM(ctx OSSL_LIB_CTX_PTR, propq *byte, __type *byte) (EVP_PKEY_PTR, error) {
+	var _err uintptr
+	r0, _ := syscallN(1, _mkcgo_EVP_PKEY_Q_keygen, uintptr(ctx), uintptr(unsafe.Pointer(propq)), uintptr(unsafe.Pointer(__type)), uintptr(unsafe.Pointer(&_err)))
+	return EVP_PKEY_PTR(r0), newMkcgoErr("EVP_PKEY_Q_keygen_MLKEM", _err)
+}
+
 func EVP_PKEY_Q_keygen_RSA(ctx OSSL_LIB_CTX_PTR, propq *byte, __type *byte, arg1 int) (EVP_PKEY_PTR, error) {
 	var _err uintptr
 	var r0 uintptr
@@ -905,6 +926,22 @@ func EVP_PKEY_assign(pkey EVP_PKEY_PTR, __type int32, key unsafe.Pointer) (int32
 	var _err uintptr
 	r0, _ := syscallN(3, _mkcgo_EVP_PKEY_assign, uintptr(pkey), uintptr(__type), uintptr(key), uintptr(unsafe.Pointer(&_err)))
 	return int32(r0), newMkcgoErr("EVP_PKEY_assign", _err)
+}
+
+var _mkcgo_EVP_PKEY_decapsulate uintptr
+
+func EVP_PKEY_decapsulate(ctx EVP_PKEY_CTX_PTR, genkey *byte, genkeylen *int, wrappedkey *byte, wrappedkeylen int) (int32, error) {
+	var _err uintptr
+	r0, _ := syscallN(3, _mkcgo_EVP_PKEY_decapsulate, uintptr(ctx), uintptr(unsafe.Pointer(genkey)), uintptr(unsafe.Pointer(genkeylen)), uintptr(unsafe.Pointer(wrappedkey)), uintptr(wrappedkeylen), uintptr(unsafe.Pointer(&_err)))
+	return int32(r0), newMkcgoErr("EVP_PKEY_decapsulate", _err)
+}
+
+var _mkcgo_EVP_PKEY_decapsulate_init uintptr
+
+func EVP_PKEY_decapsulate_init(ctx EVP_PKEY_CTX_PTR, params OSSL_PARAM_PTR) (int32, error) {
+	var _err uintptr
+	r0, _ := syscallN(3, _mkcgo_EVP_PKEY_decapsulate_init, uintptr(ctx), uintptr(params), uintptr(unsafe.Pointer(&_err)))
+	return int32(r0), newMkcgoErr("EVP_PKEY_decapsulate_init", _err)
 }
 
 var _mkcgo_EVP_PKEY_decrypt uintptr
@@ -945,6 +982,22 @@ func EVP_PKEY_derive_set_peer(ctx EVP_PKEY_CTX_PTR, peer EVP_PKEY_PTR) (int32, e
 	var _err uintptr
 	r0, _ := syscallN(3, _mkcgo_EVP_PKEY_derive_set_peer, uintptr(ctx), uintptr(peer), uintptr(unsafe.Pointer(&_err)))
 	return int32(r0), newMkcgoErr("EVP_PKEY_derive_set_peer", _err)
+}
+
+var _mkcgo_EVP_PKEY_encapsulate uintptr
+
+func EVP_PKEY_encapsulate(ctx EVP_PKEY_CTX_PTR, wrappedkey *byte, wrappedkeylen *int, genkey *byte, genkeylen *int) (int32, error) {
+	var _err uintptr
+	r0, _ := syscallN(3, _mkcgo_EVP_PKEY_encapsulate, uintptr(ctx), uintptr(unsafe.Pointer(wrappedkey)), uintptr(unsafe.Pointer(wrappedkeylen)), uintptr(unsafe.Pointer(genkey)), uintptr(unsafe.Pointer(genkeylen)), uintptr(unsafe.Pointer(&_err)))
+	return int32(r0), newMkcgoErr("EVP_PKEY_encapsulate", _err)
+}
+
+var _mkcgo_EVP_PKEY_encapsulate_init uintptr
+
+func EVP_PKEY_encapsulate_init(ctx EVP_PKEY_CTX_PTR, params OSSL_PARAM_PTR) (int32, error) {
+	var _err uintptr
+	r0, _ := syscallN(3, _mkcgo_EVP_PKEY_encapsulate_init, uintptr(ctx), uintptr(params), uintptr(unsafe.Pointer(&_err)))
+	return int32(r0), newMkcgoErr("EVP_PKEY_encapsulate_init", _err)
 }
 
 var _mkcgo_EVP_PKEY_encrypt uintptr
@@ -1031,6 +1084,14 @@ func EVP_PKEY_get_bn_param(pkey EVP_PKEY_PTR, key_name *byte, bn *BIGNUM_PTR) (i
 	var _err uintptr
 	r0, _ := syscallN(3, _mkcgo_EVP_PKEY_get_bn_param, uintptr(pkey), uintptr(unsafe.Pointer(key_name)), uintptr(unsafe.Pointer(bn)), uintptr(unsafe.Pointer(&_err)))
 	return int32(r0), newMkcgoErr("EVP_PKEY_get_bn_param", _err)
+}
+
+var _mkcgo_EVP_PKEY_get_octet_string_param uintptr
+
+func EVP_PKEY_get_octet_string_param(pkey EVP_PKEY_PTR, key_name *byte, buf *byte, buf_len int, out_len *int) (int32, error) {
+	var _err uintptr
+	r0, _ := syscallN(3, _mkcgo_EVP_PKEY_get_octet_string_param, uintptr(pkey), uintptr(unsafe.Pointer(key_name)), uintptr(unsafe.Pointer(buf)), uintptr(buf_len), uintptr(unsafe.Pointer(out_len)), uintptr(unsafe.Pointer(&_err)))
+	return int32(r0), newMkcgoErr("EVP_PKEY_get_octet_string_param", _err)
 }
 
 var _mkcgo_EVP_PKEY_get_raw_private_key uintptr
@@ -2007,6 +2068,8 @@ func MkcgoLoad_3(handle unsafe.Pointer) {
 	_mkcgo_EVP_KDF_derive = dlsym(handle, "EVP_KDF_derive\x00", false)
 	_mkcgo_EVP_KDF_fetch = dlsym(handle, "EVP_KDF_fetch\x00", false)
 	_mkcgo_EVP_KDF_free = dlsym(handle, "EVP_KDF_free\x00", false)
+	_mkcgo_EVP_KEYMGMT_fetch = dlsym(handle, "EVP_KEYMGMT_fetch\x00", false)
+	_mkcgo_EVP_KEYMGMT_free = dlsym(handle, "EVP_KEYMGMT_free\x00", false)
 	_mkcgo_EVP_MAC_CTX_dup = dlsym(handle, "EVP_MAC_CTX_dup\x00", false)
 	_mkcgo_EVP_MAC_CTX_free = dlsym(handle, "EVP_MAC_CTX_free\x00", false)
 	_mkcgo_EVP_MAC_CTX_new = dlsym(handle, "EVP_MAC_CTX_new\x00", false)
@@ -2034,11 +2097,16 @@ func MkcgoLoad_3(handle unsafe.Pointer) {
 	_mkcgo_EVP_PKEY_CTX_set_hkdf_md = dlsym(handle, "EVP_PKEY_CTX_set_hkdf_md\x00", false)
 	_mkcgo_EVP_PKEY_CTX_set_hkdf_mode = dlsym(handle, "EVP_PKEY_CTX_set_hkdf_mode\x00", false)
 	_mkcgo_EVP_PKEY_Q_keygen = dlsym(handle, "EVP_PKEY_Q_keygen\x00", false)
+	_mkcgo_EVP_PKEY_decapsulate = dlsym(handle, "EVP_PKEY_decapsulate\x00", false)
+	_mkcgo_EVP_PKEY_decapsulate_init = dlsym(handle, "EVP_PKEY_decapsulate_init\x00", false)
+	_mkcgo_EVP_PKEY_encapsulate = dlsym(handle, "EVP_PKEY_encapsulate\x00", false)
+	_mkcgo_EVP_PKEY_encapsulate_init = dlsym(handle, "EVP_PKEY_encapsulate_init\x00", false)
 	_mkcgo_EVP_PKEY_fromdata = dlsym(handle, "EVP_PKEY_fromdata\x00", false)
 	_mkcgo_EVP_PKEY_fromdata_init = dlsym(handle, "EVP_PKEY_fromdata_init\x00", false)
 	_mkcgo_EVP_PKEY_get1_encoded_public_key = dlsym(handle, "EVP_PKEY_get1_encoded_public_key\x00", false)
 	_mkcgo_EVP_PKEY_get_bits = dlsym(handle, "EVP_PKEY_get_bits\x00", false)
 	_mkcgo_EVP_PKEY_get_bn_param = dlsym(handle, "EVP_PKEY_get_bn_param\x00", false)
+	_mkcgo_EVP_PKEY_get_octet_string_param = dlsym(handle, "EVP_PKEY_get_octet_string_param\x00", false)
 	_mkcgo_EVP_PKEY_get_size = dlsym(handle, "EVP_PKEY_get_size\x00", false)
 	_mkcgo_EVP_PKEY_private_check = dlsym(handle, "EVP_PKEY_private_check\x00", false)
 	_mkcgo_EVP_PKEY_public_check_quick = dlsym(handle, "EVP_PKEY_public_check_quick\x00", false)
@@ -2074,6 +2142,8 @@ func MkcgoUnload_3() {
 	_mkcgo_EVP_KDF_derive = 0
 	_mkcgo_EVP_KDF_fetch = 0
 	_mkcgo_EVP_KDF_free = 0
+	_mkcgo_EVP_KEYMGMT_fetch = 0
+	_mkcgo_EVP_KEYMGMT_free = 0
 	_mkcgo_EVP_MAC_CTX_dup = 0
 	_mkcgo_EVP_MAC_CTX_free = 0
 	_mkcgo_EVP_MAC_CTX_new = 0
@@ -2101,11 +2171,16 @@ func MkcgoUnload_3() {
 	_mkcgo_EVP_PKEY_CTX_set_hkdf_md = 0
 	_mkcgo_EVP_PKEY_CTX_set_hkdf_mode = 0
 	_mkcgo_EVP_PKEY_Q_keygen = 0
+	_mkcgo_EVP_PKEY_decapsulate = 0
+	_mkcgo_EVP_PKEY_decapsulate_init = 0
+	_mkcgo_EVP_PKEY_encapsulate = 0
+	_mkcgo_EVP_PKEY_encapsulate_init = 0
 	_mkcgo_EVP_PKEY_fromdata = 0
 	_mkcgo_EVP_PKEY_fromdata_init = 0
 	_mkcgo_EVP_PKEY_get1_encoded_public_key = 0
 	_mkcgo_EVP_PKEY_get_bits = 0
 	_mkcgo_EVP_PKEY_get_bn_param = 0
+	_mkcgo_EVP_PKEY_get_octet_string_param = 0
 	_mkcgo_EVP_PKEY_get_size = 0
 	_mkcgo_EVP_PKEY_private_check = 0
 	_mkcgo_EVP_PKEY_public_check_quick = 0
