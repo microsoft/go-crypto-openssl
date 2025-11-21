@@ -321,6 +321,7 @@ void __mkcgo_load_(void* handle) {
 	__mkcgo__dlsym(EVP_PKEY_paramgen_init)
 	__mkcgo__dlsym(EVP_PKEY_sign)
 	__mkcgo__dlsym(EVP_PKEY_sign_init)
+	__mkcgo__dlsym(EVP_PKEY_up_ref)
 	__mkcgo__dlsym(EVP_PKEY_verify)
 	__mkcgo__dlsym(EVP_PKEY_verify_init)
 	__mkcgo__dlsym(EVP_aes_128_cbc)
@@ -426,6 +427,7 @@ void __mkcgo_unload_() {
 	_g_EVP_PKEY_paramgen_init = NULL;
 	_g_EVP_PKEY_sign = NULL;
 	_g_EVP_PKEY_sign_init = NULL;
+	_g_EVP_PKEY_up_ref = NULL;
 	_g_EVP_PKEY_verify = NULL;
 	_g_EVP_PKEY_verify_init = NULL;
 	_g_EVP_aes_128_cbc = NULL;
@@ -547,7 +549,6 @@ void __mkcgo_load_3(void* handle) {
 	__mkcgo__dlsym(EVP_PKEY_private_check)
 	__mkcgo__dlsym(EVP_PKEY_public_check_quick)
 	__mkcgo__dlsym(EVP_PKEY_set1_encoded_public_key)
-	__mkcgo__dlsym(EVP_PKEY_up_ref)
 	__mkcgo__dlsym(EVP_SIGNATURE_fetch)
 	__mkcgo__dlsym(EVP_SIGNATURE_free)
 	__mkcgo__dlsym(EVP_default_properties_enable_fips)
@@ -621,7 +622,6 @@ void __mkcgo_unload_3() {
 	_g_EVP_PKEY_private_check = NULL;
 	_g_EVP_PKEY_public_check_quick = NULL;
 	_g_EVP_PKEY_set1_encoded_public_key = NULL;
-	_g_EVP_PKEY_up_ref = NULL;
 	_g_EVP_SIGNATURE_fetch = NULL;
 	_g_EVP_SIGNATURE_free = NULL;
 	_g_EVP_default_properties_enable_fips = NULL;
@@ -1398,6 +1398,12 @@ _EVP_PKEY_PTR _mkcgo_EVP_PKEY_Q_keygen_MLKEM(_OSSL_LIB_CTX_PTR _arg0, const char
 
 _EVP_PKEY_PTR _mkcgo_EVP_PKEY_Q_keygen_RSA(_OSSL_LIB_CTX_PTR _arg0, const char* _arg1, const char* _arg2, size_t _arg3, uintptr_t *_err_state) {
 	_EVP_PKEY_PTR _ret = _g_EVP_PKEY_Q_keygen(_arg0, _arg1, _arg2, _arg3);
+	if (_ret == NULL) *_err_state = mkcgo_err_retrieve();
+	return _ret;
+}
+
+_EVP_PKEY_PTR _mkcgo_EVP_PKEY_Q_keygen_X25519(_OSSL_LIB_CTX_PTR _arg0, const char* _arg1, const char* _arg2, uintptr_t *_err_state) {
+	_EVP_PKEY_PTR _ret = _g_EVP_PKEY_Q_keygen(_arg0, _arg1, _arg2);
 	if (_ret == NULL) *_err_state = mkcgo_err_retrieve();
 	return _ret;
 }

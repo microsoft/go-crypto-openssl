@@ -44,6 +44,7 @@ enum {
 	_EVP_PKEY_RSA         = 6,
 	_EVP_PKEY_EC          = 408,
 	_EVP_PKEY_TLS1_PRF    = 1021,
+	_EVP_PKEY_X25519      = 1034,
 	_EVP_PKEY_HKDF        = 1036,
 	_EVP_PKEY_ED25519     = 1087,
 	_EVP_PKEY_DSA         = 116,
@@ -283,7 +284,7 @@ int EVP_PKEY_set1_encoded_public_key(_EVP_PKEY_PTR pkey, const unsigned char *pu
 size_t EVP_PKEY_get1_encoded_public_key(_EVP_PKEY_PTR pkey, unsigned char **ppub) __attribute__((tag("3")));
 int EVP_PKEY_get_bn_param(const _EVP_PKEY_PTR pkey, const char *key_name, _BIGNUM_PTR *bn) __attribute__((tag("3")));
 int EVP_PKEY_get_octet_string_param(const _EVP_PKEY_PTR pkey, const char *key_name, unsigned char *buf, size_t buf_len, size_t *out_len) __attribute__((tag("3")));
-int EVP_PKEY_up_ref(_EVP_PKEY_PTR key) __attribute__((tag("3")));
+int EVP_PKEY_up_ref(_EVP_PKEY_PTR key);
 int EVP_PKEY_set1_EC_KEY(_EVP_PKEY_PTR pkey, _EC_KEY_PTR key) __attribute__((tag("legacy_1")));
 int EVP_PKEY_CTX_set0_rsa_oaep_label(_EVP_PKEY_CTX_PTR ctx, void *label, int len) __attribute__((tag("3")));
 int EVP_PKEY_get_raw_public_key(const _EVP_PKEY_PTR pkey, unsigned char *pub, size_t *len) __attribute__((tag("111"),noescape,nocallback));
@@ -311,6 +312,7 @@ _EVP_PKEY_PTR EVP_PKEY_Q_keygen(_OSSL_LIB_CTX_PTR ctx, const char *propq, const 
 _EVP_PKEY_PTR EVP_PKEY_Q_keygen_RSA(_OSSL_LIB_CTX_PTR ctx, const char *propq, const char *type, size_t arg1) __attribute__((tag("3"),variadic("EVP_PKEY_Q_keygen")));
 _EVP_PKEY_PTR EVP_PKEY_Q_keygen_EC(_OSSL_LIB_CTX_PTR ctx, const char *propq, const char *type, const char *arg1) __attribute__((tag("3"),variadic("EVP_PKEY_Q_keygen")));
 _EVP_PKEY_PTR EVP_PKEY_Q_keygen_ED25519(_OSSL_LIB_CTX_PTR ctx, const char *propq, const char *type) __attribute__((tag("3"),variadic("EVP_PKEY_Q_keygen")));
+_EVP_PKEY_PTR EVP_PKEY_Q_keygen_X25519(_OSSL_LIB_CTX_PTR ctx, const char *propq, const char *type) __attribute__((tag("3"),variadic("EVP_PKEY_Q_keygen")));
 _EVP_PKEY_PTR EVP_PKEY_Q_keygen_MLKEM(_OSSL_LIB_CTX_PTR ctx, const char *propq, const char *type) __attribute__((tag("3"),variadic("EVP_PKEY_Q_keygen")));
 
 _EVP_PKEY_CTX_PTR EVP_PKEY_CTX_new(_EVP_PKEY_PTR arg0, _ENGINE_PTR arg1);
