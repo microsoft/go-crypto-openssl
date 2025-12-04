@@ -455,6 +455,14 @@ func EVP_Digest(data []byte, md []byte, size *uint32, __type EVP_MD_PTR, impl EN
 	return int32(r0), newMkcgoErr("EVP_Digest", _err)
 }
 
+var _mkcgo_EVP_DigestFinalXOF uintptr
+
+func EVP_DigestFinalXOF(ctx EVP_MD_CTX_PTR, md []byte, len int) (int32, error) {
+	var _err uintptr
+	r0, _ := syscallN(3, _mkcgo_EVP_DigestFinalXOF, uintptr(ctx), uintptr(unsafe.Pointer(unsafe.SliceData(md))), uintptr(len), uintptr(unsafe.Pointer(&_err)))
+	return int32(r0), newMkcgoErr("EVP_DigestFinalXOF", _err)
+}
+
 var _mkcgo_EVP_DigestFinal_ex uintptr
 
 func EVP_DigestFinal_ex(ctx EVP_MD_CTX_PTR, md []byte, s *uint32) (int32, error) {
@@ -501,6 +509,14 @@ func EVP_DigestSignInit(ctx EVP_MD_CTX_PTR, pctx *EVP_PKEY_CTX_PTR, __type EVP_M
 	var _err uintptr
 	r0, _ := syscallN(3, _mkcgo_EVP_DigestSignInit, uintptr(ctx), uintptr(unsafe.Pointer(pctx)), uintptr(__type), uintptr(e), uintptr(pkey), uintptr(unsafe.Pointer(&_err)))
 	return int32(r0), newMkcgoErr("EVP_DigestSignInit", _err)
+}
+
+var _mkcgo_EVP_DigestSqueeze uintptr
+
+func EVP_DigestSqueeze(ctx EVP_MD_CTX_PTR, out []byte) (int32, error) {
+	var _err uintptr
+	r0, _ := syscallN(3, _mkcgo_EVP_DigestSqueeze, uintptr(ctx), uintptr(unsafe.Pointer(unsafe.SliceData(out))), uintptr(len(out)), uintptr(unsafe.Pointer(&_err)))
+	return int32(r0), newMkcgoErr("EVP_DigestSqueeze", _err)
 }
 
 var _mkcgo_EVP_DigestUpdate uintptr
@@ -693,6 +709,14 @@ func EVP_MD_CTX_copy_ex(out EVP_MD_CTX_PTR, in EVP_MD_CTX_PTR) (int32, error) {
 	var _err uintptr
 	r0, _ := syscallN(3, _mkcgo_EVP_MD_CTX_copy_ex, uintptr(out), uintptr(in), uintptr(unsafe.Pointer(&_err)))
 	return int32(r0), newMkcgoErr("EVP_MD_CTX_copy_ex", _err)
+}
+
+var _mkcgo_EVP_MD_CTX_ctrl uintptr
+
+func EVP_MD_CTX_ctrl(ctx EVP_MD_CTX_PTR, cmd int32, p1 int32, p2 unsafe.Pointer) (int32, error) {
+	var _err uintptr
+	r0, _ := syscallN(3, _mkcgo_EVP_MD_CTX_ctrl, uintptr(ctx), uintptr(cmd), uintptr(p1), uintptr(p2), uintptr(unsafe.Pointer(&_err)))
+	return int32(r0), newMkcgoErr("EVP_MD_CTX_ctrl", _err)
 }
 
 var _mkcgo_EVP_MD_CTX_free uintptr
@@ -2027,6 +2051,7 @@ func MkcgoUnload_() {
 func MkcgoLoad_111(handle unsafe.Pointer) {
 	_mkcgo_EVP_DigestSign = dlsym(handle, "EVP_DigestSign\x00", false)
 	_mkcgo_EVP_DigestVerify = dlsym(handle, "EVP_DigestVerify\x00", false)
+	_mkcgo_EVP_MD_CTX_ctrl = dlsym(handle, "EVP_MD_CTX_ctrl\x00", false)
 	_mkcgo_EVP_PKEY_get_raw_private_key = dlsym(handle, "EVP_PKEY_get_raw_private_key\x00", false)
 	_mkcgo_EVP_PKEY_get_raw_public_key = dlsym(handle, "EVP_PKEY_get_raw_public_key\x00", false)
 	_mkcgo_EVP_PKEY_new_raw_private_key = dlsym(handle, "EVP_PKEY_new_raw_private_key\x00", false)
@@ -2042,6 +2067,7 @@ func MkcgoLoad_111(handle unsafe.Pointer) {
 func MkcgoUnload_111() {
 	_mkcgo_EVP_DigestSign = 0
 	_mkcgo_EVP_DigestVerify = 0
+	_mkcgo_EVP_MD_CTX_ctrl = 0
 	_mkcgo_EVP_PKEY_get_raw_private_key = 0
 	_mkcgo_EVP_PKEY_get_raw_public_key = 0
 	_mkcgo_EVP_PKEY_new_raw_private_key = 0
@@ -2198,6 +2224,16 @@ func MkcgoUnload_3() {
 	_mkcgo_OSSL_PROVIDER_available = 0
 	_mkcgo_OSSL_PROVIDER_get0_name = 0
 	_mkcgo_OSSL_PROVIDER_try_load = 0
+}
+
+func MkcgoLoad_33(handle unsafe.Pointer) {
+	_mkcgo_EVP_DigestFinalXOF = dlsym(handle, "EVP_DigestFinalXOF\x00", false)
+	_mkcgo_EVP_DigestSqueeze = dlsym(handle, "EVP_DigestSqueeze\x00", false)
+}
+
+func MkcgoUnload_33() {
+	_mkcgo_EVP_DigestFinalXOF = 0
+	_mkcgo_EVP_DigestSqueeze = 0
 }
 
 func MkcgoLoad_init_1(handle unsafe.Pointer) {

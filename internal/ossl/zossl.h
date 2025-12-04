@@ -58,6 +58,7 @@ enum {
 	_EVP_MAX_MD_SIZE = 64,
 	_EVP_PKEY_PUBLIC_KEY = 0x86,
 	_EVP_PKEY_KEYPAIR = 0x87,
+	_EVP_MD_CTRL_XOF_LEN = 0x3,
 	_EVP_PKEY_CTRL_EC_PARAMGEN_CURVE_NID = 0x1001,
 	_EVP_KDF_HKDF_MODE_EXTRACT_ONLY = 1,
 	_EVP_KDF_HKDF_MODE_EXPAND_ONLY = 2,
@@ -103,6 +104,8 @@ void __mkcgo_load_111(void* handle);
 void __mkcgo_unload_111();
 void __mkcgo_load_3(void* handle);
 void __mkcgo_unload_3();
+void __mkcgo_load_33(void* handle);
+void __mkcgo_unload_33();
 void __mkcgo_load_init_1(void* handle);
 void __mkcgo_unload_init_1();
 void __mkcgo_load_init_3(void* handle);
@@ -173,12 +176,14 @@ int _mkcgo_EVP_DecryptFinal_ex(_EVP_CIPHER_CTX_PTR, unsigned char*, int*, uintpt
 int _mkcgo_EVP_DecryptInit_ex(_EVP_CIPHER_CTX_PTR, const _EVP_CIPHER_PTR, _ENGINE_PTR, const unsigned char*, const unsigned char*, uintptr_t *);
 int _mkcgo_EVP_DecryptUpdate(_EVP_CIPHER_CTX_PTR, unsigned char*, int*, const unsigned char*, int, uintptr_t *);
 int _mkcgo_EVP_Digest(const unsigned char*, size_t, unsigned char*, unsigned int*, const _EVP_MD_PTR, _ENGINE_PTR, uintptr_t *);
+int _mkcgo_EVP_DigestFinalXOF(_EVP_MD_CTX_PTR, unsigned char*, size_t, uintptr_t *);
 int _mkcgo_EVP_DigestFinal_ex(_EVP_MD_CTX_PTR, unsigned char*, unsigned int*, uintptr_t *);
 int _mkcgo_EVP_DigestInit(_EVP_MD_CTX_PTR, const _EVP_MD_PTR, uintptr_t *);
 int _mkcgo_EVP_DigestInit_ex(_EVP_MD_CTX_PTR, const _EVP_MD_PTR, _ENGINE_PTR, uintptr_t *);
 int _mkcgo_EVP_DigestSign(_EVP_MD_CTX_PTR, unsigned char*, size_t*, const unsigned char*, size_t, uintptr_t *);
 int _mkcgo_EVP_DigestSignFinal(_EVP_MD_CTX_PTR, unsigned char*, size_t*, uintptr_t *);
 int _mkcgo_EVP_DigestSignInit(_EVP_MD_CTX_PTR, _EVP_PKEY_CTX_PTR*, const _EVP_MD_PTR, _ENGINE_PTR, _EVP_PKEY_PTR, uintptr_t *);
+int _mkcgo_EVP_DigestSqueeze(_EVP_MD_CTX_PTR, unsigned char*, size_t, uintptr_t *);
 int _mkcgo_EVP_DigestUpdate(_EVP_MD_CTX_PTR, const unsigned char*, size_t, uintptr_t *);
 int _mkcgo_EVP_DigestVerify(_EVP_MD_CTX_PTR, const unsigned char*, size_t, const unsigned char*, size_t, uintptr_t *);
 int _mkcgo_EVP_DigestVerifyFinal(_EVP_MD_CTX_PTR, const unsigned char*, size_t, uintptr_t *);
@@ -204,6 +209,7 @@ int _mkcgo_EVP_MAC_final(_EVP_MAC_CTX_PTR, unsigned char*, size_t*, size_t, uint
 int _mkcgo_EVP_MAC_init(_EVP_MAC_CTX_PTR, const unsigned char*, size_t, const _OSSL_PARAM_PTR, uintptr_t *);
 int _mkcgo_EVP_MAC_update(_EVP_MAC_CTX_PTR, const unsigned char*, size_t, uintptr_t *);
 int _mkcgo_EVP_MD_CTX_copy_ex(_EVP_MD_CTX_PTR, const _EVP_MD_CTX_PTR, uintptr_t *);
+int _mkcgo_EVP_MD_CTX_ctrl(_EVP_MD_CTX_PTR, int, int, void*, uintptr_t *);
 void _mkcgo_EVP_MD_CTX_free(_EVP_MD_CTX_PTR);
 int _mkcgo_EVP_MD_CTX_get_params(_EVP_MD_CTX_PTR, _OSSL_PARAM_PTR, uintptr_t *);
 const _OSSL_PARAM_PTR _mkcgo_EVP_MD_CTX_gettable_params(_EVP_MD_CTX_PTR, uintptr_t *);

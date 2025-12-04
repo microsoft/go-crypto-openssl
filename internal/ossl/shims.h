@@ -56,6 +56,8 @@ enum {
 	_EVP_PKEY_PUBLIC_KEY = 0x86,
 	_EVP_PKEY_KEYPAIR    = 0x87,
 
+	_EVP_MD_CTRL_XOF_LEN = 0x3,
+
 	_EVP_PKEY_CTRL_EC_PARAMGEN_CURVE_NID = 0x1001,
 
 	_EVP_KDF_HKDF_MODE_EXTRACT_ONLY = 1,
@@ -207,6 +209,7 @@ const _EVP_MD_PTR EVP_sha3_512(void) __attribute__((tag("111"),noerror));
 
 _EVP_MD_CTX_PTR EVP_MD_CTX_new(void);
 void EVP_MD_CTX_free(_EVP_MD_CTX_PTR ctx);
+int EVP_MD_CTX_ctrl(_EVP_MD_CTX_PTR ctx, int cmd, int p1, void *p2) __attribute__((tag("111")));
 int EVP_MD_CTX_copy_ex(_EVP_MD_CTX_PTR out, const _EVP_MD_CTX_PTR in);
 const _OSSL_PARAM_PTR EVP_MD_CTX_gettable_params(_EVP_MD_CTX_PTR ctx) __attribute__((tag("3")));
 const _OSSL_PARAM_PTR EVP_MD_CTX_settable_params(_EVP_MD_CTX_PTR ctx) __attribute__((tag("3")));
@@ -217,6 +220,8 @@ int EVP_DigestInit_ex(_EVP_MD_CTX_PTR ctx, const _EVP_MD_PTR type, _ENGINE_PTR i
 int EVP_DigestInit(_EVP_MD_CTX_PTR ctx, const _EVP_MD_PTR type);
 int EVP_DigestUpdate(_EVP_MD_CTX_PTR ctx, const void *d, size_t cnt) __attribute__((noescape,nocallback,slice("d","cnt")));
 int EVP_DigestFinal_ex(_EVP_MD_CTX_PTR ctx, unsigned char *md, unsigned int *s) __attribute__((noescape,nocallback,slice(md)));
+int EVP_DigestFinalXOF(_EVP_MD_CTX_PTR ctx, unsigned char *md, size_t len) __attribute__((tag("33"),noescape,nocallback,slice(md)));
+int EVP_DigestSqueeze(_EVP_MD_CTX_PTR ctx, unsigned char *out, size_t len) __attribute__((tag("33"),noescape,nocallback,slice("out","len")));
 int EVP_DigestSign(_EVP_MD_CTX_PTR ctx, unsigned char *sigret, size_t *siglen, const unsigned char *tbs, size_t tbslen) __attribute__((tag("111"),noescape,nocallback));
 int EVP_DigestSignInit(_EVP_MD_CTX_PTR ctx, _EVP_PKEY_CTX_PTR *pctx, const _EVP_MD_PTR type, _ENGINE_PTR e, _EVP_PKEY_PTR pkey);
 int EVP_DigestSignFinal(_EVP_MD_CTX_PTR ctx, unsigned char *sig, size_t *siglen);

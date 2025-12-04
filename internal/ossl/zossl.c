@@ -69,12 +69,14 @@ int (*_g_EVP_DecryptFinal_ex)(_EVP_CIPHER_CTX_PTR, unsigned char*, int*);
 int (*_g_EVP_DecryptInit_ex)(_EVP_CIPHER_CTX_PTR, const _EVP_CIPHER_PTR, _ENGINE_PTR, const unsigned char*, const unsigned char*);
 int (*_g_EVP_DecryptUpdate)(_EVP_CIPHER_CTX_PTR, unsigned char*, int*, const unsigned char*, int);
 int (*_g_EVP_Digest)(const unsigned char*, size_t, unsigned char*, unsigned int*, const _EVP_MD_PTR, _ENGINE_PTR);
+int (*_g_EVP_DigestFinalXOF)(_EVP_MD_CTX_PTR, unsigned char*, size_t);
 int (*_g_EVP_DigestFinal_ex)(_EVP_MD_CTX_PTR, unsigned char*, unsigned int*);
 int (*_g_EVP_DigestInit)(_EVP_MD_CTX_PTR, const _EVP_MD_PTR);
 int (*_g_EVP_DigestInit_ex)(_EVP_MD_CTX_PTR, const _EVP_MD_PTR, _ENGINE_PTR);
 int (*_g_EVP_DigestSign)(_EVP_MD_CTX_PTR, unsigned char*, size_t*, const unsigned char*, size_t);
 int (*_g_EVP_DigestSignFinal)(_EVP_MD_CTX_PTR, unsigned char*, size_t*);
 int (*_g_EVP_DigestSignInit)(_EVP_MD_CTX_PTR, _EVP_PKEY_CTX_PTR*, const _EVP_MD_PTR, _ENGINE_PTR, _EVP_PKEY_PTR);
+int (*_g_EVP_DigestSqueeze)(_EVP_MD_CTX_PTR, unsigned char*, size_t);
 int (*_g_EVP_DigestUpdate)(_EVP_MD_CTX_PTR, const unsigned char*, size_t);
 int (*_g_EVP_DigestVerify)(_EVP_MD_CTX_PTR, const unsigned char*, size_t, const unsigned char*, size_t);
 int (*_g_EVP_DigestVerifyFinal)(_EVP_MD_CTX_PTR, const unsigned char*, size_t);
@@ -100,6 +102,7 @@ int (*_g_EVP_MAC_final)(_EVP_MAC_CTX_PTR, unsigned char*, size_t*, size_t);
 int (*_g_EVP_MAC_init)(_EVP_MAC_CTX_PTR, const unsigned char*, size_t, const _OSSL_PARAM_PTR);
 int (*_g_EVP_MAC_update)(_EVP_MAC_CTX_PTR, const unsigned char*, size_t);
 int (*_g_EVP_MD_CTX_copy_ex)(_EVP_MD_CTX_PTR, const _EVP_MD_CTX_PTR);
+int (*_g_EVP_MD_CTX_ctrl)(_EVP_MD_CTX_PTR, int, int, void*);
 void (*_g_EVP_MD_CTX_free)(_EVP_MD_CTX_PTR);
 int (*_g_EVP_MD_CTX_get_params)(_EVP_MD_CTX_PTR, _OSSL_PARAM_PTR);
 const _OSSL_PARAM_PTR (*_g_EVP_MD_CTX_gettable_params)(_EVP_MD_CTX_PTR);
@@ -467,6 +470,7 @@ void __mkcgo_unload_() {
 void __mkcgo_load_111(void* handle) {
 	__mkcgo__dlsym(EVP_DigestSign)
 	__mkcgo__dlsym(EVP_DigestVerify)
+	__mkcgo__dlsym(EVP_MD_CTX_ctrl)
 	__mkcgo__dlsym(EVP_PKEY_get_raw_private_key)
 	__mkcgo__dlsym(EVP_PKEY_get_raw_public_key)
 	__mkcgo__dlsym(EVP_PKEY_new_raw_private_key)
@@ -482,6 +486,7 @@ void __mkcgo_load_111(void* handle) {
 void __mkcgo_unload_111() {
 	_g_EVP_DigestSign = NULL;
 	_g_EVP_DigestVerify = NULL;
+	_g_EVP_MD_CTX_ctrl = NULL;
 	_g_EVP_PKEY_get_raw_private_key = NULL;
 	_g_EVP_PKEY_get_raw_public_key = NULL;
 	_g_EVP_PKEY_new_raw_private_key = NULL;
@@ -638,6 +643,16 @@ void __mkcgo_unload_3() {
 	_g_OSSL_PROVIDER_available = NULL;
 	_g_OSSL_PROVIDER_get0_name = NULL;
 	_g_OSSL_PROVIDER_try_load = NULL;
+}
+
+void __mkcgo_load_33(void* handle) {
+	__mkcgo__dlsym(EVP_DigestFinalXOF)
+	__mkcgo__dlsym(EVP_DigestSqueeze)
+}
+
+void __mkcgo_unload_33() {
+	_g_EVP_DigestFinalXOF = NULL;
+	_g_EVP_DigestSqueeze = NULL;
 }
 
 void __mkcgo_load_init_1(void* handle) {
@@ -1072,6 +1087,12 @@ int _mkcgo_EVP_Digest(const unsigned char* _arg0, size_t _arg1, unsigned char* _
 	return _ret;
 }
 
+int _mkcgo_EVP_DigestFinalXOF(_EVP_MD_CTX_PTR _arg0, unsigned char* _arg1, size_t _arg2, uintptr_t *_err_state) {
+	int _ret = _g_EVP_DigestFinalXOF(_arg0, _arg1, _arg2);
+	if (_ret <= 0) *_err_state = mkcgo_err_retrieve();
+	return _ret;
+}
+
 int _mkcgo_EVP_DigestFinal_ex(_EVP_MD_CTX_PTR _arg0, unsigned char* _arg1, unsigned int* _arg2, uintptr_t *_err_state) {
 	int _ret = _g_EVP_DigestFinal_ex(_arg0, _arg1, _arg2);
 	if (_ret <= 0) *_err_state = mkcgo_err_retrieve();
@@ -1104,6 +1125,12 @@ int _mkcgo_EVP_DigestSignFinal(_EVP_MD_CTX_PTR _arg0, unsigned char* _arg1, size
 
 int _mkcgo_EVP_DigestSignInit(_EVP_MD_CTX_PTR _arg0, _EVP_PKEY_CTX_PTR* _arg1, const _EVP_MD_PTR _arg2, _ENGINE_PTR _arg3, _EVP_PKEY_PTR _arg4, uintptr_t *_err_state) {
 	int _ret = _g_EVP_DigestSignInit(_arg0, _arg1, _arg2, _arg3, _arg4);
+	if (_ret <= 0) *_err_state = mkcgo_err_retrieve();
+	return _ret;
+}
+
+int _mkcgo_EVP_DigestSqueeze(_EVP_MD_CTX_PTR _arg0, unsigned char* _arg1, size_t _arg2, uintptr_t *_err_state) {
+	int _ret = _g_EVP_DigestSqueeze(_arg0, _arg1, _arg2);
 	if (_ret <= 0) *_err_state = mkcgo_err_retrieve();
 	return _ret;
 }
@@ -1246,6 +1273,12 @@ int _mkcgo_EVP_MAC_update(_EVP_MAC_CTX_PTR _arg0, const unsigned char* _arg1, si
 
 int _mkcgo_EVP_MD_CTX_copy_ex(_EVP_MD_CTX_PTR _arg0, const _EVP_MD_CTX_PTR _arg1, uintptr_t *_err_state) {
 	int _ret = _g_EVP_MD_CTX_copy_ex(_arg0, _arg1);
+	if (_ret <= 0) *_err_state = mkcgo_err_retrieve();
+	return _ret;
+}
+
+int _mkcgo_EVP_MD_CTX_ctrl(_EVP_MD_CTX_PTR _arg0, int _arg1, int _arg2, void* _arg3, uintptr_t *_err_state) {
+	int _ret = _g_EVP_MD_CTX_ctrl(_arg0, _arg1, _arg2, _arg3);
 	if (_ret <= 0) *_err_state = mkcgo_err_retrieve();
 	return _ret;
 }

@@ -31,6 +31,9 @@ func opensslInit(file string) error {
 	} else {
 		ossl.MkcgoLoad_111(handle)
 		ossl.MkcgoLoad_3(handle)
+		if vMajor >= 3 && vMinor >= 3 {
+			ossl.MkcgoLoad_33(handle)
+		}
 	}
 
 	// Initialize OpenSSL.

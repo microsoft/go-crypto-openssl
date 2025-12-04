@@ -65,6 +65,14 @@ func MkcgoUnload_3() {
 	C.__mkcgo_unload_3()
 }
 
+func MkcgoLoad_33(handle unsafe.Pointer) {
+	C.__mkcgo_load_33(handle)
+}
+
+func MkcgoUnload_33() {
+	C.__mkcgo_unload_33()
+}
+
 func MkcgoLoad_init_1(handle unsafe.Pointer) {
 	C.__mkcgo_load_init_1(handle)
 }
@@ -395,6 +403,12 @@ func EVP_Digest(data []byte, md []byte, size *uint32, __type EVP_MD_PTR, impl EN
 	return int32(_ret), newMkcgoErr("EVP_Digest", uintptr(_err))
 }
 
+func EVP_DigestFinalXOF(ctx EVP_MD_CTX_PTR, md []byte, len int) (int32, error) {
+	var _err C.uintptr_t
+	_ret := C._mkcgo_EVP_DigestFinalXOF(ctx, (*C.uchar)(unsafe.Pointer(unsafe.SliceData(md))), C.size_t(len), mkcgoNoEscape(&_err))
+	return int32(_ret), newMkcgoErr("EVP_DigestFinalXOF", uintptr(_err))
+}
+
 func EVP_DigestFinal_ex(ctx EVP_MD_CTX_PTR, md []byte, s *uint32) (int32, error) {
 	var _err C.uintptr_t
 	_ret := C._mkcgo_EVP_DigestFinal_ex(ctx, (*C.uchar)(unsafe.Pointer(unsafe.SliceData(md))), (*C.uint)(unsafe.Pointer(s)), mkcgoNoEscape(&_err))
@@ -429,6 +443,12 @@ func EVP_DigestSignInit(ctx EVP_MD_CTX_PTR, pctx *EVP_PKEY_CTX_PTR, __type EVP_M
 	var _err C.uintptr_t
 	_ret := C._mkcgo_EVP_DigestSignInit(ctx, pctx, __type, e, pkey, mkcgoNoEscape(&_err))
 	return int32(_ret), newMkcgoErr("EVP_DigestSignInit", uintptr(_err))
+}
+
+func EVP_DigestSqueeze(ctx EVP_MD_CTX_PTR, out []byte) (int32, error) {
+	var _err C.uintptr_t
+	_ret := C._mkcgo_EVP_DigestSqueeze(ctx, (*C.uchar)(unsafe.Pointer(unsafe.SliceData(out))), C.size_t(len(out)), mkcgoNoEscape(&_err))
+	return int32(_ret), newMkcgoErr("EVP_DigestSqueeze", uintptr(_err))
 }
 
 func EVP_DigestUpdate(ctx EVP_MD_CTX_PTR, d []byte) (int32, error) {
@@ -571,6 +591,12 @@ func EVP_MD_CTX_copy_ex(out EVP_MD_CTX_PTR, in EVP_MD_CTX_PTR) (int32, error) {
 	var _err C.uintptr_t
 	_ret := C._mkcgo_EVP_MD_CTX_copy_ex(out, in, mkcgoNoEscape(&_err))
 	return int32(_ret), newMkcgoErr("EVP_MD_CTX_copy_ex", uintptr(_err))
+}
+
+func EVP_MD_CTX_ctrl(ctx EVP_MD_CTX_PTR, cmd int32, p1 int32, p2 unsafe.Pointer) (int32, error) {
+	var _err C.uintptr_t
+	_ret := C._mkcgo_EVP_MD_CTX_ctrl(ctx, C.int(cmd), C.int(p1), p2, mkcgoNoEscape(&_err))
+	return int32(_ret), newMkcgoErr("EVP_MD_CTX_ctrl", uintptr(_err))
 }
 
 func EVP_MD_CTX_free(ctx EVP_MD_CTX_PTR) {

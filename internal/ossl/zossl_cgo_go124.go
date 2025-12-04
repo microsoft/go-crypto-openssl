@@ -15,10 +15,14 @@ package ossl
 #cgo nocallback _mkcgo_EVP_DecryptUpdate
 #cgo noescape _mkcgo_EVP_Digest
 #cgo nocallback _mkcgo_EVP_Digest
+#cgo noescape _mkcgo_EVP_DigestFinalXOF
+#cgo nocallback _mkcgo_EVP_DigestFinalXOF
 #cgo noescape _mkcgo_EVP_DigestFinal_ex
 #cgo nocallback _mkcgo_EVP_DigestFinal_ex
 #cgo noescape _mkcgo_EVP_DigestSign
 #cgo nocallback _mkcgo_EVP_DigestSign
+#cgo noescape _mkcgo_EVP_DigestSqueeze
+#cgo nocallback _mkcgo_EVP_DigestSqueeze
 #cgo noescape _mkcgo_EVP_DigestUpdate
 #cgo nocallback _mkcgo_EVP_DigestUpdate
 #cgo noescape _mkcgo_EVP_EncryptFinal_ex

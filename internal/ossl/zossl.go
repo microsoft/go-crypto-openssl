@@ -24,6 +24,7 @@ const (
 	EVP_MAX_MD_SIZE                     = 64
 	EVP_PKEY_PUBLIC_KEY                 = 0x86
 	EVP_PKEY_KEYPAIR                    = 0x87
+	EVP_MD_CTRL_XOF_LEN                 = 0x3
 	EVP_PKEY_CTRL_EC_PARAMGEN_CURVE_NID = 0x1001
 	EVP_KDF_HKDF_MODE_EXTRACT_ONLY      = 1
 	EVP_KDF_HKDF_MODE_EXPAND_ONLY       = 2
