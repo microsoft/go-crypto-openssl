@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math/big"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/golang-fips/openssl/v2"
@@ -42,7 +41,7 @@ func testRSAEncryptDecryptPKCS1(t *testing.T, priv *openssl.PrivateKeyRSA, pub *
 }
 
 func TestRSAEncryptDecryptPKCS1(t *testing.T) {
-	if !openssl.SupportsRSAPKCS1Encryption() {
+	if !openssl.SupportsRSAPKCS1v15Encryption() {
 		t.Skip("RSA PKCS1 v1.5 encryption not supported")
 	}
 	for _, size := range []int{2048, 3072} {
@@ -56,7 +55,7 @@ func TestRSAEncryptDecryptPKCS1(t *testing.T) {
 }
 
 func TestRSAEncryptDecryptPKCS1_MissingPrecomputedValues(t *testing.T) {
-	if !openssl.SupportsRSAPKCS1Encryption() {
+	if !openssl.SupportsRSAPKCS1v15Encryption() {
 		t.Skip("RSA PKCS1 v1.5 encryption not supported")
 	}
 	n, e, d, p, q, dp, dq, qinv, err := openssl.GenerateKeyRSA(2048)
@@ -217,43 +216,6 @@ var stdHashes = [...]crypto.Hash{
 	crypto.RIPEMD160,
 }
 
-func TestRSASignVerifyPKCS1v15(t *testing.T) {
-	priv, pub := newRSAKey(t, 2048)
-	for _, hash := range append([]crypto.Hash{0}, stdHashes[:]...) {
-		var name string
-		if hash == 0 {
-			name = "unhashed"
-		} else {
-			name = hash.String()
-		}
-		t.Run(name, func(t *testing.T) {
-			if hash != 0 && !openssl.SupportsHash(hash) {
-				t.Skip("skipping test because hash is not supported")
-			}
-			// Construct a fake hashed data.
-			size := 1
-			if hash != 0 {
-				size = hash.Size()
-			}
-			hashed := make([]byte, size)
-			hashed[0] = 0x30
-			signed, err := openssl.SignRSAPKCS1v15(priv, hash, hashed)
-			if err != nil {
-				if strings.Contains(err.Error(), "invalid digest") || strings.Contains(err.Error(), "digest not allowed") {
-					// Can happen if the hash is supported by EVP_MD_CTX but not by EVP_PKEY_CTX.
-					// There is nothing we can do about it.
-					t.Skip("skipping test because hash is not supported")
-				}
-				t.Fatal(err)
-			}
-			err = openssl.VerifyRSAPKCS1v15(pub, hash, hashed, signed)
-			if err != nil {
-				t.Fatal(err)
-			}
-		})
-	}
-}
-
 func TestRSAHashSignVerifyPKCS1v15(t *testing.T) {
 	sha256 := openssl.NewSHA256()
 	priv, pub := newRSAKey(t, 2048)
@@ -294,37 +256,6 @@ func TestRSASignVerifyPKCS1v15_Invalid(t *testing.T) {
 	err = openssl.VerifyRSAPKCS1v15(pub, crypto.SHA256, msg, signed)
 	if err == nil {
 		t.Fatal("error expected")
-	}
-}
-
-func TestRSASignVerifyRSAPSS(t *testing.T) {
-	priv, pub := newRSAKey(t, 2048)
-	for _, hash := range stdHashes {
-		t.Run(hash.String(), func(t *testing.T) {
-			if !openssl.SupportsHash(hash) {
-				t.Skip("skipping test because hash is not supported")
-			}
-			// Construct a fake hashed data.
-			size := 1
-			if hash != 0 {
-				size = hash.Size()
-			}
-			hashed := make([]byte, size)
-			hashed[0] = 0x30
-			signed, err := openssl.SignRSAPSS(priv, hash, hashed, rsa.PSSSaltLengthEqualsHash)
-			if err != nil {
-				if strings.Contains(err.Error(), "invalid digest") || strings.Contains(err.Error(), "digest not allowed") {
-					// Can happen if the hash is supported by EVP_MD_CTX but not by EVP_PKEY_CTX.
-					// There is nothing we can do about it.
-					t.Skip("skipping test because hash is not supported")
-				}
-				t.Fatal(err)
-			}
-			err = openssl.VerifyRSAPSS(pub, hash, hashed, signed, rsa.PSSSaltLengthEqualsHash)
-			if err != nil {
-				t.Fatal(err)
-			}
-		})
 	}
 }
 
@@ -403,7 +334,7 @@ func BenchmarkEncryptRSA(b *testing.B) {
 	}
 	b.StartTimer()
 	b.Run("PKCS1", func(b *testing.B) {
-		if !openssl.SupportsRSAPKCS1Encryption() {
+		if !openssl.SupportsRSAPKCS1v15Encryption() {
 			b.Skip("RSA PKCS1 v1.5 encryption not supported")
 		}
 		b.ReportAllocs()
@@ -430,5 +361,243 @@ func BenchmarkGenerateKeyRSA(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
+	}
+}
+
+func TestRSAPSS(t *testing.T) {
+	privGo, err := rsa.GenerateKey(openssl.RandReader, 2048)
+	if err != nil {
+		t.Fatal(err)
+	}
+	priv, err := openssl.NewPrivateKeyRSA(
+		bbig.Enc(privGo.N), bbig.Enc(big.NewInt(int64(privGo.E))), bbig.Enc(privGo.D),
+		bbig.Enc(privGo.Primes[0]), bbig.Enc(privGo.Primes[1]), nil, nil, nil,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pub, err := openssl.NewPublicKeyRSA(bbig.Enc(privGo.N), bbig.Enc(big.NewInt(int64(privGo.E))))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, hash := range stdHashes {
+		t.Run(hash.String(), func(t *testing.T) {
+			if !openssl.SupportsRSAPSS(hash) {
+				t.Skipf("Hash %v not supported", hash)
+			}
+			digest := make([]byte, hash.Size())
+			digest[0] = 0x30
+			signature, err := openssl.SignRSAPSS(priv, hash, digest, rsa.PSSSaltLengthEqualsHash)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(signature) == 0 {
+				t.Fatal("empty signature returned")
+			}
+			err = openssl.VerifyRSAPSS(pub, hash, digest, signature, rsa.PSSSaltLengthEqualsHash)
+			if err != nil {
+				t.Error(err)
+			}
+			if hash.Available() {
+				// Verify with crypto/rsa
+				err = rsa.VerifyPSS(&privGo.PublicKey, hash, digest, signature, &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthEqualsHash})
+				if err != nil {
+					t.Error(err)
+				}
+			}
+		})
+	}
+}
+
+func TestRSAPKCS1Signature(t *testing.T) {
+	privGo, err := rsa.GenerateKey(openssl.RandReader, 2048)
+	if err != nil {
+		t.Fatal(err)
+	}
+	priv, err := openssl.NewPrivateKeyRSA(
+		bbig.Enc(privGo.N), bbig.Enc(big.NewInt(int64(privGo.E))), bbig.Enc(privGo.D),
+		bbig.Enc(privGo.Primes[0]), bbig.Enc(privGo.Primes[1]), nil, nil, nil,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pub, err := openssl.NewPublicKeyRSA(bbig.Enc(privGo.N), bbig.Enc(big.NewInt(int64(privGo.E))))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, hash := range append([]crypto.Hash{0}, stdHashes[:]...) {
+		t.Run(hash.String(), func(t *testing.T) {
+			if !openssl.SupportsRSAPKCS1v15Signature(hash) {
+				t.Skipf("Hash %v not supported", hash)
+			}
+			// Construct a fake hashed data.
+			size := 1
+			if hash != 0 {
+				size = hash.Size()
+			}
+			digest := make([]byte, size)
+			digest[0] = 0x30
+			signature, err := openssl.SignRSAPKCS1v15(priv, hash, digest)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(signature) == 0 {
+				t.Fatal("empty signature returned")
+			}
+			err = openssl.VerifyRSAPKCS1v15(pub, hash, digest, signature)
+			if err != nil {
+				t.Error(err)
+			}
+			if hash.Available() {
+				// Verify with crypto/rsa
+				err = rsa.VerifyPKCS1v15(&privGo.PublicKey, hash, digest, signature)
+				if err != nil {
+					t.Error(err)
+				}
+			}
+		})
+	}
+}
+
+func TestRSAOAEP(t *testing.T) {
+	privGo, err := rsa.GenerateKey(openssl.RandReader, 2048)
+	if err != nil {
+		t.Fatal(err)
+	}
+	priv, err := openssl.NewPrivateKeyRSA(
+		bbig.Enc(privGo.N), bbig.Enc(big.NewInt(int64(privGo.E))), bbig.Enc(privGo.D),
+		bbig.Enc(privGo.Primes[0]), bbig.Enc(privGo.Primes[1]), nil, nil, nil,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pub, err := openssl.NewPublicKeyRSA(bbig.Enc(privGo.N), bbig.Enc(big.NewInt(int64(privGo.E))))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, hash := range hashes {
+		t.Run(hash.String(), func(t *testing.T) {
+			if !openssl.SupportsHash(hash) {
+				t.Skipf("Hash %v not supported", hash)
+			}
+			h := cryptoToHash(hash)()
+			if !openssl.SupportsRSAOAEP(h, h) {
+				t.Skipf("Hash %v not supported", hash)
+			}
+			msg := []byte("hi!")
+			label := []byte("ho!")
+			ciphertext, err := openssl.EncryptRSAOAEP(h, h, pub, msg, label)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(ciphertext) == 0 {
+				t.Fatal("empty ciphertext returned")
+			}
+			plaintext, err := openssl.DecryptRSAOAEP(h, h, priv, ciphertext, label)
+			if err != nil {
+				t.Error(err)
+			}
+			if !bytes.Equal(plaintext, msg) {
+				t.Errorf("got:%x want:%x", plaintext, msg)
+			}
+			if hash.Available() {
+				// Decrypt with crypto/rsa
+				plaintext, err = rsa.DecryptOAEP(h, openssl.RandReader, privGo, ciphertext, label)
+				if err != nil {
+					t.Error(err)
+				}
+				if !bytes.Equal(plaintext, msg) {
+					t.Errorf("got:%x want:%x", plaintext, msg)
+				}
+			}
+		})
+	}
+}
+
+func TestSupportsRSAOAEP(t *testing.T) {
+	// Test only applies when SymCrypt provider is used,
+	// as we know which hashes are supported there.
+	if !symCryptProviderAvailable() {
+		t.Skip("SymCrypt provider not available")
+	}
+	for _, ch := range []crypto.Hash{
+		crypto.SHA1,
+		crypto.SHA224,
+		crypto.SHA256,
+		crypto.SHA512,
+		crypto.SHA512_224,
+		crypto.SHA512_256,
+		crypto.SHA3_224,
+		crypto.SHA3_256,
+		crypto.SHA3_512,
+	} {
+		t.Run(ch.String(), func(t *testing.T) {
+			h := cryptoToHash(ch)()
+			if !openssl.SupportsRSAOAEP(h, h) {
+				t.Errorf("SupportsRSAOAEP(%v, %v) = false, want true", ch, ch)
+			}
+		})
+	}
+}
+
+func TestSupportsRSAPKCS1v15Encryption(t *testing.T) {
+	// Test only applies when SymCrypt provider is used,
+	// as we know which hashes are supported there.
+	if !symCryptProviderAvailable() {
+		t.Skip("SymCrypt provider not available")
+	}
+	if !openssl.SupportsRSAPKCS1v15Encryption() {
+		t.Errorf("SupportsRSAPKCS1v15Encryption() = false, want true")
+	}
+}
+
+func TestSupportsRSAPKCS1v15Signature(t *testing.T) {
+	// Test only applies when SymCrypt provider is used,
+	// as we know which hashes are supported there.
+	if !symCryptProviderAvailable() {
+		t.Skip("SymCrypt provider not available")
+	}
+	for _, ch := range []crypto.Hash{
+		0,
+		crypto.SHA1,
+		crypto.SHA224,
+		crypto.SHA256,
+		crypto.SHA512,
+		crypto.SHA512_224,
+		crypto.SHA512_256,
+		crypto.SHA3_224,
+		crypto.SHA3_256,
+		crypto.SHA3_512,
+	} {
+		t.Run(ch.String(), func(t *testing.T) {
+			if !openssl.SupportsRSAPKCS1v15Signature(ch) {
+				t.Errorf("SupportsRSAPKCS1v15Signature(%v) = false, want true", ch)
+			}
+		})
+	}
+}
+
+func TestSupportsRSAPSS(t *testing.T) {
+	// Test only applies when SymCrypt provider is used,
+	// as we know which hashes are supported there.
+	if !symCryptProviderAvailable() {
+		t.Skip("SymCrypt provider not available")
+	}
+	for _, ch := range []crypto.Hash{
+		crypto.SHA1,
+		crypto.SHA224,
+		crypto.SHA256,
+		crypto.SHA512,
+		crypto.SHA512_224,
+		crypto.SHA512_256,
+		crypto.SHA3_224,
+		crypto.SHA3_256,
+		crypto.SHA3_512,
+	} {
+		t.Run(ch.String(), func(t *testing.T) {
+			if !openssl.SupportsRSAPSS(ch) {
+				t.Errorf("SupportsRSAPSS(%v) = false, want true", ch)
+			}
+		})
 	}
 }
