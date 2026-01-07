@@ -1,5 +1,3 @@
-//go:build cgo || goexperiment.ms_nocgo_opensslcrypto
-
 package ossl
 
 import (
