@@ -132,22 +132,39 @@ jobs:
       fail-fast: false
       matrix:
         go-version: [1.24, 1.25]
-        architecture: [ppc64le, s390x, riscv64]
+        architecture: [arm/v7, ppc64le, s390x, riscv64]
     steps:
     - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
-      with:
-        platforms: ${{ matrix.architecture }}
     - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-    - name: Run tests on ${{matrix.architecture}}
+    - name: Run tests on ${{matrix.architecture}} - CGO enabled
       run: |
         docker run --rm --platform linux/${{matrix.architecture}} \
           -v ${{ github.workspace }}:/workspace \
           -w /workspace \
+          -e CGO_ENABLED=1 \
           golang:${{ matrix.go-version }} \
           bash -c "
             go test -shuffle=on -v ./...
           "
-
+    - name: Run tests on ${{matrix.architecture}} - CGO disabled
+      if: matrix.architecture == 'riscv64' || matrix.architecture == 'arm/v7'
+      run: |
+        docker run --rm --platform linux/${{matrix.architecture}} \
+          -v ${{ github.workspace }}:/workspace \
+          -w /workspace \
+          -e CGO_ENABLED=0 \
+          golang:${{ matrix.go-version }} \
+          bash -c "
+            # Add required dynamic linker symlink (if applicable)
+            case ${{matrix.architecture}} in
+              riscv64)
+                ln -sf /usr/lib/riscv64-linux-gnu/ld-linux-riscv64-lp64d.so.1 /lib/ld.so.1 ;;
+              arm/v7)
+                ln -sf /usr/lib/ld-linux-armhf.so.3 /lib/ld-linux.so.3
+                ;;
+            esac
+            go test -shuffle=on -v ./...
+          "
   # Verify that golang-fips/openssl builds successfully without cgo enabled
   # on a platform where cgoless execution is not supported.
   #
