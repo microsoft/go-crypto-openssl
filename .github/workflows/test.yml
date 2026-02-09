@@ -105,8 +105,8 @@ jobs:
       fail-fast: false
       matrix:
         image: [
-          mcr.microsoft.com/oss/go/microsoft/golang:1.24-azurelinux3.0,
-          mcr.microsoft.com/oss/go/microsoft/golang:1.24-cbl-mariner2.0,
+          mcr.microsoft.com/oss/go/microsoft/golang:1.25-azurelinux3.0,
+          mcr.microsoft.com/oss/go/microsoft/golang:1.25-cbl-mariner2.0,
           fedora:latest,
         ]
     runs-on: ubuntu-latest
@@ -121,11 +121,12 @@ jobs:
       run: go test -shuffle=on -v ./...
       env:
         CGO_ENABLED: 1
+        MS_GO_NOSYSTEMCRYPTO: 1 # Avoid duplicated symbol errors when running the MS toolchain
     - name: Run Test CGO disabled
       run: go test -shuffle=on -v ./...
       env:
         CGO_ENABLED: 0
-
+        MS_GO_NOSYSTEMCRYPTO: 1
   test-qemu:
     runs-on: ${{ matrix.architecture == 'arm/v7' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     strategy:
