@@ -192,9 +192,13 @@ jobs:
       with:
         prepare: |
           fetch https://go.dev/dl/go${{matrix.go}}.freebsd-amd64.tar.gz
-          rm -fr /usr/local/go && tar -C /usr/local -xf go${{matrix.go}}.freebsd-amd64.tar.gz
+          rm -rf /usr/local/go && tar -C /usr/local -xf go${{matrix.go}}.freebsd-amd64.tar.gz
         run: |
-          CGO_ENABLED=${{ matrix.cgo }} /usr/local/go/bin/go test -shuffle=on -count 3 -v ./...
+          GCFLAGS=""
+          if [ "${{ matrix.cgo }}" = "0" ]; then
+            GCFLAGS="-gcflags=github.com/golang-fips/openssl/v2/internal/fakecgo=-std"
+          fi
+          CGO_ENABLED=${{ matrix.cgo }} /usr/local/go/bin/go test -shuffle=on -count 3 $GCFLAGS -v ./...
 
   # Verify that golang-fips/openssl builds successfully without cgo enabled
   # on a platform where cgoless execution is not supported.
@@ -217,7 +221,7 @@ jobs:
       run: CGO_ENABLED=0 GOOS=windows GOARCH=386 go build ./...
 
   conclusion:
-    needs: [test, ossltest, container, test-qemu, cgolessbuild]
+    needs: [test, ossltest, container, test-qemu, freebsd, cgolessbuild]
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:
