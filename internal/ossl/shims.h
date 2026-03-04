@@ -150,12 +150,12 @@ typedef int point_conversion_form_t;
 // BIO API
 const _BIO_METHOD_PTR BIO_s_mem(void) __attribute__((tag(""),tag("init_3"),noerror));
 _BIO_PTR BIO_new(const _BIO_METHOD_PTR type) __attribute__((tag(""),tag("init_3")));
-int BIO_free(_BIO_PTR a) __attribute__((tag(""),tag("init_3"),noerror));
+int BIO_free(_BIO_PTR a) __attribute__((tag(""),tag("init_3"),noerror,noescape,nocallback));
 long BIO_ctrl(_BIO_PTR bp, int cmd, long larg, void *parg) __attribute__((tag(""),tag("init_3"),noerror,noescape,nocallback));
 
 // ERR API
 unsigned long ERR_peek_error(void) __attribute__((noerror));
-void ERR_print_errors(_BIO_PTR bp) __attribute__((tag(""),tag("init_3")));
+void ERR_print_errors(_BIO_PTR bp) __attribute__((tag(""),tag("init_3"),noescape,nocallback));
 
 // OPENSSL API
 const char *OpenSSL_version(int type) __attribute__((noerror));
@@ -233,13 +233,13 @@ int EVP_DigestVerifyFinal(_EVP_MD_CTX_PTR ctx, const unsigned char *sig, size_t 
 int EVP_DigestVerify(_EVP_MD_CTX_PTR ctx, const unsigned char *sigret, size_t siglen, const unsigned char *tbs, size_t tbslen) __attribute__((tag("111")));
 
 // HMAC API
-int HMAC_Init_ex(_HMAC_CTX_PTR arg0, const void *arg1, int arg2, const _EVP_MD_PTR arg3, _ENGINE_PTR arg4) __attribute__((tag("legacy_1")));
-int HMAC_Update(_HMAC_CTX_PTR arg0, const unsigned char *arg1, size_t arg2) __attribute__((tag("legacy_1")));
-int HMAC_Final(_HMAC_CTX_PTR arg0, unsigned char *arg1, unsigned int *arg2) __attribute__((tag("legacy_1")));
+int HMAC_Init_ex(_HMAC_CTX_PTR arg0, const void *arg1, int arg2, const _EVP_MD_PTR arg3, _ENGINE_PTR arg4) __attribute__((tag("legacy_1"),noescape,nocallback));
+int HMAC_Update(_HMAC_CTX_PTR arg0, const unsigned char *arg1, size_t arg2) __attribute__((tag("legacy_1"),noescape,nocallback));
+int HMAC_Final(_HMAC_CTX_PTR arg0, unsigned char *arg1, unsigned int *arg2) __attribute__((tag("legacy_1"),noescape,nocallback));
 
 _HMAC_CTX_PTR HMAC_CTX_new(void) __attribute__((tag("legacy_1")));
-int HMAC_CTX_copy(_HMAC_CTX_PTR dest, _HMAC_CTX_PTR src) __attribute__((tag("legacy_1")));
-void HMAC_CTX_free(_HMAC_CTX_PTR arg0) __attribute__((tag("legacy_1")));
+int HMAC_CTX_copy(_HMAC_CTX_PTR dest, _HMAC_CTX_PTR src) __attribute__((tag("legacy_1"),noescape,nocallback));
+void HMAC_CTX_free(_HMAC_CTX_PTR arg0) __attribute__((tag("legacy_1"),noescape,nocallback));
 
 // EVP_CIPHER API
 _EVP_CIPHER_PTR EVP_CIPHER_fetch(_OSSL_LIB_CTX_PTR ctx, const char *algorithm, const char *properties) __attribute__((tag("3")));
@@ -291,7 +291,7 @@ _EC_KEY_PTR EVP_PKEY_get0_EC_KEY(_EVP_PKEY_PTR pkey) __attribute__((tag("legacy_
 _DSA_PTR EVP_PKEY_get0_DSA(_EVP_PKEY_PTR pkey) __attribute__((tag("legacy_1")));
 int EVP_PKEY_set1_encoded_public_key(_EVP_PKEY_PTR pkey, const unsigned char *pub, size_t publen) __attribute__((tag("3")));
 size_t EVP_PKEY_get1_encoded_public_key(_EVP_PKEY_PTR pkey, unsigned char **ppub) __attribute__((tag("3")));
-int EVP_PKEY_get_bn_param(const _EVP_PKEY_PTR pkey, const char *key_name, _BIGNUM_PTR *bn) __attribute__((tag("3")));
+int EVP_PKEY_get_bn_param(const _EVP_PKEY_PTR pkey, const char *key_name, _BIGNUM_PTR *bn) __attribute__((tag("3"),noescape,nocallback));
 int EVP_PKEY_get_octet_string_param(const _EVP_PKEY_PTR pkey, const char *key_name, unsigned char *buf, size_t buf_len, size_t *out_len) __attribute__((tag("3")));
 int EVP_PKEY_up_ref(_EVP_PKEY_PTR key);
 int EVP_PKEY_set1_EC_KEY(_EVP_PKEY_PTR pkey, _EC_KEY_PTR key) __attribute__((tag("legacy_1")));
@@ -303,7 +303,7 @@ int EVP_PKEY_fromdata(_EVP_PKEY_CTX_PTR ctx, _EVP_PKEY_PTR *pkey, int selection,
 int EVP_PKEY_paramgen_init(_EVP_PKEY_CTX_PTR ctx);
 int EVP_PKEY_paramgen(_EVP_PKEY_CTX_PTR ctx, _EVP_PKEY_PTR *ppkey);
 int EVP_PKEY_keygen_init(_EVP_PKEY_CTX_PTR ctx);
-int EVP_PKEY_keygen(_EVP_PKEY_CTX_PTR ctx, _EVP_PKEY_PTR *ppkey);
+int EVP_PKEY_keygen(_EVP_PKEY_CTX_PTR ctx, _EVP_PKEY_PTR *ppkey) __attribute__((noescape,nocallback));
 int EVP_PKEY_decrypt(_EVP_PKEY_CTX_PTR arg0, unsigned char *arg1, size_t *arg2, const unsigned char *arg3, size_t arg4);
 int EVP_PKEY_encrypt(_EVP_PKEY_CTX_PTR arg0, unsigned char *arg1, size_t *arg2, const unsigned char *arg3, size_t arg4);
 int EVP_PKEY_decrypt_init(_EVP_PKEY_CTX_PTR arg0);
@@ -318,11 +318,11 @@ int EVP_PKEY_derive(_EVP_PKEY_CTX_PTR ctx, unsigned char *key, size_t *keylen) _
 int EVP_PKEY_public_check_quick(_EVP_PKEY_CTX_PTR ctx) __attribute__((tag("3")));
 int EVP_PKEY_private_check(_EVP_PKEY_CTX_PTR ctx) __attribute__((tag("3")));
 _EVP_PKEY_PTR EVP_PKEY_Q_keygen(_OSSL_LIB_CTX_PTR ctx, const char *propq, const char *type, ...) __attribute__((tag("3")));
-_EVP_PKEY_PTR EVP_PKEY_Q_keygen_RSA(_OSSL_LIB_CTX_PTR ctx, const char *propq, const char *type, size_t arg1) __attribute__((tag("3"),variadic("EVP_PKEY_Q_keygen")));
-_EVP_PKEY_PTR EVP_PKEY_Q_keygen_EC(_OSSL_LIB_CTX_PTR ctx, const char *propq, const char *type, const char *arg1) __attribute__((tag("3"),variadic("EVP_PKEY_Q_keygen")));
-_EVP_PKEY_PTR EVP_PKEY_Q_keygen_ED25519(_OSSL_LIB_CTX_PTR ctx, const char *propq, const char *type) __attribute__((tag("3"),variadic("EVP_PKEY_Q_keygen")));
-_EVP_PKEY_PTR EVP_PKEY_Q_keygen_X25519(_OSSL_LIB_CTX_PTR ctx, const char *propq, const char *type) __attribute__((tag("3"),variadic("EVP_PKEY_Q_keygen")));
-_EVP_PKEY_PTR EVP_PKEY_Q_keygen_MLKEM(_OSSL_LIB_CTX_PTR ctx, const char *propq, const char *type) __attribute__((tag("3"),variadic("EVP_PKEY_Q_keygen")));
+_EVP_PKEY_PTR EVP_PKEY_Q_keygen_RSA(_OSSL_LIB_CTX_PTR ctx, const char *propq, const char *type, size_t arg1) __attribute__((tag("3"),variadic("EVP_PKEY_Q_keygen"),noescape,nocallback));
+_EVP_PKEY_PTR EVP_PKEY_Q_keygen_EC(_OSSL_LIB_CTX_PTR ctx, const char *propq, const char *type, const char *arg1) __attribute__((tag("3"),variadic("EVP_PKEY_Q_keygen"),noescape,nocallback));
+_EVP_PKEY_PTR EVP_PKEY_Q_keygen_ED25519(_OSSL_LIB_CTX_PTR ctx, const char *propq, const char *type) __attribute__((tag("3"),variadic("EVP_PKEY_Q_keygen"),noescape,nocallback));
+_EVP_PKEY_PTR EVP_PKEY_Q_keygen_X25519(_OSSL_LIB_CTX_PTR ctx, const char *propq, const char *type) __attribute__((tag("3"),variadic("EVP_PKEY_Q_keygen"),noescape,nocallback));
+_EVP_PKEY_PTR EVP_PKEY_Q_keygen_MLKEM(_OSSL_LIB_CTX_PTR ctx, const char *propq, const char *type) __attribute__((tag("3"),variadic("EVP_PKEY_Q_keygen"),noescape,nocallback));
 
 _EVP_PKEY_CTX_PTR EVP_PKEY_CTX_new(_EVP_PKEY_PTR arg0, _ENGINE_PTR arg1);
 _EVP_PKEY_CTX_PTR EVP_PKEY_CTX_new_id(int id, _ENGINE_PTR e);
@@ -380,11 +380,11 @@ void EC_GROUP_free(_EC_GROUP_PTR group);
 _EVP_MAC_PTR EVP_MAC_fetch(_OSSL_LIB_CTX_PTR ctx, const char *algorithm, const char *properties) __attribute__((tag("3")));
 _EVP_MAC_CTX_PTR EVP_MAC_CTX_new(_EVP_MAC_PTR arg0) __attribute__((tag("3")));
 int EVP_MAC_CTX_set_params(_EVP_MAC_CTX_PTR ctx, const _OSSL_PARAM_PTR params) __attribute__((tag("3")));
-void EVP_MAC_CTX_free(_EVP_MAC_CTX_PTR arg0) __attribute__((tag("3")));
+void EVP_MAC_CTX_free(_EVP_MAC_CTX_PTR arg0) __attribute__((tag("3"),noescape,nocallback));
 _EVP_MAC_CTX_PTR EVP_MAC_CTX_dup(const _EVP_MAC_CTX_PTR arg0) __attribute__((tag("3")));
-int EVP_MAC_init(_EVP_MAC_CTX_PTR ctx, const unsigned char *key, size_t keylen, const _OSSL_PARAM_PTR params) __attribute__((tag("3")));
-int EVP_MAC_update(_EVP_MAC_CTX_PTR ctx, const unsigned char *data, size_t datalen) __attribute__((tag("3")));
-int EVP_MAC_final(_EVP_MAC_CTX_PTR ctx, unsigned char *out, size_t *outl, size_t outsize) __attribute__((tag("3")));
+int EVP_MAC_init(_EVP_MAC_CTX_PTR ctx, const unsigned char *key, size_t keylen, const _OSSL_PARAM_PTR params) __attribute__((tag("3"),noescape,nocallback));
+int EVP_MAC_update(_EVP_MAC_CTX_PTR ctx, const unsigned char *data, size_t datalen) __attribute__((tag("3"),noescape,nocallback));
+int EVP_MAC_final(_EVP_MAC_CTX_PTR ctx, unsigned char *out, size_t *outl, size_t outsize) __attribute__((tag("3"),noescape,nocallback));
 
 // OSSL_PARAM API
 void OSSL_PARAM_free(_OSSL_PARAM_PTR p) __attribute__((tag("3")));
