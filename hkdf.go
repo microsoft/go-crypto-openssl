@@ -18,7 +18,7 @@ func SupportsHKDF() bool {
 	switch major() {
 	case 1:
 		return true
-	case 3:
+	case 3, 4:
 		_, err := fetchHKDF3()
 		return err == nil
 	default:
@@ -31,7 +31,7 @@ func SupportsTLS13KDF() bool {
 	switch major() {
 	case 1:
 		return false
-	case 3:
+	case 3, 4:
 		// TLS13-KDF is available in OpenSSL 3.0.0 and later.
 		_, err := fetchTLS13_KDF()
 		return err == nil
@@ -169,7 +169,7 @@ func ExtractHKDF(h func() hash.Hash, secret, salt []byte) ([]byte, error) {
 			return nil, err
 		}
 		return out[:keylen], nil
-	case 3:
+	case 3, 4:
 		ctx, err := newHKDFCtx3(md, ossl.EVP_KDF_HKDF_MODE_EXTRACT_ONLY, secret, salt, nil, nil)
 		if err != nil {
 			return nil, err
@@ -218,7 +218,7 @@ func ExpandHKDFOneShot(h func() hash.Hash, pseudorandomKey, info []byte, keyLeng
 		if _, err := ossl.EVP_PKEY_derive(ctx, out, &keylen); err != nil {
 			return nil, err
 		}
-	case 3:
+	case 3, 4:
 		ctx, err := newHKDFCtx3(md, ossl.EVP_KDF_HKDF_MODE_EXPAND_ONLY, nil, nil, pseudorandomKey, info)
 		if err != nil {
 			return nil, err
@@ -285,7 +285,7 @@ func ExpandHKDF(h func() hash.Hash, pseudorandomKey, info []byte) (io.Reader, er
 		c := &hkdf1{ctx: ctx, hashLen: size}
 		runtime.SetFinalizer(c, (*hkdf1).finalize)
 		return c, nil
-	case 3:
+	case 3, 4:
 		ctx, err := newHKDFCtx3(md, ossl.EVP_KDF_HKDF_MODE_EXPAND_ONLY, nil, nil, pseudorandomKey, info)
 		if err != nil {
 			return nil, err
@@ -315,7 +315,7 @@ func (c *hkdf3) finalize() {
 // It is safe to call this function concurrently.
 // The returned EVP_KDF_PTR shouldn't be freed.
 var fetchTLS13_KDF = sync.OnceValues(func() (ossl.EVP_KDF_PTR, error) {
-	checkMajorVersion(3)
+	checkMajorVersion(3, 4)
 
 	kdf, err := ossl.EVP_KDF_fetch(nil, _OSSL_KDF_NAME_TLS13_KDF.ptr(), nil)
 	if err != nil {
@@ -326,7 +326,7 @@ var fetchTLS13_KDF = sync.OnceValues(func() (ossl.EVP_KDF_PTR, error) {
 
 // newTLS13KDFExpandCtx3 fetches the "TLS13-KDF" for TLS 1.3 handshakes.
 func newTLS13KDFExpandCtx3(md ossl.EVP_MD_PTR, label, context, pseudorandomKey []byte) (_ ossl.EVP_KDF_CTX_PTR, err error) {
-	checkMajorVersion(3)
+	checkMajorVersion(3, 4)
 
 	kdf, err := fetchTLS13_KDF()
 	if err != nil {
@@ -368,7 +368,7 @@ func newTLS13KDFExpandCtx3(md ossl.EVP_MD_PTR, label, context, pseudorandomKey [
 // It is safe to call this function concurrently.
 // The returned EVP_KDF_PTR shouldn't be freed.
 var fetchHKDF3 = sync.OnceValues(func() (ossl.EVP_KDF_PTR, error) {
-	checkMajorVersion(3)
+	checkMajorVersion(3, 4)
 
 	kdf, err := ossl.EVP_KDF_fetch(nil, _OSSL_KDF_NAME_HKDF.ptr(), nil)
 	if err != nil {
@@ -379,7 +379,7 @@ var fetchHKDF3 = sync.OnceValues(func() (ossl.EVP_KDF_PTR, error) {
 
 // newHKDFCtx3 implements HKDF for OpenSSL 3 using the EVP_KDF API.
 func newHKDFCtx3(md ossl.EVP_MD_PTR, mode int32, secret, salt, pseudorandomKey, info []byte) (_ ossl.EVP_KDF_CTX_PTR, err error) {
-	checkMajorVersion(3)
+	checkMajorVersion(3, 4)
 
 	kdf, err := fetchHKDF3()
 	if err != nil {

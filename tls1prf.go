@@ -16,7 +16,7 @@ func SupportsTLS1PRF() bool {
 	switch major() {
 	case 1:
 		return minor() >= 1
-	case 3:
+	case 3, 4:
 		_, err := fetchTLS1PRF3()
 		return err == nil
 	default:
@@ -50,7 +50,7 @@ func TLS1PRF(result, secret, label, seed []byte, fh func() hash.Hash) error {
 	switch major() {
 	case 1:
 		return tls1PRF1(result, secret, label, seed, md)
-	case 3:
+	case 3, 4:
 		return tls1PRF3(result, secret, label, seed, md)
 	default:
 		return errUnsupportedVersion()
@@ -114,7 +114,7 @@ func tls1PRF1(result, secret, label, seed []byte, md ossl.EVP_MD_PTR) error {
 // It is safe to call this function concurrently.
 // The returned EVP_KDF_PTR shouldn't be freed.
 var fetchTLS1PRF3 = sync.OnceValues(func() (ossl.EVP_KDF_PTR, error) {
-	checkMajorVersion(3)
+	checkMajorVersion(3, 4)
 
 	kdf, err := ossl.EVP_KDF_fetch(nil, _OSSL_KDF_NAME_TLS1_PRF.ptr(), nil)
 	if err != nil {
@@ -125,7 +125,7 @@ var fetchTLS1PRF3 = sync.OnceValues(func() (ossl.EVP_KDF_PTR, error) {
 
 // tls1PRF3 implements TLS1PRF for OpenSSL 3 using the EVP_KDF API.
 func tls1PRF3(result, secret, label, seed []byte, md ossl.EVP_MD_PTR) error {
-	checkMajorVersion(3)
+	checkMajorVersion(3, 4)
 
 	kdf, err := fetchTLS1PRF3()
 	if err != nil {
