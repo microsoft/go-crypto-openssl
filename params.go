@@ -114,10 +114,20 @@ func (b *paramBuilder) addOctetString(name cString, value []byte) {
 	if !b.check() {
 		return
 	}
+	if value == nil {
+		// Short-circuit a nil slice: don't pass anything at all to OpenSSL.
+		// OpenSSL 3.5.6 raises an error when passed null, and expects users
+		// to not call this function at all in this case.
+		// See https://github.com/openssl/openssl/issues/30728
+		//
+		// Don't short-circuit empty slices, as they might have a meaning.
+		// For example, in KDFs an empty salt is different from a nil salt.
+		return
+	}
 	if len(value) != 0 {
 		b.pinner.Pin(&value[0])
 	}
-	if _, err := ossl.OSSL_PARAM_BLD_push_octet_string(b.bld, name.ptr(), pbase(value), len(value)); err != nil {
+	if _, err := ossl.OSSL_PARAM_BLD_push_octet_string(b.bld, name.ptr(), pbaseNeverEmpty(value), len(value)); err != nil {
 		b.err = addParamError{name.str(), err}
 	}
 }
