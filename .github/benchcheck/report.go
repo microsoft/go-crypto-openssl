@@ -61,10 +61,10 @@ func cmdReport(args []string) {
 		failures := readFileContent(filepath.Join(dir, "failures.txt"))
 		regressions := readFileContent(filepath.Join(dir, "regressions.txt"))
 
-		if status.failed {
+		if status.Failed() {
 			buf.WriteString("<details>\n")
 			fmt.Fprintf(&buf, "<summary>:x: <code>%s</code></summary>\n\n", label)
-			if status.benchError {
+			if status.BenchmarkError {
 				fmt.Fprintf(&buf, ":boom: **Benchmark run failed** — see [workflow logs](%s) for details.\n\n", jobURL)
 			}
 			if failures != "" {
@@ -76,7 +76,7 @@ func cmdReport(args []string) {
 				buf.WriteString("**Regressions:**\n```\n")
 				buf.WriteString(regressions)
 				buf.WriteString("\n```\n\n")
-			} else if !status.benchError {
+			} else if !status.BenchmarkError {
 				buf.WriteString("No benchmark regressions detected.\n\n")
 			}
 			fmt.Fprintf(&buf, ":file_folder: [Full results](%s)\n\n", jobURL)
@@ -100,54 +100,35 @@ func cmdReport(args []string) {
 	fmt.Print(output)
 }
 
-type jobStatus struct {
-	regression   bool
-	testFailures bool
-	benchError   bool
-	failed       bool // derived: any of the above
-}
-
-func (s *jobStatus) setFailed(field *bool) {
-	*field = true
-	s.failed = true
-}
-
-func readJobStatus(path string) jobStatus {
+func readJobStatus(path string) Status {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			fmt.Fprintf(os.Stderr, "reading %s: %v\n", path, err)
 		}
 		// Missing or unreadable status file means the job errored before writing it.
-		return jobStatus{benchError: true, failed: true}
+		return Status{BenchmarkError: true}
 	}
-	var status Status
-	if err := json.Unmarshal(data, &status); err != nil {
+	var s Status
+	if err := json.Unmarshal(data, &s); err != nil {
 		fmt.Fprintf(os.Stderr, "parsing %s: %v\n", path, err)
-		return jobStatus{benchError: true, failed: true}
-	}
-	var s jobStatus
-	if status.Regression {
-		s.setFailed(&s.regression)
-	}
-	if status.TestFailures {
-		s.setFailed(&s.testFailures)
-	}
-	if status.BenchmarkError {
-		s.setFailed(&s.benchError)
+		return Status{BenchmarkError: true}
 	}
 	return s
 }
 
 func loadJobURLs(path string) map[string]string {
+	urls := make(map[string]string)
 	if path == "" {
-		return nil
+		return urls
 	}
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil
+		if !errors.Is(err, os.ErrNotExist) {
+			fmt.Fprintf(os.Stderr, "reading %s: %v\n", path, err)
+		}
+		return urls
 	}
-	urls := make(map[string]string)
 	for _, line := range strings.Split(strings.TrimSpace(string(data)), "\n") {
 		parts := strings.SplitN(line, "\t", 2)
 		if len(parts) == 2 {
@@ -160,6 +141,9 @@ func loadJobURLs(path string) map[string]string {
 func readFileContent(path string) string {
 	data, err := os.ReadFile(path)
 	if err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			fmt.Fprintf(os.Stderr, "reading %s: %v\n", path, err)
+		}
 		return ""
 	}
 	return strings.TrimSpace(string(data))
