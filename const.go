@@ -65,6 +65,9 @@ const ( //checkheader:ignore
 	_OSSL_KDF_PARAM_SALT   cString = "salt\x00"
 	_OSSL_KDF_PARAM_MODE   cString = "mode\x00"
 
+	// KDF FIPS parameters
+	_OSSL_KDF_PARAM_FIPS_KEY_CHECK cString = "key-check\x00"
+
 	// TLS3-KDF parameters
 	_OSSL_KDF_PARAM_PREFIX cString = "prefix\x00"
 	_OSSL_KDF_PARAM_LABEL  cString = "label\x00"
@@ -98,5 +101,6 @@ const ( //checkheader:ignore
 	_OSSL_SIGNATURE_PARAM_MU             cString = "mu\x00"
 
 	// MAC parameters
-	_OSSL_MAC_PARAM_DIGEST cString = "digest\x00"
+	_OSSL_MAC_PARAM_DIGEST         cString = "digest\x00"
+	_OSSL_MAC_PARAM_FIPS_KEY_CHECK cString = "key-check\x00"
 )
