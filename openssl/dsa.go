@@ -93,7 +93,7 @@ func GenerateParametersDSA(l, n int) (DSAParameters, error) {
 	case 1:
 		dsa := getDSA(pkey)
 		ossl.DSA_get0_pqg(dsa, &p, &q, &g)
-	case 3, 4:
+	default:
 		defer func() {
 			ossl.BN_free(p)
 			ossl.BN_free(q)
@@ -108,8 +108,6 @@ func GenerateParametersDSA(l, n int) (DSAParameters, error) {
 		if _, err := ossl.EVP_PKEY_get_bn_param(pkey, _OSSL_PKEY_PARAM_FFC_G.ptr(), &g); err != nil {
 			return DSAParameters{}, err
 		}
-	default:
-		panic(errUnsupportedVersion())
 	}
 
 	return DSAParameters{
@@ -159,7 +157,7 @@ func GenerateKeyDSA(params DSAParameters) (x, y BigInt, err error) {
 	case 1:
 		dsa := getDSA(pkey)
 		ossl.DSA_get0_key(dsa, &by, &bx)
-	case 3, 4:
+	default:
 		defer func() {
 			ossl.BN_clear_free(bx)
 			ossl.BN_free(by)
@@ -170,8 +168,6 @@ func GenerateKeyDSA(params DSAParameters) (x, y BigInt, err error) {
 		if _, err := ossl.EVP_PKEY_get_bn_param(pkey, _OSSL_PKEY_PARAM_PRIV_KEY.ptr(), &bx); err != nil {
 			return nil, nil, err
 		}
-	default:
-		panic(errUnsupportedVersion())
 	}
 	return bnToBig(bx), bnToBig(by), nil
 }
@@ -190,16 +186,12 @@ func newDSA(params DSAParameters, x, y BigInt) (ossl.EVP_PKEY_PTR, error) {
 	switch major() {
 	case 1:
 		return newDSA1(params, x, y)
-	case 3, 4:
-		return newDSA3(params, x, y)
 	default:
-		panic(errUnsupportedVersion())
+		return newDSA3(params, x, y)
 	}
 }
 
 func newDSA1(params DSAParameters, x, y BigInt) (pkey ossl.EVP_PKEY_PTR, err error) {
-	checkMajorVersion(1)
-
 	dsa, err := ossl.DSA_new()
 	if err != nil {
 		return nil, err
@@ -245,8 +237,6 @@ func newDSA1(params DSAParameters, x, y BigInt) (pkey ossl.EVP_PKEY_PTR, err err
 }
 
 func newDSA3(params DSAParameters, x, y BigInt) (ossl.EVP_PKEY_PTR, error) {
-	checkMajorVersion(3, 4)
-
 	bld := newParamBuilder()
 	defer bld.finalize()
 

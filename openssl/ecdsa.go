@@ -92,7 +92,7 @@ func GenerateKeyECDSA(curve string) (x, y, d BigInt, err error) {
 		}
 		// Get Z. We don't need to free it, get0 does not increase the reference count.
 		bd = ossl.EC_KEY_get0_private_key(key)
-	case 3, 4:
+	default:
 		if _, err := ossl.EVP_PKEY_get_bn_param(pkey, _OSSL_PKEY_PARAM_EC_PUB_X.ptr(), &bx); err != nil {
 			return nil, nil, nil, err
 		}
@@ -103,8 +103,6 @@ func GenerateKeyECDSA(curve string) (x, y, d BigInt, err error) {
 			return nil, nil, nil, err
 		}
 		defer ossl.BN_clear_free(bd)
-	default:
-		panic(errUnsupportedVersion())
 	}
 
 	// Get D.
@@ -150,16 +148,12 @@ func newECDSAKey(curve string, x, y, d BigInt) (ossl.EVP_PKEY_PTR, error) {
 	switch major() {
 	case 1:
 		return newECDSAKey1(nid, bx, by, bd)
-	case 3, 4:
-		return newECDSAKey3(nid, bx, by, bd)
 	default:
-		panic(errUnsupportedVersion())
+		return newECDSAKey3(nid, bx, by, bd)
 	}
 }
 
 func newECDSAKey1(nid int32, bx, by, bd ossl.BIGNUM_PTR) (pkey ossl.EVP_PKEY_PTR, err error) {
-	checkMajorVersion(1)
-
 	key, err := ossl.EC_KEY_new_by_curve_name(nid)
 	if err != nil {
 		return nil, err
@@ -182,8 +176,6 @@ func newECDSAKey1(nid int32, bx, by, bd ossl.BIGNUM_PTR) (pkey ossl.EVP_PKEY_PTR
 }
 
 func newECDSAKey3(nid int32, bx, by, bd ossl.BIGNUM_PTR) (ossl.EVP_PKEY_PTR, error) {
-	checkMajorVersion(3, 4)
-
 	// Create the encoded public key public key from bx and by.
 	pubBytes, err := generateAndEncodeEcPublicKey(nid, func(group ossl.EC_GROUP_PTR) (ossl.EC_POINT_PTR, error) {
 		pt, err := ossl.EC_POINT_new(group)
