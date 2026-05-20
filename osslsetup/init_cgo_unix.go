@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-//go:build unix && !cmd_go_bootstrap
+//go:build unix
 
 package osslsetup
 

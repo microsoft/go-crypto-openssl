@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-//go:build !cmd_go_bootstrap
-
 // Package openssl provides access to OpenSSL cryptographic functions.
 package openssl
 
