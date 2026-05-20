@@ -36,4 +36,4 @@ jobs:
           -allow errors,unsafe \
           -pkg ./osslsetup \
           -allow errors,strconv,sync,syscall,unsafe \
-          -pkg .
+          -pkg ./openssl
