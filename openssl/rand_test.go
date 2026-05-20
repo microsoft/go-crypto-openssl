@@ -6,7 +6,7 @@ package openssl_test
 import (
 	"testing"
 
-	"github.com/microsoft/go-crypto-openssl"
+	"github.com/microsoft/go-crypto-openssl/openssl"
 )
 
 func TestRand(t *testing.T) {

@@ -8,8 +8,8 @@ import (
 	"crypto/cipher"
 	"testing"
 
-	"github.com/microsoft/go-crypto-openssl"
 	"github.com/microsoft/go-crypto-openssl/internal/cryptotest"
+	"github.com/microsoft/go-crypto-openssl/openssl"
 )
 
 type CryptTest struct {

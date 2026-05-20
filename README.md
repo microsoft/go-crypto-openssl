@@ -1,10 +1,12 @@
 # Go OpenSSL bindings for FIPS compliance
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/microsoft/go-crypto-openssl.svg)](https://pkg.go.dev/github.com/microsoft/go-crypto-openssl)
+[![Go Reference](https://pkg.go.dev/badge/github.com/microsoft/go-crypto-openssl/openssl.svg)](https://pkg.go.dev/github.com/microsoft/go-crypto-openssl/openssl)
 
 The `openssl` package implements Go crypto primitives using OpenSSL shared libraries and cgo. When configured correctly, OpenSSL can be executed in FIPS mode, making the `openssl` package FIPS compliant.
 
 The `openssl` package is designed to be used as a drop-in replacement for the [boring](https://pkg.go.dev/crypto/internal/boring) package in order to facilitate integrating `openssl` inside a forked Go toolchain.
+
+Visit the [FIPS documentation in the microsoft/go repository](https://github.com/microsoft/go/tree/microsoft/main/eng/doc/fips) for more information about FIPS, enabling FIPS mode, and writing a FIPS compliant Go application.
 
 ## Disclaimer
 
@@ -13,14 +15,6 @@ A program directly or indirectly using this package in FIPS mode can claim it is
 ## Background
 
 FIPS 140-2 is a U.S. government computer security standard used to approve cryptographic modules. FIPS compliance may come up when working with U.S. government and other regulated industries.
-
-### Go FIPS compliance
-
-The Go `crypto` package is not FIPS certified, and the Go team has stated that it won't be, e.g. in [golang/go/issues/21734](https://github.com/golang/go/issues/21734#issuecomment-326980213) Adam Langley says:
-
-> The status of FIPS 140 for Go itself remains "no plans, basically zero chance".
-
-On the other hand, Google maintains a branch that uses cgo and BoringSSL to implement various crypto primitives: https://github.com/golang/go/blob/dev.boringcrypto/README.boringcrypto.md. As BoringSSL is FIPS 140-2 certified, an application using that branch is more likely to be FIPS 140-2 compliant, yet Google does not provide any liability about the suitability of this code in relation to the FIPS 140-2 standard.
 
 ## Features
 
@@ -31,12 +25,12 @@ The `openssl` package has support for multiple OpenSSL versions, namely 1.1.1, 3
 All supported OpenSSL versions pass a small set of automatic tests that ensure they can be built and that there are no major regressions.
 These tests do not validate the cryptographic correctness of the `openssl` package.
 
-On top of that, the [golang-fips Go fork](https://github.com/golang-fips/go) (maintained by Red Hat) and the [Microsoft build of Go](https://github.com/microsoft/go) test a subset of the supported OpenSSL versions when integrated with the Go `crypto` package.
+On top of that, the [Microsoft build of Go](https://github.com/microsoft/go) tests a subset of the supported OpenSSL versions when integrated with the Go `crypto` package.
 These tests are much more exhaustive and validate a specific OpenSSL version can produce working applications.
 
 ### Building without OpenSSL headers
 
-The `openssl` package does not use any symbol from the OpenSSL headers. There is no need that have them installed to build an application which imports this library.
+The `openssl` package does not use any symbol from the OpenSSL headers. There is no need to have them installed to build an application which imports this library.
 
 The CI tests in this repository verify that all the functions and constants defined in our headers match the ones in the OpenSSL headers for every supported OpenSSL version.
 
@@ -51,7 +45,6 @@ This feature does not require any additional configuration, but it only works wi
 ## Limitations
 
 - Only Unix, Unix-like and Windows platforms are supported.
-- The build must set `CGO_ENABLED=1`.
 
 ## Acknowledgements
 

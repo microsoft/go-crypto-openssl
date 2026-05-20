@@ -8,7 +8,7 @@ import (
 	"hash"
 	"testing"
 
-	openssl "github.com/microsoft/go-crypto-openssl"
+	openssl "github.com/microsoft/go-crypto-openssl/openssl"
 )
 
 type hkdfTest struct {

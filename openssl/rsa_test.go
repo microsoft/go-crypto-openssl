@@ -12,8 +12,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/microsoft/go-crypto-openssl"
 	"github.com/microsoft/go-crypto-openssl/bbig"
+	"github.com/microsoft/go-crypto-openssl/openssl"
 )
 
 func TestRSAKeyGeneration(t *testing.T) {

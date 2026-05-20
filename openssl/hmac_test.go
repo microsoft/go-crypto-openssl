@@ -8,7 +8,7 @@ import (
 	"hash"
 	"testing"
 
-	"github.com/microsoft/go-crypto-openssl"
+	"github.com/microsoft/go-crypto-openssl/openssl"
 )
 
 func TestHMAC(t *testing.T) {
