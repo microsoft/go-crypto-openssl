@@ -56,7 +56,7 @@ jobs:
     - name: Set OpenSSL config and prove FIPS
       run: |
         sudo cp ./scripts/openssl-3.cnf /usr/local/ssl/openssl.cnf
-        go test -v -count 0 . | grep -q "FIPS: true"
+        go test -v -count 0 ./openssl | grep -q "FIPS: true"
       if: ${{ matrix.openssl-version == '3.0.1' }}
       env:
         GO_OPENSSL_VERSION_OVERRIDE: ${{ matrix.openssl-version }}
