@@ -12,7 +12,7 @@ on:
       base-ref:
         description: 'Base ref to compare against (branch, tag, or SHA)'
         required: true
-        default: 'v2'
+        default: 'main'
 
 permissions:
   actions: read
