@@ -9,6 +9,7 @@ import (
 	"runtime"
 
 	"github.com/microsoft/go-crypto-openssl/internal/ossl"
+	"github.com/microsoft/go-crypto-openssl/osslsetup"
 )
 
 // SupportsRC4 returns true if NewRC4Cipher is supported.
@@ -16,7 +17,7 @@ func SupportsRC4() bool {
 	switch major() {
 	case 1:
 		// RC4 is not part of the OpenSSL 1.x FIPS module.
-		return !FIPS() && loadCipher(cipherRC4, cipherModeNone) != nil
+		return !osslsetup.FIPS() && loadCipher(cipherRC4, cipherModeNone) != nil
 	default:
 		// On OpenSSL 3+ availability is decided by the algorithm probe:
 		// EVP_CIPHER_fetch returns nil unless the legacy provider is loaded.

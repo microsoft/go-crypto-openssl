@@ -6,10 +6,9 @@ package openssl_test
 import (
 	"bytes"
 	"hash"
-	"io"
 	"testing"
 
-	"github.com/microsoft/go-crypto-openssl"
+	openssl "github.com/microsoft/go-crypto-openssl"
 )
 
 type hkdfTest struct {
@@ -292,139 +291,23 @@ var hkdfTests = []hkdfTest{
 	},
 }
 
-func newHKDF(hash func() hash.Hash, secret, salt, info []byte) (io.Reader, error) {
-	prk, err := openssl.ExtractHKDF(hash, secret, salt)
-	if err != nil {
-		return nil, err
-	}
-	r, err := openssl.ExpandHKDF(hash, prk, info)
-	if err != nil {
-		return nil, err
-	}
-	return r, nil
-}
-
-func TestHKDF(t *testing.T) {
+func TestExpandHKDF(t *testing.T) {
 	if !openssl.SupportsHKDF() {
 		t.Skip("HKDF is not supported")
 	}
 	for i, tt := range hkdfTests {
-		prk, err := openssl.ExtractHKDF(tt.hash, tt.master, tt.salt)
-		if err != nil {
-			t.Errorf("test %d: error extracting HKDF: %v.", i, err)
-		}
-		if !bytes.Equal(prk, tt.prk) {
-			t.Errorf("test %d: incorrect PRK: have %v, need %v.", i, prk, tt.prk)
-		}
-
-		hkdf, err := newHKDF(tt.hash, tt.master, tt.salt, tt.info)
-		if err != nil {
-			t.Errorf("test %d: error creating HKDF: %v.", i, err)
-			continue
-		}
-		out := make([]byte, len(tt.out))
-
-		n, err := io.ReadFull(hkdf, out)
-		if n != len(tt.out) || err != nil {
-			t.Errorf("test %d: not enough output bytes: %d.", i, n)
-		}
-
-		if !bytes.Equal(out, tt.out) {
-			t.Errorf("test %d: incorrect output: have %v, need %v.", i, out, tt.out)
-		}
-
-		hkdf, err = openssl.ExpandHKDF(tt.hash, prk, tt.info)
-		if err != nil {
-			t.Errorf("test %d: error expanding HKDF: %v.", i, err)
-		}
-
-		n, err = io.ReadFull(hkdf, out)
-		if n != len(tt.out) || err != nil {
-			t.Errorf("test %d: not enough output bytes from Expand: %d.", i, n)
-		}
-
-		if !bytes.Equal(out, tt.out) {
-			t.Errorf("test %d: incorrect output from Expand: have %v, need %v.", i, out, tt.out)
-		}
-	}
-}
-
-func TestHKDFMultiRead(t *testing.T) {
-	if !openssl.SupportsHKDF() {
-		t.Skip("HKDF is not supported")
-	}
-	for i, tt := range hkdfTests {
-		hkdf, err := newHKDF(tt.hash, tt.master, tt.salt, tt.info)
-		if err != nil {
-			t.Errorf("test %d: error creating HKDF: %v.", i, err)
-		}
-		out := make([]byte, len(tt.out))
-
-		for b := range len(tt.out) {
-			n, err := io.ReadFull(hkdf, out[b:b+1])
-			if n != 1 || err != nil {
-				t.Errorf("test %d.%d: not enough output bytes: have %d, need %d .", i, b, n, len(tt.out))
-			}
-		}
-
-		if !bytes.Equal(out, tt.out) {
-			t.Errorf("test %d: incorrect output: have %v, need %v.", i, out, tt.out)
-		}
-	}
-}
-
-func TestHKDFLimit(t *testing.T) {
-	if !openssl.SupportsHKDF() {
-		t.Skip("HKDF is not supported")
-	}
-	hash := openssl.NewSHA1
-	master := []byte{0x00, 0x01, 0x02, 0x03}
-	info := []byte{}
-
-	hkdf, err := newHKDF(hash, master, nil, info)
-	if err != nil {
-		t.Fatalf("error creating HKDF: %v.", err)
-	}
-	limit := hash().Size() * 255
-	out := make([]byte, limit)
-
-	// The maximum output bytes should be extractable
-	n, err := io.ReadFull(hkdf, out)
-	if n != limit || err != nil {
-		t.Errorf("not enough output bytes: %d, %v.", n, err)
-	}
-
-	// Reading one more should fail
-	n, err = io.ReadFull(hkdf, make([]byte, 1))
-	if n > 0 || err == nil {
-		t.Errorf("key expansion overflowed: n = %d, err = %v", n, err)
-	}
-}
-
-func TestHKDFUnsupportedHash(t *testing.T) {
-	// Test that newHKDF returns an error instead of panicking.
-	_, err := newHKDF(newStubHash, []byte{0x00, 0x01, 0x02, 0x03}, nil, []byte{})
-	if err == nil {
-		t.Error("expected error for unsupported hash")
-	}
-}
-func TestExpandHKDFOneShot(t *testing.T) {
-	if !openssl.SupportsHKDF() {
-		t.Skip("HKDF is not supported")
-	}
-	for i, tt := range hkdfTests {
-		out, err := openssl.ExpandHKDFOneShot(tt.hash, tt.prk, tt.info, len(tt.out))
+		out, err := openssl.ExpandHKDF(tt.hash, tt.prk, tt.info, len(tt.out))
 		if err != nil {
 			t.Errorf("test %d: error expanding HKDF one-shot: %v.", i, err)
 			continue
 		}
 		if !bytes.Equal(out, tt.out) {
-			t.Errorf("test %d: incorrect output from ExpandHKDFOneShot: have %v, need %v.", i, out, tt.out)
+			t.Errorf("test %d: incorrect output from ExpandHKDF: have %v, need %v.", i, out, tt.out)
 		}
 	}
 }
 
-func TestExpandHKDFOneShotLimit(t *testing.T) {
+func TestExpandHKDFLimit(t *testing.T) {
 	if !openssl.SupportsHKDF() {
 		t.Skip("HKDF is not supported")
 	}
@@ -437,16 +320,16 @@ func TestExpandHKDFOneShotLimit(t *testing.T) {
 		t.Fatalf("error extracting HKDF: %v.", err)
 	}
 	limit := hash().Size() * 255
-	out, err := openssl.ExpandHKDFOneShot(hash, prk, info, limit)
+	out, err := openssl.ExpandHKDF(hash, prk, info, limit)
 	if err != nil {
-		t.Errorf("error expanding HKDF one-shot: %v.", err)
+		t.Errorf("error expanding HKDF: %v.", err)
 	}
 	if len(out) != limit {
 		t.Errorf("incorrect output length: have %d, need %d.", len(out), limit)
 	}
 
 	// Expanding one more byte should fail
-	_, err = openssl.ExpandHKDFOneShot(hash, prk, info, limit+1)
+	_, err = openssl.ExpandHKDF(hash, prk, info, limit+1)
 	if err == nil {
 		t.Errorf("expected error for key expansion overflow")
 	}
@@ -661,11 +544,19 @@ func TestExpandHKDFZeroLengthKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error extracting HKDF: %v.", err)
 	}
-	out, err := openssl.ExpandHKDFOneShot(hash, prk, info, 0)
+	out, err := openssl.ExpandHKDF(hash, prk, info, 0)
 	if err != nil {
 		t.Errorf("error expanding HKDF zero-length key: %v.", err)
 	}
 	if len(out) != 0 {
 		t.Errorf("incorrect output length for zero-length key: have %d, need 0.", len(out))
+	}
+}
+
+func TestExtractHKDFUnsupportedHash(t *testing.T) {
+	// Test that newHKDF returns an error instead of panicking.
+	_, err := openssl.ExtractHKDF(newStubHash, []byte{0x00, 0x01, 0x02, 0x03}, nil)
+	if err == nil {
+		t.Error("expected error for unsupported hash")
 	}
 }

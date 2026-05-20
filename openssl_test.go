@@ -15,7 +15,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/microsoft/go-crypto-openssl"
+	openssl "github.com/microsoft/go-crypto-openssl"
 	"github.com/microsoft/go-crypto-openssl/internal/ossl"
 	"github.com/microsoft/go-crypto-openssl/osslsetup"
 )
@@ -52,7 +52,7 @@ func getVersion() string {
 		default:
 			v = "libcrypto.so." + v
 		}
-		if ok, _ := openssl.CheckVersion(v); ok {
+		if ok, _ := osslsetup.CheckVersion(v); ok {
 			return v
 		}
 	}
@@ -62,16 +62,14 @@ func getVersion() string {
 func TestMain(m *testing.M) {
 	v := getVersion()
 	fmt.Printf("Using %s\n", v)
-	err := openssl.Init(v)
+	err := osslsetup.Init(v)
 	if err != nil {
 		// An error here could mean that this Linux distro does not have a supported OpenSSL version
 		// or that there is a bug in the Init code.
 		panic(err)
 	}
-	_ = osslsetup.SetFIPS(true) // Skip the error as we still want to run the tests on machines without FIPS support.
 	fmt.Println("OpenSSL version:", osslsetup.VersionText())
-	fmt.Println("FIPS enabled:", osslsetup.FIPS())
-	fmt.Println("FIPS capable:", osslsetup.FIPSCapable())
+	fmt.Println("FIPS:", osslsetup.FIPS())
 	status := m.Run()
 	for range 5 {
 		// Run GC a few times to avoid false positives in leak detection.
@@ -146,60 +144,6 @@ func TestCheckVersion(t *testing.T) {
 func compareCurrentVersion(v string) int {
 	ver := strings.TrimPrefix(runtime.Version(), "devel ")
 	return version.Compare(ver, v)
-}
-
-func TestSetFIPS(t *testing.T) {
-	fipsEnabled := osslsetup.FIPS()
-	t.Cleanup(func() {
-		// Restore the previous FIPS mode.
-		err := osslsetup.SetFIPS(fipsEnabled)
-		if err != nil {
-			t.Fatal(err)
-		}
-	})
-
-	if err := osslsetup.SetFIPS(fipsEnabled); err != nil {
-		// Test that we can set FIPS mode to the current state
-		// without error.
-		t.Fatalf("SetFIPS(%v) failed: %v", fipsEnabled, err)
-	}
-	if got := osslsetup.FIPS(); got != fipsEnabled {
-		// Test that the FIPS mode hasn't been changed by the
-		// previous SetFIPS call.
-		t.Fatalf("FIPS mode mismatch: want %v, got %v", fipsEnabled, got)
-	}
-
-	if fipsEnabled &&
-		defaultProviderAvailable() {
-		// Test that we can disable FIPS mode if it was enabled
-		// when the built-in provider is available.
-		err := osslsetup.SetFIPS(false)
-		if err != nil {
-			t.Fatalf("SetFIPS(false) failed: %v", err)
-		}
-	} else if !fipsEnabled &&
-		(symCryptProviderAvailable() || fipsProviderAvailable()) {
-		// Test that we can enable FIPS mode if it was disabled
-		// when the provider is known to support FIPS mode.
-		err := osslsetup.SetFIPS(true)
-		if err != nil {
-			t.Fatalf("SetFIPS(true) failed: %v", err)
-		}
-	} else {
-		t.Skip("FIPS mode is not supported")
-	}
-}
-
-func TestFIPSCapable(t *testing.T) {
-	got := osslsetup.FIPSCapable()
-	want := osslsetup.FIPS()
-	if !want && symCryptProviderAvailable() {
-		// The SymCrypt provider is FIPS-capable.
-		want = true
-	}
-	if got != want {
-		t.Fatalf("FIPSCapable mismatch: want %v, got %v", want, got)
-	}
 }
 
 func TestErrorMultithread(t *testing.T) {

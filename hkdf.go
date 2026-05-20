@@ -6,10 +6,7 @@
 package openssl
 
 import (
-	"errors"
 	"hash"
-	"io"
-	"runtime"
 	"sync"
 	"unsafe"
 
@@ -86,44 +83,6 @@ func newHKDFCtx1(md ossl.EVP_MD_PTR, mode int32, secret, salt, pseudorandomKey, 
 	return ctx, nil
 }
 
-type hkdf1 struct {
-	ctx ossl.EVP_PKEY_CTX_PTR
-
-	hashLen int
-	buf     []byte
-}
-
-func (c *hkdf1) finalize() {
-	if c.ctx != nil {
-		ossl.EVP_PKEY_CTX_free(c.ctx)
-	}
-}
-
-func (c *hkdf1) Read(p []byte) (int, error) {
-	defer runtime.KeepAlive(c)
-
-	// EVP_PKEY_derive doesn't support incremental output, each call
-	// derives the key from scratch and returns the requested bytes.
-	// To implement io.Reader, we need to ask for len(c.buf) + len(p)
-	// bytes and copy the last derived len(p) bytes to p.
-	// We use c.buf to know how many bytes we've already derived and
-	// to avoid allocating the whole output buffer on each call.
-	prevLen := len(c.buf)
-	needLen := len(p)
-	remains := 255*c.hashLen - prevLen
-	// Check whether enough data can be generated.
-	if remains < needLen {
-		return 0, errors.New("hkdf: entropy limit reached")
-	}
-	c.buf = append(c.buf, make([]byte, needLen)...)
-	outLen := prevLen + needLen
-	if _, err := ossl.EVP_PKEY_derive(c.ctx, c.buf, &outLen); err != nil {
-		return 0, err
-	}
-	n := copy(p, c.buf[prevLen:outLen])
-	return n, nil
-}
-
 // hkdfAllZerosSalt is a preallocated buffer of zeros used in ExtractHKDF().
 // The size should be kept as large as the output length of any hash algorithm
 // used with HKDF.
@@ -192,8 +151,8 @@ func ExtractHKDF(h func() hash.Hash, secret, salt []byte) ([]byte, error) {
 	}
 }
 
-// ExpandHKDFOneShot derives a key from the given hash, key, and optional context info.
-func ExpandHKDFOneShot(h func() hash.Hash, pseudorandomKey, info []byte, keyLength int) ([]byte, error) {
+// ExpandHKDF derives a key from the given hash, key, and optional context info.
+func ExpandHKDF(h func() hash.Hash, pseudorandomKey, info []byte, keyLength int) ([]byte, error) {
 	if !SupportsHKDF() {
 		return nil, errUnsupportedVersion()
 	}
@@ -265,53 +224,6 @@ func ExpandTLS13KDF(h func() hash.Hash, pseudorandomKey, label, context []byte, 
 		return nil, err
 	}
 	return out, nil
-}
-
-func ExpandHKDF(h func() hash.Hash, pseudorandomKey, info []byte) (io.Reader, error) {
-	if !SupportsHKDF() {
-		return nil, errUnsupportedVersion()
-	}
-
-	md, err := hashFuncToMD(h)
-	if err != nil {
-		return nil, err
-	}
-
-	size := int(ossl.EVP_MD_get_size(md))
-
-	switch major() {
-	case 1:
-		ctx, err := newHKDFCtx1(md, ossl.EVP_KDF_HKDF_MODE_EXPAND_ONLY, nil, nil, pseudorandomKey, info)
-		if err != nil {
-			return nil, err
-		}
-		c := &hkdf1{ctx: ctx, hashLen: size}
-		runtime.SetFinalizer(c, (*hkdf1).finalize)
-		return c, nil
-	case 3, 4:
-		ctx, err := newHKDFCtx3(md, ossl.EVP_KDF_HKDF_MODE_EXPAND_ONLY, nil, nil, pseudorandomKey, info)
-		if err != nil {
-			return nil, err
-		}
-		c := &hkdf3{ctx: ctx, hashLen: size}
-		runtime.SetFinalizer(c, (*hkdf3).finalize)
-		return c, nil
-	default:
-		panic(errUnsupportedVersion())
-	}
-}
-
-type hkdf3 struct {
-	ctx ossl.EVP_KDF_CTX_PTR
-
-	hashLen int
-	buf     []byte
-}
-
-func (c *hkdf3) finalize() {
-	if c.ctx != nil {
-		ossl.EVP_KDF_CTX_free(c.ctx)
-	}
 }
 
 // fetchTLS13_KDF fetches the TLS13-KDF algorithm.
@@ -416,29 +328,4 @@ func newHKDFCtx3(md ossl.EVP_MD_PTR, mode int32, secret, salt, pseudorandomKey, 
 		return ctx, err
 	}
 	return ctx, nil
-}
-
-func (c *hkdf3) Read(p []byte) (int, error) {
-	defer runtime.KeepAlive(c)
-
-	// EVP_KDF_derive doesn't support incremental output, each call
-	// derives the key from scratch and returns the requested bytes.
-	// To implement io.Reader, we need to ask for len(c.buf) + len(p)
-	// bytes and copy the last derived len(p) bytes to p.
-	// We use c.buf to know how many bytes we've already derived and
-	// to avoid allocating the whole output buffer on each call.
-	prevLen := len(c.buf)
-	needLen := len(p)
-	remains := 255*c.hashLen - prevLen
-	// Check whether enough data can be generated.
-	if remains < needLen {
-		return 0, errors.New("hkdf: entropy limit reached")
-	}
-	c.buf = append(c.buf, make([]byte, needLen)...)
-	outLen := prevLen + needLen
-	if _, err := ossl.EVP_KDF_derive(c.ctx, c.buf[:outLen], nil); err != nil {
-		return 0, err
-	}
-	n := copy(p, c.buf[prevLen:outLen])
-	return n, nil
 }

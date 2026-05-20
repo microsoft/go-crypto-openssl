@@ -8,6 +8,8 @@ package openssl
 import (
 	"crypto/cipher"
 	"errors"
+
+	"github.com/microsoft/go-crypto-openssl/osslsetup"
 )
 
 // SupportsDESCipher returns true if NewDESCipher is supported,
@@ -18,7 +20,7 @@ func SupportsDESCipher() bool {
 	switch major() {
 	case 1:
 		// DES is not part of the OpenSSL 1.x FIPS module.
-		return !FIPS() && loadCipher(cipherDES, cipherModeECB) != nil
+		return !osslsetup.FIPS() && loadCipher(cipherDES, cipherModeECB) != nil
 	default:
 		// On OpenSSL 3+ availability is decided by the algorithm probe:
 		// EVP_CIPHER_fetch returns nil unless the legacy provider is loaded.

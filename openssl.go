@@ -17,14 +17,6 @@ import (
 	"github.com/microsoft/go-crypto-openssl/osslsetup"
 )
 
-// CheckVersion checks if the OpenSSL version can be loaded
-// and if the FIPS mode is enabled.
-// This function can be called before Init.
-// All OpenSSL functions used in here should be tagged with "init_1" or "init_3" in shims.h.
-func CheckVersion(version string) (exists, fips bool) {
-	return osslsetup.CheckVersion(version)
-}
-
 var isBigEndian = sync.OnceValue(func() bool {
 	buf := [2]byte{}
 	*(*uint16)(unsafe.Pointer(&buf[0])) = uint16(0xABCD)
@@ -51,22 +43,6 @@ func patch() int {
 	return osslsetup.VersionPatch()
 }
 
-// Init loads and initializes OpenSSL from the shared library at path.
-// It must be called before any other OpenSSL call, except CheckVersion.
-//
-// Only the first call to Init is effective.
-// Subsequent calls will return the same error result as the one from the first call.
-//
-// The file is passed to dlopen() verbatim to load the OpenSSL shared library.
-// For example, `file=libcrypto.so.1.1.1k-fips` makes Init look for the shared
-// library libcrypto.so.1.1.1k-fips.
-func Init(file string) error {
-	if err := osslsetup.Init(file); err != nil {
-		return err
-	}
-	return nil
-}
-
 func utoa(n int) string {
 	return strconv.FormatUint(uint64(n), 10)
 }
@@ -88,40 +64,6 @@ func checkMajorVersion(expected ...int) {
 type fail string
 
 func (e fail) Error() string { return "openssl: " + string(e) + " failed" }
-
-// VersionText returns the version text of the OpenSSL currently loaded.
-//
-//go:fix inline
-func VersionText() string {
-	return osslsetup.VersionText()
-}
-
-// FIPS returns true if OpenSSL is running in FIPS mode and there is
-// a provider available that supports FIPS. It returns false otherwise.
-// All OpenSSL functions used in here should be tagged with "init_1" or "init_3" in shims.h.
-//
-//go:fix inline
-func FIPS() bool {
-	return osslsetup.FIPS()
-}
-
-// FIPSCapable returns true if the provider used by default matches the `fips=yes` query.
-// See [osslsetup.FIPSCapable] for details.
-//
-//go:fix inline
-func FIPSCapable() bool {
-	return osslsetup.FIPSCapable()
-}
-
-// SetFIPS enables or disables FIPS mode.
-//
-// For OpenSSL 3, if there is no provider available that supports FIPS mode,
-// SetFIPS will try to load a built-in provider that supports FIPS mode.
-//
-//go:fix inline
-func SetFIPS(enable bool) error {
-	return osslsetup.SetFIPS(enable)
-}
 
 // sliceNeverNil returns b if non-nil, and a non-nil zero-length slice otherwise.
 func sliceNeverNil(b []byte) []byte {
