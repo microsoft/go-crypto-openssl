@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 // Package ossl provides a Go interface to OpenSSL.
 package ossl
 

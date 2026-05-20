@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 package openssl_test
 
 import (
@@ -5,7 +8,7 @@ import (
 	"crypto/ed25519"
 	"testing"
 
-	"github.com/golang-fips/openssl/v2"
+	"github.com/microsoft/go-crypto-openssl"
 )
 
 func TestNewKeyFromSeedEd25519(t *testing.T) {

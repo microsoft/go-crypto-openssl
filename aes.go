@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 //go:build !cmd_go_bootstrap
 
 package openssl
@@ -7,8 +10,8 @@ import (
 	"errors"
 )
 
-//go:generate go run github.com/golang-fips/openssl/v2/cmd/genaesmodes -in aes.go -modes CBC,CTR,GCM -out zaes.go
-//go:generate go run github.com/golang-fips/openssl/v2/cmd/gentestvectors -out vectors_test.go
+//go:generate go run github.com/microsoft/go-crypto-openssl/cmd/genaesmodes -in aes.go -modes CBC,CTR,GCM -out zaes.go
+//go:generate go run github.com/microsoft/go-crypto-openssl/cmd/gentestvectors -out vectors_test.go
 
 // Steps to support a new AES mode, e.g. `FOO`:
 // 1. Add `FOO` to the list of modes in the `genaesmodes` command.

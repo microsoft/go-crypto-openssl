@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 // versionguardcheck is a small static analyzer that enforces the
 // "version checks must be justified" rule.
 //

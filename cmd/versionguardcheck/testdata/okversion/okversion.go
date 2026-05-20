@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 // Package okversion contains positive fixtures: every gated call in a 3+
 // branch is justified by a //versionguardcheck:ignore marker on the line
 // above, or is in a 1.x branch (and therefore exempt), or is outside any

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 //go:build !cmd_go_bootstrap
 
 package openssl
@@ -5,7 +8,7 @@ package openssl
 import (
 	"runtime"
 
-	"github.com/golang-fips/openssl/v2/internal/ossl"
+	"github.com/microsoft/go-crypto-openssl/internal/ossl"
 )
 
 // SupportsRC4 returns true if NewRC4Cipher is supported.

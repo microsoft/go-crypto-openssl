@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 //go:build !cmd_go_bootstrap
 
 // Package openssl provides access to OpenSSL cryptographic functions.
@@ -10,8 +13,8 @@ import (
 	"sync"
 	"unsafe"
 
-	"github.com/golang-fips/openssl/v2/internal/ossl"
-	"github.com/golang-fips/openssl/v2/osslsetup"
+	"github.com/microsoft/go-crypto-openssl/internal/ossl"
+	"github.com/microsoft/go-crypto-openssl/osslsetup"
 )
 
 // CheckVersion checks if the OpenSSL version can be loaded

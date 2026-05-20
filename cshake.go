@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 //go:build !cmd_go_bootstrap
 
 package openssl
@@ -7,7 +10,7 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/golang-fips/openssl/v2/internal/ossl"
+	"github.com/microsoft/go-crypto-openssl/internal/ossl"
 )
 
 // shakeOneShot applies the SHAKE extendable output function to data and

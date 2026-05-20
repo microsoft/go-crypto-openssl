@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 on:
   push:
     branches:
@@ -227,7 +230,7 @@ jobs:
         run: |
           GCFLAGS=""
           if [ "${{ matrix.cgo }}" = "0" ]; then
-            GCFLAGS="-gcflags=github.com/golang-fips/openssl/v2/internal/fakecgo=-std"
+            GCFLAGS="-gcflags=github.com/microsoft/go-crypto-openssl/internal/fakecgo=-std"
           fi
           CGO_ENABLED=${{ matrix.cgo }} /usr/local/go/bin/go test -shuffle=on -count 3 $GCFLAGS -v ./...
           CGO_ENABLED=${{ matrix.cgo }} /usr/local/go/bin/go test -bench=. -run='^$' -benchtime=1x $GCFLAGS ./...

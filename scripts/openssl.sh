@@ -1,4 +1,6 @@
 #!/bin/sh
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 
 # openssl.sh is intended for use in a CI workflow to set up various versions of OpenSSL without
 # relying on availability in any particular distro's package manager. It downloads the specified

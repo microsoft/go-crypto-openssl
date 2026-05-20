@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 // Package badversion contains negative fixtures: every gated call inside
 // a 3+ branch lacks a //versionguardcheck:ignore marker and must be flagged.
 //

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 //go:build !cmd_go_bootstrap
 
 package osslsetup
@@ -6,7 +9,7 @@ import (
 	"errors"
 	"unsafe"
 
-	"github.com/golang-fips/openssl/v2/internal/ossl"
+	"github.com/microsoft/go-crypto-openssl/internal/ossl"
 )
 
 // cString is a null-terminated string,

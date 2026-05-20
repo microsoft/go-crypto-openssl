@@ -8,8 +8,8 @@ import (
 	"testing"
 	"unsafe"
 
-	"github.com/golang-fips/openssl/v2"
-	"github.com/golang-fips/openssl/v2/internal/cryptotest"
+	openssl "github.com/microsoft/go-crypto-openssl"
+	"github.com/microsoft/go-crypto-openssl/internal/cryptotest"
 )
 
 // Test AES against the general cipher.Block interface tester.

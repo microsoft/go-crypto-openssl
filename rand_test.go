@@ -1,9 +1,12 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 package openssl_test
 
 import (
 	"testing"
 
-	"github.com/golang-fips/openssl/v2"
+	"github.com/microsoft/go-crypto-openssl"
 )
 
 func TestRand(t *testing.T) {

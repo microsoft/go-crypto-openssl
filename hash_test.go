@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 package openssl_test
 
 import (
@@ -17,7 +20,7 @@ import (
 	_ "crypto/sha256"
 	_ "crypto/sha512"
 
-	"github.com/golang-fips/openssl/v2"
+	"github.com/microsoft/go-crypto-openssl"
 )
 
 func cryptoToHash(h crypto.Hash) func() hash.Hash {

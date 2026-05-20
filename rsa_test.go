@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 package openssl_test
 
 import (
@@ -9,8 +12,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/golang-fips/openssl/v2"
-	"github.com/golang-fips/openssl/v2/bbig"
+	"github.com/microsoft/go-crypto-openssl"
+	"github.com/microsoft/go-crypto-openssl/bbig"
 )
 
 func TestRSAKeyGeneration(t *testing.T) {

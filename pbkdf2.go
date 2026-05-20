@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 //go:build !cmd_go_bootstrap
 
 package openssl
@@ -7,7 +10,7 @@ import (
 	"hash"
 	"sync"
 
-	"github.com/golang-fips/openssl/v2/internal/ossl"
+	"github.com/microsoft/go-crypto-openssl/internal/ossl"
 )
 
 // SupportsPBKDF2 reports whether the current OpenSSL version supports PBKDF2.

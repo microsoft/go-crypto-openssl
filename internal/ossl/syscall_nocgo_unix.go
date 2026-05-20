@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 //go:build !cgo && unix && (go1.27 || !s390x)
 
 package ossl
@@ -5,7 +8,7 @@ package ossl
 import (
 	"unsafe"
 
-	_ "github.com/golang-fips/openssl/v2/internal/fakecgo"
+	_ "github.com/microsoft/go-crypto-openssl/internal/fakecgo"
 )
 
 func dlsym(handle unsafe.Pointer, symbol string, optional bool) uintptr {

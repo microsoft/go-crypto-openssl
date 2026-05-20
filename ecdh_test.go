@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 package openssl_test
 
 import (
@@ -7,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang-fips/openssl/v2"
+	"github.com/microsoft/go-crypto-openssl"
 )
 
 func TestECDH(t *testing.T) {

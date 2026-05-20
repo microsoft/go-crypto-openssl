@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 // Copyright 2022 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
@@ -11,7 +14,7 @@ import (
 	"math/big"
 	"unsafe"
 
-	"github.com/golang-fips/openssl/v2"
+	"github.com/microsoft/go-crypto-openssl"
 )
 
 func Enc(b *big.Int) openssl.BigInt {

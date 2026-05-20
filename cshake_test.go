@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 package openssl_test
 
 import (
@@ -8,7 +11,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/golang-fips/openssl/v2"
+	"github.com/microsoft/go-crypto-openssl"
 )
 
 // testShakes contains functions that return *sha3.SHAKE instances for

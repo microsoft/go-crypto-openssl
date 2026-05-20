@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 package main
 
 import (
@@ -11,7 +14,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/golang-fips/openssl/v2/internal/mkcgo"
+	"github.com/microsoft/go-crypto-openssl/internal/mkcgo"
 )
 
 var (

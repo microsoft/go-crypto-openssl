@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 //go:build unix && !cmd_go_bootstrap && !cgo && (go1.27 || !s390x)
 
 package osslsetup
@@ -7,7 +10,7 @@ import (
 	"runtime"
 	"unsafe"
 
-	"github.com/golang-fips/openssl/v2/internal/ossl"
+	"github.com/microsoft/go-crypto-openssl/internal/ossl"
 )
 
 func dlopen(file string) (handle unsafe.Pointer, err error) {

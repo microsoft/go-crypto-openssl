@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 // This header file is used by the mkcgo tool to generate cgo and Go bindings for the
 // OpenSSL C API. Run "go generate ." to regenerate the bindings.
 // Do not include this file, import "zossl.h" instead.

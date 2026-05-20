@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 package mkcgo_test
 
 import (
@@ -8,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang-fips/openssl/v2/internal/mkcgo"
+	"github.com/microsoft/go-crypto-openssl/internal/mkcgo"
 )
 
 func TestFuncVariadic(t *testing.T) {

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 package openssl_test
 
 import (
@@ -12,9 +15,9 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/golang-fips/openssl/v2"
-	"github.com/golang-fips/openssl/v2/internal/ossl"
-	"github.com/golang-fips/openssl/v2/osslsetup"
+	"github.com/microsoft/go-crypto-openssl"
+	"github.com/microsoft/go-crypto-openssl/internal/ossl"
+	"github.com/microsoft/go-crypto-openssl/osslsetup"
 )
 
 // sink is used to prevent the compiler from optimizing out the allocations.

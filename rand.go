@@ -1,8 +1,11 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 //go:build !cmd_go_bootstrap
 
 package openssl
 
-import "github.com/golang-fips/openssl/v2/internal/ossl"
+import "github.com/microsoft/go-crypto-openssl/internal/ossl"
 
 type randReader int
 

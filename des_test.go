@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 package openssl_test
 
 import (
@@ -5,8 +8,8 @@ import (
 	"crypto/cipher"
 	"testing"
 
-	"github.com/golang-fips/openssl/v2"
-	"github.com/golang-fips/openssl/v2/internal/cryptotest"
+	"github.com/microsoft/go-crypto-openssl"
+	"github.com/microsoft/go-crypto-openssl/internal/cryptotest"
 )
 
 type CryptTest struct {

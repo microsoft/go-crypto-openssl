@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 // The mkcgo package provides a C header syntax parser.
 // It supports just the necessary features to parse the OpenSSL symbols used in this project.
 package mkcgo

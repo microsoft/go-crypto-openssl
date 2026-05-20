@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 // benchcheck is a tool for analyzing Go benchmark results in CI.
 //
 // Commands:

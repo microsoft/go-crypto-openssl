@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 package openssl_test
 
 import (
@@ -6,8 +9,8 @@ import (
 	"crypto/elliptic"
 	"testing"
 
-	"github.com/golang-fips/openssl/v2"
-	"github.com/golang-fips/openssl/v2/bbig"
+	"github.com/microsoft/go-crypto-openssl"
+	"github.com/microsoft/go-crypto-openssl/bbig"
 )
 
 func testAllCurves(t *testing.T, f func(*testing.T, elliptic.Curve)) {
