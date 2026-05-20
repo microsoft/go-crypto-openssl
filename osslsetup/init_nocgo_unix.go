@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-//go:build unix && !cmd_go_bootstrap && !cgo && (go1.27 || !s390x)
+//go:build unix && !cgo && (go1.27 || !s390x)
 
 package osslsetup
 

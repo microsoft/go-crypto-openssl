@@ -193,7 +193,8 @@ _OSSL_PROVIDER_PTR OSSL_PROVIDER_try_load(_OSSL_LIB_CTX_PTR libctx, const char *
 const char *OSSL_PROVIDER_get0_name(const _OSSL_PROVIDER_PTR prov) __attribute__((tag("3"),noerror));
 
 // RAND API
-int RAND_bytes(unsigned char *arg0, int arg1) __attribute__((noescape,nocallback,slice("arg0","arg1")));
+int RAND_bytes(unsigned char *buf, int num) __attribute__((tag("legacy_1"),noescape,nocallback,slice("buf","num")));
+int RAND_bytes_ex(_OSSL_LIB_CTX_PTR ctx, unsigned char *buf, size_t num, unsigned int strength) __attribute__((tag("3"),noescape,nocallback,slice("buf","num")));
 
 // EVP_MD API
 _EVP_MD_PTR EVP_MD_fetch(_OSSL_LIB_CTX_PTR ctx, const char *algorithm, const char *properties) __attribute__((tag("3"),tag("init_3")));
@@ -429,7 +430,7 @@ int EVP_KDF_CTX_set_params(_EVP_KDF_CTX_PTR ctx, const _OSSL_PARAM_PTR params) _
 void EVP_KDF_CTX_free(_EVP_KDF_CTX_PTR ctx) __attribute__((tag("3")));
 size_t EVP_KDF_CTX_get_kdf_size(_EVP_KDF_CTX_PTR ctx) __attribute__((tag("3")));
 int EVP_KDF_derive(_EVP_KDF_CTX_PTR ctx, unsigned char *key, size_t keylen, const _OSSL_PARAM_PTR params) __attribute__((tag("3"),slice("key","keylen")));
-int PKCS5_PBKDF2_HMAC(const char *pass, int passlen, const unsigned char *salt, int saltlen, int iter, const _EVP_MD_PTR digest, int keylen, unsigned char *out) __attribute__((slice("pass","passlen"),slice("salt","saltlen"),slice("out","keylen")));
+int PKCS5_PBKDF2_HMAC(const char *pass, int passlen, const unsigned char *salt, int saltlen, int iter, const _EVP_MD_PTR digest, int keylen, unsigned char *out) __attribute__((tag("legacy_1"),slice("pass","passlen"),slice("salt","saltlen"),slice("out","keylen")));
 
 // OBJ API
 const char *OBJ_nid2sn(int n) __attribute__((noerror));

@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-//go:build !cmd_go_bootstrap
-
 package openssl
 
 import (
@@ -102,6 +100,7 @@ func buildHMAC3Params(md ossl.EVP_MD_PTR) (ossl.OSSL_PARAM_PTR, error) {
 	bld := newParamBuilder()
 	defer bld.finalize()
 	bld.addUTF8String(_OSSL_MAC_PARAM_DIGEST, ossl.EVP_MD_get0_name(md), 0)
+	bld.addInt32(_OSSL_MAC_PARAM_FIPS_KEY_CHECK, 0)
 	return bld.build()
 }
 
