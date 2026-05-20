@@ -1,6 +1,3 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
-
 # Source: https://www.openssl.org/docs/man3.0/man7/fips_module.html
 
 config_diagnostics = 1
