@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/microsoft/go-crypto-openssl"
+	"github.com/microsoft/go-crypto-openssl/openssl"
 )
 
 type rc4Test struct {

@@ -8,7 +8,7 @@ import (
 	"crypto/ed25519"
 	"testing"
 
-	"github.com/microsoft/go-crypto-openssl"
+	"github.com/microsoft/go-crypto-openssl/openssl"
 )
 
 func TestNewKeyFromSeedEd25519(t *testing.T) {

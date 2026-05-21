@@ -20,7 +20,7 @@ import (
 	_ "crypto/sha256"
 	_ "crypto/sha512"
 
-	"github.com/microsoft/go-crypto-openssl"
+	"github.com/microsoft/go-crypto-openssl/openssl"
 )
 
 func cryptoToHash(h crypto.Hash) func() hash.Hash {

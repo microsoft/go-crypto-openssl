@@ -14,7 +14,7 @@ import (
 	"math/big"
 	"unsafe"
 
-	"github.com/microsoft/go-crypto-openssl"
+	"github.com/microsoft/go-crypto-openssl/openssl"
 )
 
 func Enc(b *big.Int) openssl.BigInt {

@@ -8,7 +8,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/microsoft/go-crypto-openssl"
+	"github.com/microsoft/go-crypto-openssl/openssl"
 )
 
 // TestHashBufferingWithClone tests that Clone properly copies buffered data

@@ -10,8 +10,8 @@ import (
 	"math/big"
 	"testing"
 
-	openssl "github.com/microsoft/go-crypto-openssl"
 	"github.com/microsoft/go-crypto-openssl/bbig"
+	openssl "github.com/microsoft/go-crypto-openssl/openssl"
 	"github.com/microsoft/go-crypto-openssl/osslsetup"
 )
 

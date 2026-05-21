@@ -15,8 +15,8 @@ import (
 	"time"
 	"unsafe"
 
-	openssl "github.com/microsoft/go-crypto-openssl"
 	"github.com/microsoft/go-crypto-openssl/internal/ossl"
+	openssl "github.com/microsoft/go-crypto-openssl/openssl"
 	"github.com/microsoft/go-crypto-openssl/osslsetup"
 )
 

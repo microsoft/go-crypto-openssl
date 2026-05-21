@@ -8,7 +8,7 @@ import (
 	"crypto"
 	"testing"
 
-	"github.com/microsoft/go-crypto-openssl"
+	"github.com/microsoft/go-crypto-openssl/openssl"
 )
 
 type tls1prfTest struct {
