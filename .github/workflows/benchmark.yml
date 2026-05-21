@@ -7,6 +7,7 @@ on:
   pull_request:
     paths-ignore:
       - '.github/**'
+      - '!.github/workflows/benchmark.yml'
   workflow_dispatch:
     inputs:
       base-ref:
@@ -41,6 +42,6 @@ jobs:
           "cgo-enabled": ["1"],
           "include": [
             { "runs-on": "ubuntu-latest", "go-version": "1.25", "cgo-enabled": "1", "container": "mcr.microsoft.com/oss/go/microsoft/golang:1.25-azurelinux3.0", "container-label": "azl3", "container-setup": "tdnf install -y openssl-devel" },
-            { "runs-on": "ubuntu-latest", "go-version": "1.26", "cgo-enabled": "1", "container": "mcr.microsoft.com/oss/go/microsoft/golang:1.25-azurelinux3.0", "container-label": "azl3", "container-setup": "tdnf install -y openssl-devel" }
+            { "runs-on": "ubuntu-latest", "go-version": "1.26", "cgo-enabled": "1", "container": "mcr.microsoft.com/oss/go/microsoft/golang:1.26-azurelinux3.0", "container-label": "azl3", "container-setup": "tdnf install -y openssl-devel" }
           ]
         }
