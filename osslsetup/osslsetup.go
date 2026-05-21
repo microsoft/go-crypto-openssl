@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/golang-fips/openssl/v2/internal/ossl"
+	"github.com/microsoft/go-crypto-openssl/internal/ossl"
 )
 
 var (

@@ -5,7 +5,7 @@ package ossl
 import (
 	"unsafe"
 
-	_ "github.com/golang-fips/openssl/v2/internal/fakecgo"
+	_ "github.com/microsoft/go-crypto-openssl/internal/fakecgo"
 )
 
 func dlsym(handle unsafe.Pointer, symbol string, optional bool) uintptr {

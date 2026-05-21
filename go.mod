@@ -1,3 +1,3 @@
-module github.com/golang-fips/openssl/v2
+module github.com/microsoft/go-crypto-openssl
 
 go 1.24

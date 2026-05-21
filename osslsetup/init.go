@@ -6,7 +6,7 @@ import (
 	"errors"
 	"unsafe"
 
-	"github.com/golang-fips/openssl/v2/internal/ossl"
+	"github.com/microsoft/go-crypto-openssl/internal/ossl"
 )
 
 // osslHandle is the handle to the OpenSSL shared library loaded in the [Init] function.

@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/golang-fips/openssl/v2/internal/mkcgo"
+	"github.com/microsoft/go-crypto-openssl/internal/mkcgo"
 )
 
 // checkheader is a static analyzer that detects incompatibilities between wrapper definitions and system headers.

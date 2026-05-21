@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"unsafe"
 
-	"github.com/golang-fips/openssl/v2/internal/ossl"
+	"github.com/microsoft/go-crypto-openssl/internal/ossl"
 )
 
 func dlopen(file string) (handle unsafe.Pointer, err error) {
