@@ -11,6 +11,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  MS_GO_NOSYSTEMCRYPTO: "1" # Don't use systemcrypto for testing parity with stdlib
+
 name: Test
 jobs:
   versionguardcheck:
