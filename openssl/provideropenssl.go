@@ -195,12 +195,13 @@ func getOSSLDigetsContext(ctx ossl.EVP_MD_CTX_PTR) unsafe.Pointer {
 		}
 		return (*mdCtx)(unsafe.Pointer(ctx)).algctx
 	default:
-		// Unknown OpenSSL major: the EVP_MD_CTX internal layout is not known,
-		// so the running hash state cannot be safely extracted. osslsetup
-		// rejects untested majors at startup; this path is only reachable
-		// under GODEBUG=ms_opensslallowuntested=1. Callers surface a nil
-		// return as errHashStateInvalid, marking the hash effectively not
-		// marshalable on this version.
+		// Unknown OpenSSL major: the EVP_MD_CTX internal layout is not
+		// known, so the running hash state cannot be safely extracted.
+		// loadHash marks hashes as not marshallable on untested majors
+		// (see evp.go), so MarshalBinary/UnmarshalBinary short-circuit
+		// with errMarshallUnsupported{} before calling this. The nil
+		// return is defense in depth against any future caller that
+		// bypasses that gate.
 		return nil
 	}
 }

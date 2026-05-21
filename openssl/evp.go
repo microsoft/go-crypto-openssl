@@ -183,16 +183,22 @@ func loadHash(ch crypto.Hash, must bool) (h *hashAlgorithm) {
 	default:
 		if prov := ossl.EVP_MD_get0_provider(hash.md); prov != nil {
 			cname := ossl.OSSL_PROVIDER_get0_name(prov)
+			// Marshalability depends on knowing the EVP_MD_CTX internal
+			// layout for this major (see getOSSLDigetsContext). Untested
+			// majors loaded via GODEBUG=ms_opensslallowuntested=1 leave
+			// marshallable false so MarshalBinary/UnmarshalBinary return
+			// errMarshallUnsupported{} instead of touching unknown memory.
+			known := knownMajor()
 			switch goString(cname) {
 			case "default":
 				hash.provider = providerOSSLDefault
-				hash.marshallable = hash.magic != ""
+				hash.marshallable = known && hash.magic != ""
 			case "fips":
 				hash.provider = providerOSSLFIPS
-				hash.marshallable = hash.magic != ""
+				hash.marshallable = known && hash.magic != ""
 			case "symcryptprovider":
 				hash.provider = providerSymCrypt
-				hash.marshallable = hash.magic != "" && isSymCryptHashStateSerializable(hash.md)
+				hash.marshallable = known && hash.magic != "" && isSymCryptHashStateSerializable(hash.md)
 			}
 		}
 	}

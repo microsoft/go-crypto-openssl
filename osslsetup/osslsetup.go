@@ -23,6 +23,20 @@ var (
 // [openLibrary].
 var testedMajors = [...]int{1, 3, 4}
 
+// IsTestedMajor reports whether m is one of the OpenSSL major versions
+// this backend has been tested against (see [testedMajors]). Callers
+// that depend on version-specific layouts or behaviors should gate on
+// this so they degrade safely on untested majors loaded via
+// GODEBUG=ms_opensslallowuntested=1.
+func IsTestedMajor(m int) bool {
+	for _, v := range testedMajors {
+		if v == m {
+			return true
+		}
+	}
+	return false
+}
+
 // allowUntestedMajor reports whether the user has set
 // GODEBUG=ms_opensslallowuntested=1. The "ms_" prefix marks this as a
 // Microsoft-defined GODEBUG so it will not collide with upstream Go.

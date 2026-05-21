@@ -41,6 +41,15 @@ func patch() int {
 	return osslsetup.VersionPatch()
 }
 
+// knownMajor reports whether the loaded OpenSSL major is one this
+// backend has been tested against. Untested majors are only reachable
+// behind GODEBUG=ms_opensslallowuntested=1; code paths that rely on
+// version-specific layouts (e.g. EVP_MD_CTX internals) must guard on
+// this so they degrade safely instead of touching unknown memory.
+func knownMajor() bool {
+	return osslsetup.IsTestedMajor(major())
+}
+
 func utoa(n int) string {
 	return strconv.FormatUint(uint64(n), 10)
 }
