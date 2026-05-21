@@ -9,7 +9,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/golang-fips/openssl/v2/internal/mkcgo"
+	"github.com/microsoft/go-crypto-openssl/internal/mkcgo"
 )
 
 // generateGo output Go source file from src.
