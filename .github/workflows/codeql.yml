@@ -46,6 +46,7 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           build-mode: autobuild
+          config-file: ./CodeQL.yml
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@9e0d7b8d25671d64c341c19c0152d693099fb5ba # v4.35.5
