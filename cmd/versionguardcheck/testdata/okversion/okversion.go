@@ -11,7 +11,6 @@ func major() int                        { return 3 }
 func minor() int                        { return 0 }
 func patch() int                        { return 0 }
 func versionAtOrAbove(a, b, c int) bool { return true }
-func checkMajorVersion(expected ...int) {}
 
 func oneBranchOnly() {
 	switch major() {
@@ -20,7 +19,6 @@ func oneBranchOnly() {
 		_ = minor()
 		_ = patch()
 		_ = versionAtOrAbove(1, 1, 1)
-		checkMajorVersion(1)
 	}
 }
 

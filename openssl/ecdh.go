@@ -107,7 +107,7 @@ func (k *PrivateKeyECDH) PublicKey() (*PublicKeyECDH, error) {
 			if bytes, err = encodeEcPoint(group, pt); err != nil {
 				return nil, err
 			}
-		case 3, 4:
+		default:
 			pkey = k._pkey
 			if _, err := ossl.EVP_PKEY_up_ref(pkey); err != nil {
 				return nil, err
@@ -119,8 +119,6 @@ func (k *PrivateKeyECDH) PublicKey() (*PublicKeyECDH, error) {
 			}
 			bytes = goBytes(unsafe.Pointer(cbytes), n)
 			cryptoFree(unsafe.Pointer(cbytes))
-		default:
-			panic(errUnsupportedVersion())
 		}
 	}
 	pub := &PublicKeyECDH{pkey, bytes}
@@ -141,16 +139,12 @@ func newECDHPkey(curve string, bytes []byte, isPrivate bool) (ossl.EVP_PKEY_PTR,
 	switch major() {
 	case 1:
 		return newECDHPkey1(nid, bytes, isPrivate)
-	case 3, 4:
-		return newECDHPkey3(nid, bytes, isPrivate)
 	default:
-		panic(errUnsupportedVersion())
+		return newECDHPkey3(nid, bytes, isPrivate)
 	}
 }
 
 func newECDHPkey1(nid int32, bytes []byte, isPrivate bool) (pkey ossl.EVP_PKEY_PTR, err error) {
-	checkMajorVersion(1)
-
 	key, err := ossl.EC_KEY_new_by_curve_name(nid)
 	if err != nil {
 		return nil, err
@@ -203,8 +197,6 @@ func newECDHPkey1(nid int32, bytes []byte, isPrivate bool) (pkey ossl.EVP_PKEY_P
 }
 
 func newECDHPkey3(nid int32, bytes []byte, isPrivate bool) (ossl.EVP_PKEY_PTR, error) {
-	checkMajorVersion(3, 4)
-
 	bld := newParamBuilder()
 	defer bld.finalize()
 	bld.addUTF8String(_OSSL_PKEY_PARAM_GROUP_NAME, ossl.OBJ_nid2sn(nid), 0)
@@ -313,13 +305,11 @@ func GenerateKeyECDH(curve string) (*PrivateKeyECDH, []byte, error) {
 			if priv == nil {
 				return nil, nil, fail("missing ECDH private key")
 			}
-		case 3, 4:
+		default:
 			if _, err := ossl.EVP_PKEY_get_bn_param(pkey, _OSSL_PKEY_PARAM_PRIV_KEY.ptr(), &priv); err != nil {
 				return nil, nil, err
 			}
 			defer ossl.BN_clear_free(priv)
-		default:
-			panic(errUnsupportedVersion())
 		}
 		// We should not leak bit length of the secret scalar in the key.
 		// For this reason, we use BN_bn2binpad instead of BN_bn2bin with fixed length.

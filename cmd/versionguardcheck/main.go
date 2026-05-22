@@ -5,8 +5,8 @@
 // "version checks must be justified" rule.
 //
 // It walks the OpenSSL backend's package ASTs and flags any call to
-// minor(), patch(), versionAtOrAbove(), or checkMajorVersion() that appears
-// inside the OpenSSL 3+ branch of a `switch major()` statement, unless the
+// minor(), patch(), or versionAtOrAbove() that appears inside the OpenSSL
+// 3+ branch of a `switch major()` statement, unless the
 // call is annotated with a marker comment of the form:
 //
 //	//versionguardcheck:ignore <reason>
@@ -49,10 +49,9 @@ const markerPrefix = "//versionguardcheck:ignore"
 // major() is intentionally excluded: the outer `switch major()` between
 // the 1.x and 3+ branches is the top-level dispatch and is exempt.
 var gatedFns = map[string]bool{
-	"minor":             true,
-	"patch":             true,
-	"versionAtOrAbove":  true,
-	"checkMajorVersion": true,
+	"minor":            true,
+	"patch":            true,
+	"versionAtOrAbove": true,
 }
 
 func main() {
