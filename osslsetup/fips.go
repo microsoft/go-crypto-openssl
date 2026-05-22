@@ -73,7 +73,6 @@ func FIPS() bool {
 // which is FIPS-capable.
 //
 // Considerations:
-//   - Multiple calls to FIPSCapable can return different values if [SetFIPS] is called in between.
 //   - Can return true even if [FIPS] returns false, because [FIPS] also checks whether
 //     the default properties contain `fips=yes`.
 //   - When using OpenSSL 3, will always return true if [FIPS] returns true.
