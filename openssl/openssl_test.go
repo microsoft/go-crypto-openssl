@@ -6,7 +6,6 @@ package openssl_test
 import (
 	"cmp"
 	"fmt"
-	"go/version"
 	"os"
 	"runtime"
 	"strings"
@@ -69,7 +68,8 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 	fmt.Println("OpenSSL version:", osslsetup.VersionText())
-	fmt.Println("FIPS:", osslsetup.FIPS())
+	fmt.Println("FIPS enabled:", osslsetup.FIPS())
+	fmt.Println("FIPS capable:", osslsetup.FIPSCapable())
 	status := m.Run()
 	for range 5 {
 		// Run GC a few times to avoid false positives in leak detection.
@@ -138,12 +138,16 @@ func TestCheckVersion(t *testing.T) {
 	}
 }
 
-// compareCurrentVersion compares v with [runtime.Version].
-// See [go/versions.Compare] for information about
-// v format and comparison rules.
-func compareCurrentVersion(v string) int {
-	ver := strings.TrimPrefix(runtime.Version(), "devel ")
-	return version.Compare(ver, v)
+func TestFIPSCapable(t *testing.T) {
+	got := osslsetup.FIPSCapable()
+	want := osslsetup.FIPS()
+	if !want && symCryptProviderAvailable() {
+		// The SymCrypt provider is FIPS-capable.
+		want = true
+	}
+	if got != want {
+		t.Fatalf("FIPSCapable mismatch: want %v, got %v", want, got)
+	}
 }
 
 func TestErrorMultithread(t *testing.T) {
@@ -196,14 +200,6 @@ func BenchmarkError(b *testing.B) {
 
 var symCryptProviderAvailable = sync.OnceValue(func() bool {
 	return isProviderAvailable("symcryptprovider")
-})
-
-var fipsProviderAvailable = sync.OnceValue(func() bool {
-	return isProviderAvailable("fips")
-})
-
-var defaultProviderAvailable = sync.OnceValue(func() bool {
-	return isProviderAvailable("default")
 })
 
 // isProviderAvailable checks if the provider with the given name is available.
