@@ -67,6 +67,7 @@ _EVP_CIPHER_PTR (*_g_EVP_CIPHER_fetch)(_OSSL_LIB_CTX_PTR, const char*, const cha
 const char* (*_g_EVP_CIPHER_get0_name)(const _EVP_CIPHER_PTR);
 int (*_g_EVP_CIPHER_get_block_size)(const _EVP_CIPHER_PTR);
 int (*_g_EVP_CipherInit_ex)(_EVP_CIPHER_CTX_PTR, const _EVP_CIPHER_PTR, _ENGINE_PTR, const unsigned char*, const unsigned char*, int);
+int (*_g_EVP_CipherInit_ex2)(_EVP_CIPHER_CTX_PTR, const _EVP_CIPHER_PTR, const unsigned char*, const unsigned char*, int, const _OSSL_PARAM_PTR);
 int (*_g_EVP_CipherUpdate)(_EVP_CIPHER_CTX_PTR, unsigned char*, int*, const unsigned char*, int);
 int (*_g_EVP_DecryptFinal_ex)(_EVP_CIPHER_CTX_PTR, unsigned char*, int*);
 int (*_g_EVP_DecryptInit_ex)(_EVP_CIPHER_CTX_PTR, const _EVP_CIPHER_PTR, _ENGINE_PTR, const unsigned char*, const unsigned char*);
@@ -502,6 +503,7 @@ void __mkcgo_load_3(void* handle) {
 	__mkcgo__dlsym(EVP_CIPHER_fetch)
 	__mkcgo__dlsym(EVP_CIPHER_get0_name)
 	__mkcgo__dlsym(EVP_CIPHER_get_block_size)
+	__mkcgo__dlsym(EVP_CipherInit_ex2)
 	__mkcgo__dlsym(EVP_KDF_CTX_free)
 	__mkcgo__dlsym(EVP_KDF_CTX_get_kdf_size)
 	__mkcgo__dlsym(EVP_KDF_CTX_new)
@@ -577,6 +579,7 @@ void __mkcgo_unload_3() {
 	_g_EVP_CIPHER_fetch = NULL;
 	_g_EVP_CIPHER_get0_name = NULL;
 	_g_EVP_CIPHER_get_block_size = NULL;
+	_g_EVP_CipherInit_ex2 = NULL;
 	_g_EVP_KDF_CTX_free = NULL;
 	_g_EVP_KDF_CTX_get_kdf_size = NULL;
 	_g_EVP_KDF_CTX_new = NULL;
@@ -1059,6 +1062,12 @@ int _mkcgo_EVP_CIPHER_get_block_size(const _EVP_CIPHER_PTR _arg0) {
 
 int _mkcgo_EVP_CipherInit_ex(_EVP_CIPHER_CTX_PTR _arg0, const _EVP_CIPHER_PTR _arg1, _ENGINE_PTR _arg2, const unsigned char* _arg3, const unsigned char* _arg4, int _arg5, uintptr_t *_err_state) {
 	int _ret = _g_EVP_CipherInit_ex(_arg0, _arg1, _arg2, _arg3, _arg4, _arg5);
+	if (_ret <= 0) *_err_state = mkcgo_err_retrieve();
+	return _ret;
+}
+
+int _mkcgo_EVP_CipherInit_ex2(_EVP_CIPHER_CTX_PTR _arg0, const _EVP_CIPHER_PTR _arg1, const unsigned char* _arg2, const unsigned char* _arg3, int _arg4, const _OSSL_PARAM_PTR _arg5, uintptr_t *_err_state) {
+	int _ret = _g_EVP_CipherInit_ex2(_arg0, _arg1, _arg2, _arg3, _arg4, _arg5);
 	if (_ret <= 0) *_err_state = mkcgo_err_retrieve();
 	return _ret;
 }
