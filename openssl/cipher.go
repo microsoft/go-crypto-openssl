@@ -614,9 +614,6 @@ func newCipherCtx(kind cipherKind, mode cipherMode, encrypt cipherOp, key, iv []
 	if err != nil {
 		return nil, err
 	}
-	if params != nil {
-		defer ossl.OSSL_PARAM_free(params)
-	}
 	ctx, err := ossl.EVP_CIPHER_CTX_new()
 	if err != nil {
 		return nil, err
@@ -650,15 +647,23 @@ func newCipherCtx(kind cipherKind, mode cipherMode, encrypt cipherOp, key, iv []
 	return ctx, nil
 }
 
-func cipherInitParams(encrypt cipherOp) (ossl.OSSL_PARAM_PTR, error) {
-	if encrypt != cipherOpEncrypt || major() == 1 {
-		return nil, nil
+var cipherEncryptCheckParams = sync.OnceValues(func() (ossl.OSSL_PARAM_PTR, error) {
+	bld, err := newParamBuilder()
+	if err != nil {
+		return nil, err
 	}
-	bld := newParamBuilder()
-	// Setting the FIPS encrypt check to 0 allows encryption to proceed even if the key is not approved for use in FIPS mode.
-	// This check is done at the Go crypto level.
 	bld.addInt32(_OSSL_CIPHER_PARAM_FIPS_ENCRYPT_CHECK, 0)
 	return bld.build()
+})
+
+func cipherInitParams(encrypt cipherOp) (ossl.OSSL_PARAM_PTR, error) {
+	if encrypt != cipherOpEncrypt || vMajor == 1 {
+		return nil, nil
+	}
+	// The returned params are cached for the lifetime of the process and must not be freed by callers.
+	// Setting the FIPS encrypt check to 0 allows encryption to proceed even if the key is not approved for use in FIPS mode.
+	// This check is done at the Go crypto level.
+	return cipherEncryptCheckParams()
 }
 
 // The following two functions are a mirror of golang.org/x/crypto/internal/subtle.
