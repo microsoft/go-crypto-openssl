@@ -323,19 +323,37 @@ func setPSSPadding(ctx ossl.EVP_PKEY_CTX_PTR, saltLen int32, ch crypto.Hash) err
 	if alg == nil {
 		return errors.New("crypto/rsa: unsupported hash function")
 	}
-	if _, err := ossl.EVP_PKEY_CTX_ctrl(ctx, ossl.EVP_PKEY_RSA, -1, ossl.EVP_PKEY_CTRL_MD, 0, unsafe.Pointer(alg.md)); err != nil {
-		return err
-	}
-	// setPadding must happen after setting EVP_PKEY_CTRL_MD.
-	if _, err := ossl.EVP_PKEY_CTX_ctrl(ctx, ossl.EVP_PKEY_RSA, -1, ossl.EVP_PKEY_CTRL_RSA_PADDING, ossl.RSA_PKCS1_PSS_PADDING, nil); err != nil {
-		return err
-	}
-	if saltLen != 0 {
-		if _, err := ossl.EVP_PKEY_CTX_ctrl(ctx, ossl.EVP_PKEY_RSA, -1, ossl.EVP_PKEY_CTRL_RSA_PSS_SALTLEN, saltLen, nil); err != nil {
+	switch major() {
+	case 1:
+		if _, err := ossl.EVP_PKEY_CTX_ctrl(ctx, ossl.EVP_PKEY_RSA, -1, ossl.EVP_PKEY_CTRL_MD, 0, unsafe.Pointer(alg.md)); err != nil {
 			return err
 		}
+		// setPadding must happen after setting EVP_PKEY_CTRL_MD.
+		if _, err := ossl.EVP_PKEY_CTX_ctrl(ctx, ossl.EVP_PKEY_RSA, -1, ossl.EVP_PKEY_CTRL_RSA_PADDING, ossl.RSA_PKCS1_PSS_PADDING, nil); err != nil {
+			return err
+		}
+		if saltLen != 0 {
+			if _, err := ossl.EVP_PKEY_CTX_ctrl(ctx, ossl.EVP_PKEY_RSA, -1, ossl.EVP_PKEY_CTRL_RSA_PSS_SALTLEN, saltLen, nil); err != nil {
+				return err
+			}
+		}
+		return nil
+	default:
+		bld := newParamBuilder()
+		bld.addUTF8String(_OSSL_SIGNATURE_PARAM_DIGEST, ossl.EVP_MD_get0_name(alg.md), 0)
+		bld.addUTF8String(_OSSL_SIGNATURE_PARAM_PAD_MODE, _OSSL_PKEY_RSA_PAD_MODE_PSS.ptr(), 0)
+		if saltLen != 0 {
+			bld.addInt32(_OSSL_SIGNATURE_PARAM_PSS_SALTLEN, saltLen)
+		}
+		bld.addInt32(_OSSL_SIGNATURE_PARAM_FIPS_RSA_PSS_SALTLEN_CHECK, 0)
+		params, err := bld.build()
+		if err != nil {
+			return err
+		}
+		defer ossl.OSSL_PARAM_free(params)
+		_, err = ossl.EVP_PKEY_CTX_set_params(ctx, params)
+		return err
 	}
-	return nil
 }
 
 func setPKCS1Padding(ctx ossl.EVP_PKEY_CTX_PTR, ch crypto.Hash) error {

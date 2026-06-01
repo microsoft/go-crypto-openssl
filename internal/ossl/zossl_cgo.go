@@ -733,6 +733,12 @@ func EVP_PKEY_CTX_set_hkdf_mode(arg0 EVP_PKEY_CTX_PTR, arg1 int32) (int32, error
 	return int32(_ret), newMkcgoErr("EVP_PKEY_CTX_set_hkdf_mode", uintptr(_err))
 }
 
+func EVP_PKEY_CTX_set_params(ctx EVP_PKEY_CTX_PTR, params OSSL_PARAM_PTR) (int32, error) {
+	var _err C.uintptr_t
+	_ret := C._mkcgo_EVP_PKEY_CTX_set_params(ctx, params, mkcgoNoEscape(&_err))
+	return int32(_ret), newMkcgoErr("EVP_PKEY_CTX_set_params", uintptr(_err))
+}
+
 func EVP_PKEY_Q_keygen_EC(ctx OSSL_LIB_CTX_PTR, propq *byte, __type *byte, arg1 *byte) (EVP_PKEY_PTR, error) {
 	var _err C.uintptr_t
 	_ret := C._mkcgo_EVP_PKEY_Q_keygen_EC(ctx, (*C.char)(unsafe.Pointer(propq)), (*C.char)(unsafe.Pointer(__type)), (*C.char)(unsafe.Pointer(arg1)), mkcgoNoEscape(&_err))

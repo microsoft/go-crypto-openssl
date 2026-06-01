@@ -239,6 +239,7 @@ int _mkcgo_EVP_PKEY_CTX_set1_hkdf_key(_EVP_PKEY_CTX_PTR, const unsigned char*, i
 int _mkcgo_EVP_PKEY_CTX_set1_hkdf_salt(_EVP_PKEY_CTX_PTR, const unsigned char*, int, uintptr_t *);
 int _mkcgo_EVP_PKEY_CTX_set_hkdf_md(_EVP_PKEY_CTX_PTR, const _EVP_MD_PTR, uintptr_t *);
 int _mkcgo_EVP_PKEY_CTX_set_hkdf_mode(_EVP_PKEY_CTX_PTR, int, uintptr_t *);
+int _mkcgo_EVP_PKEY_CTX_set_params(_EVP_PKEY_CTX_PTR, const _OSSL_PARAM_PTR, uintptr_t *);
 _EVP_PKEY_PTR _mkcgo_EVP_PKEY_Q_keygen_EC(_OSSL_LIB_CTX_PTR, const char*, const char*, const char*, uintptr_t *);
 _EVP_PKEY_PTR _mkcgo_EVP_PKEY_Q_keygen_ED25519(_OSSL_LIB_CTX_PTR, const char*, const char*, uintptr_t *);
 _EVP_PKEY_PTR _mkcgo_EVP_PKEY_Q_keygen_MLKEM(_OSSL_LIB_CTX_PTR, const char*, const char*, uintptr_t *);
