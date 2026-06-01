@@ -339,7 +339,10 @@ func setPSSPadding(ctx ossl.EVP_PKEY_CTX_PTR, saltLen int32, ch crypto.Hash) err
 		}
 		return nil
 	default:
-		bld := newParamBuilder()
+		bld, err := newParamBuilder()
+		if err != nil {
+			return err
+		}
 		bld.addUTF8String(_OSSL_SIGNATURE_PARAM_DIGEST, ossl.EVP_MD_get0_name(alg.md), 0)
 		bld.addUTF8String(_OSSL_SIGNATURE_PARAM_PAD_MODE, _OSSL_PKEY_RSA_PAD_MODE_PSS.ptr(), 0)
 		if saltLen != 0 {
