@@ -159,6 +159,7 @@ _EVP_CIPHER_PTR _mkcgo_EVP_CIPHER_fetch(_OSSL_LIB_CTX_PTR, const char*, const ch
 const char* _mkcgo_EVP_CIPHER_get0_name(const _EVP_CIPHER_PTR);
 int _mkcgo_EVP_CIPHER_get_block_size(const _EVP_CIPHER_PTR);
 int _mkcgo_EVP_CipherInit_ex(_EVP_CIPHER_CTX_PTR, const _EVP_CIPHER_PTR, _ENGINE_PTR, const unsigned char*, const unsigned char*, int, mkcgo_err_state *);
+int _mkcgo_EVP_CipherInit_ex2(_EVP_CIPHER_CTX_PTR, const _EVP_CIPHER_PTR, const unsigned char*, const unsigned char*, int, const _OSSL_PARAM_PTR, mkcgo_err_state *);
 int _mkcgo_EVP_CipherUpdate(_EVP_CIPHER_CTX_PTR, unsigned char*, int*, const unsigned char*, int, mkcgo_err_state *);
 int _mkcgo_EVP_DecryptFinal_ex(_EVP_CIPHER_CTX_PTR, unsigned char*, int*, mkcgo_err_state *);
 int _mkcgo_EVP_DecryptInit_ex(_EVP_CIPHER_CTX_PTR, const _EVP_CIPHER_PTR, _ENGINE_PTR, const unsigned char*, const unsigned char*, mkcgo_err_state *);

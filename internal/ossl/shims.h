@@ -246,6 +246,7 @@ int EVP_CIPHER_CTX_set_key_length(_EVP_CIPHER_CTX_PTR x, int keylen);
 void EVP_CIPHER_CTX_free(_EVP_CIPHER_CTX_PTR arg0);
 int EVP_CIPHER_CTX_ctrl(_EVP_CIPHER_CTX_PTR ctx, int type, int arg, void *ptr);
 int EVP_CipherInit_ex(_EVP_CIPHER_CTX_PTR ctx, const _EVP_CIPHER_PTR type, _ENGINE_PTR impl, const unsigned char *key, const unsigned char *iv, int enc);
+int EVP_CipherInit_ex2(_EVP_CIPHER_CTX_PTR ctx, const _EVP_CIPHER_PTR type, const unsigned char *key, const unsigned char *iv, int enc, const _OSSL_PARAM_PTR params) __attribute__((tag("3")));
 int EVP_CipherUpdate(_EVP_CIPHER_CTX_PTR ctx, unsigned char *out, int *outl, const unsigned char *in, int inl) __attribute__((noescape,nocallback));
 int EVP_EncryptInit_ex(_EVP_CIPHER_CTX_PTR ctx, const _EVP_CIPHER_PTR type, _ENGINE_PTR impl, const unsigned char *key, const unsigned char *iv);
 int EVP_EncryptUpdate(_EVP_CIPHER_CTX_PTR ctx, unsigned char *out, int *outl, const unsigned char *in, int inl) __attribute__((noescape,nocallback));
