@@ -337,15 +337,37 @@ func setupEVP(withKey withKeyFunc, padding int32,
 		if alg == nil {
 			return nil, errors.New("crypto/rsa: unsupported hash function")
 		}
-		if _, err := ossl.EVP_PKEY_CTX_ctrl(ctx, ossl.EVP_PKEY_RSA, -1, ossl.EVP_PKEY_CTRL_MD, 0, unsafe.Pointer(alg.md)); err != nil {
-			return nil, err
-		}
-		// setPadding must happen after setting EVP_PKEY_CTRL_MD.
-		if err := setPadding(); err != nil {
-			return nil, err
-		}
-		if saltLen != 0 {
-			if _, err := ossl.EVP_PKEY_CTX_ctrl(ctx, ossl.EVP_PKEY_RSA, -1, ossl.EVP_PKEY_CTRL_RSA_PSS_SALTLEN, saltLen, nil); err != nil {
+		switch vMajor {
+		case 1:
+			if _, err := ossl.EVP_PKEY_CTX_ctrl(ctx, ossl.EVP_PKEY_RSA, -1, ossl.EVP_PKEY_CTRL_MD, 0, unsafe.Pointer(alg.md)); err != nil {
+				return nil, err
+			}
+			// setPadding must happen after setting EVP_PKEY_CTRL_MD.
+			if err := setPadding(); err != nil {
+				return nil, err
+			}
+			if saltLen != 0 {
+				if _, err := ossl.EVP_PKEY_CTX_ctrl(ctx, ossl.EVP_PKEY_RSA, -1, ossl.EVP_PKEY_CTRL_RSA_PSS_SALTLEN, saltLen, nil); err != nil {
+					return nil, err
+				}
+			}
+		default:
+			bld, err := newParamBuilder()
+			if err != nil {
+				return nil, err
+			}
+			bld.addUTF8String(_OSSL_SIGNATURE_PARAM_DIGEST, ossl.EVP_MD_get0_name(alg.md), 0)
+			bld.addUTF8String(_OSSL_SIGNATURE_PARAM_PAD_MODE, _OSSL_PKEY_RSA_PAD_MODE_PSS.ptr(), 0)
+			if saltLen != 0 {
+				bld.addInt32(_OSSL_SIGNATURE_PARAM_PSS_SALTLEN, saltLen)
+			}
+			bld.addInt32(_OSSL_SIGNATURE_PARAM_FIPS_RSA_PSS_SALTLEN_CHECK, 0)
+			params, err := bld.build()
+			if err != nil {
+				return nil, err
+			}
+			defer ossl.OSSL_PARAM_free(params)
+			if _, err := ossl.EVP_PKEY_CTX_set_params(ctx, params); err != nil {
 				return nil, err
 			}
 		}
