@@ -50,6 +50,7 @@ jobs:
         $ok
       env:
         GO_OPENSSL_VERSION_OVERRIDE: ${{ matrix.openssl-version }}
+        ASAN_OPTIONS: detect_leaks=0
   wintest:
     runs-on: windows-2022
     strategy:
