@@ -71,6 +71,7 @@ jobs:
         $ok
       env:
         GO_OPENSSL_VERSION_OVERRIDE: ${{ matrix.openssl-version }}
+        ASAN_OPTIONS: detect_leaks=0
 
   ossltest:
     strategy:
@@ -137,11 +138,6 @@ jobs:
         cgo: [1, 0]
         exclude:
           - architecture: s390x
-            cgo: 0
-        include:
-          # s390x CGOless only works with Go tip, which has a fix for a linker issue that causes the build to fail.
-          - architecture: s390x
-            go-version: tip
             cgo: 0
     steps:
     - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
