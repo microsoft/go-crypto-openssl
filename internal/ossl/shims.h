@@ -270,6 +270,7 @@ int EVP_CIPHER_CTX_set_key_length(_EVP_CIPHER_CTX_PTR x, int keylen);
 void EVP_CIPHER_CTX_free(_EVP_CIPHER_CTX_PTR arg0);
 int EVP_CIPHER_CTX_ctrl(_EVP_CIPHER_CTX_PTR ctx, int type, int arg, void *ptr);
 int EVP_CipherInit_ex(_EVP_CIPHER_CTX_PTR ctx, const _EVP_CIPHER_PTR type, _ENGINE_PTR impl, const unsigned char *key, const unsigned char *iv, int enc);
+int EVP_CipherInit_ex2(_EVP_CIPHER_CTX_PTR ctx, const _EVP_CIPHER_PTR type, const unsigned char *key, const unsigned char *iv, int enc, const _OSSL_PARAM_PTR params) __attribute__((tag("3")));
 int EVP_CipherUpdate(_EVP_CIPHER_CTX_PTR ctx, unsigned char *out, int *outl, const unsigned char *in, int inl) __attribute__((noescape,nocallback));
 int EVP_EncryptInit_ex(_EVP_CIPHER_CTX_PTR ctx, const _EVP_CIPHER_PTR type, _ENGINE_PTR impl, const unsigned char *key, const unsigned char *iv);
 int EVP_EncryptUpdate(_EVP_CIPHER_CTX_PTR ctx, unsigned char *out, int *outl, const unsigned char *in, int inl) __attribute__((noescape,nocallback));
@@ -296,6 +297,7 @@ int EVP_PKEY_get_octet_string_param(const _EVP_PKEY_PTR pkey, const char *key_na
 int EVP_PKEY_up_ref(_EVP_PKEY_PTR key);
 int EVP_PKEY_set1_EC_KEY(_EVP_PKEY_PTR pkey, _EC_KEY_PTR key) __attribute__((tag("legacy_1")));
 int EVP_PKEY_CTX_set0_rsa_oaep_label(_EVP_PKEY_CTX_PTR ctx, void *label, int len) __attribute__((tag("3")));
+int EVP_PKEY_CTX_set_params(_EVP_PKEY_CTX_PTR ctx, const _OSSL_PARAM_PTR params) __attribute__((tag("3")));
 int EVP_PKEY_get_raw_public_key(const _EVP_PKEY_PTR pkey, unsigned char *pub, size_t *len) __attribute__((tag("111"),noescape,nocallback));
 int EVP_PKEY_get_raw_private_key(const _EVP_PKEY_PTR pkey, unsigned char *priv, size_t *len) __attribute__((tag("111"),noescape,nocallback));
 int EVP_PKEY_fromdata_init(_EVP_PKEY_CTX_PTR ctx) __attribute__((tag("3")));

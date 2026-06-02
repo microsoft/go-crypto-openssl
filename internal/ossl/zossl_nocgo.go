@@ -415,6 +415,14 @@ func EVP_CipherInit_ex(ctx EVP_CIPHER_CTX_PTR, __type EVP_CIPHER_PTR, impl ENGIN
 	return int32(r0), newMkcgoErr("EVP_CipherInit_ex", _err)
 }
 
+var _mkcgo_EVP_CipherInit_ex2 uintptr
+
+func EVP_CipherInit_ex2(ctx EVP_CIPHER_CTX_PTR, __type EVP_CIPHER_PTR, key *byte, iv *byte, enc int32, params OSSL_PARAM_PTR) (int32, error) {
+	var _err uintptr
+	r0, _ := syscallN(3, _mkcgo_EVP_CipherInit_ex2, uintptr(ctx), uintptr(__type), uintptr(unsafe.Pointer(key)), uintptr(unsafe.Pointer(iv)), uintptr(enc), uintptr(params), uintptr(unsafe.Pointer(&_err)))
+	return int32(r0), newMkcgoErr("EVP_CipherInit_ex2", _err)
+}
+
 var _mkcgo_EVP_CipherUpdate uintptr
 
 func EVP_CipherUpdate(ctx EVP_CIPHER_CTX_PTR, out *byte, outl *int32, in *byte, inl int32) (int32, error) {
@@ -898,6 +906,14 @@ func EVP_PKEY_CTX_set_hkdf_mode(arg0 EVP_PKEY_CTX_PTR, arg1 int32) (int32, error
 	var _err uintptr
 	r0, _ := syscallN(3, _mkcgo_EVP_PKEY_CTX_set_hkdf_mode, uintptr(arg0), uintptr(arg1), uintptr(unsafe.Pointer(&_err)))
 	return int32(r0), newMkcgoErr("EVP_PKEY_CTX_set_hkdf_mode", _err)
+}
+
+var _mkcgo_EVP_PKEY_CTX_set_params uintptr
+
+func EVP_PKEY_CTX_set_params(ctx EVP_PKEY_CTX_PTR, params OSSL_PARAM_PTR) (int32, error) {
+	var _err uintptr
+	r0, _ := syscallN(3, _mkcgo_EVP_PKEY_CTX_set_params, uintptr(ctx), uintptr(params), uintptr(unsafe.Pointer(&_err)))
+	return int32(r0), newMkcgoErr("EVP_PKEY_CTX_set_params", _err)
 }
 
 var _mkcgo_EVP_PKEY_Q_keygen uintptr
@@ -2098,6 +2114,7 @@ func MkcgoLoad_3(handle unsafe.Pointer) {
 	_mkcgo_EVP_CIPHER_fetch = dlsym(handle, "EVP_CIPHER_fetch\x00", false)
 	_mkcgo_EVP_CIPHER_get0_name = dlsym(handle, "EVP_CIPHER_get0_name\x00", false)
 	_mkcgo_EVP_CIPHER_get_block_size = dlsym(handle, "EVP_CIPHER_get_block_size\x00", false)
+	_mkcgo_EVP_CipherInit_ex2 = dlsym(handle, "EVP_CipherInit_ex2\x00", false)
 	_mkcgo_EVP_KDF_CTX_free = dlsym(handle, "EVP_KDF_CTX_free\x00", false)
 	_mkcgo_EVP_KDF_CTX_get_kdf_size = dlsym(handle, "EVP_KDF_CTX_get_kdf_size\x00", false)
 	_mkcgo_EVP_KDF_CTX_new = dlsym(handle, "EVP_KDF_CTX_new\x00", false)
@@ -2133,6 +2150,7 @@ func MkcgoLoad_3(handle unsafe.Pointer) {
 	_mkcgo_EVP_PKEY_CTX_set1_hkdf_salt = dlsym(handle, "EVP_PKEY_CTX_set1_hkdf_salt\x00", false)
 	_mkcgo_EVP_PKEY_CTX_set_hkdf_md = dlsym(handle, "EVP_PKEY_CTX_set_hkdf_md\x00", false)
 	_mkcgo_EVP_PKEY_CTX_set_hkdf_mode = dlsym(handle, "EVP_PKEY_CTX_set_hkdf_mode\x00", false)
+	_mkcgo_EVP_PKEY_CTX_set_params = dlsym(handle, "EVP_PKEY_CTX_set_params\x00", false)
 	_mkcgo_EVP_PKEY_Q_keygen = dlsym(handle, "EVP_PKEY_Q_keygen\x00", false)
 	_mkcgo_EVP_PKEY_decapsulate = dlsym(handle, "EVP_PKEY_decapsulate\x00", false)
 	_mkcgo_EVP_PKEY_decapsulate_init = dlsym(handle, "EVP_PKEY_decapsulate_init\x00", false)
@@ -2171,6 +2189,7 @@ func MkcgoUnload_3() {
 	_mkcgo_EVP_CIPHER_fetch = 0
 	_mkcgo_EVP_CIPHER_get0_name = 0
 	_mkcgo_EVP_CIPHER_get_block_size = 0
+	_mkcgo_EVP_CipherInit_ex2 = 0
 	_mkcgo_EVP_KDF_CTX_free = 0
 	_mkcgo_EVP_KDF_CTX_get_kdf_size = 0
 	_mkcgo_EVP_KDF_CTX_new = 0
@@ -2206,6 +2225,7 @@ func MkcgoUnload_3() {
 	_mkcgo_EVP_PKEY_CTX_set1_hkdf_salt = 0
 	_mkcgo_EVP_PKEY_CTX_set_hkdf_md = 0
 	_mkcgo_EVP_PKEY_CTX_set_hkdf_mode = 0
+	_mkcgo_EVP_PKEY_CTX_set_params = 0
 	_mkcgo_EVP_PKEY_Q_keygen = 0
 	_mkcgo_EVP_PKEY_decapsulate = 0
 	_mkcgo_EVP_PKEY_decapsulate_init = 0
