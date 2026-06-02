@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/microsoft/go-crypto-openssl/openssl"
 	"github.com/microsoft/go-crypto-openssl/bbig"
+	"github.com/microsoft/go-crypto-openssl/openssl"
 )
 
 func TestRSAKeyGeneration(t *testing.T) {
@@ -42,6 +42,9 @@ func testRSAEncryptDecryptPKCS1(t *testing.T, priv *openssl.PrivateKeyRSA, pub *
 }
 
 func TestRSAEncryptDecryptPKCS1(t *testing.T) {
+	if !openssl.SupportsRSAPKCS1v15Encryption() {
+		t.Skip("RSA PKCS1 v1.5 encryption not supported")
+	}
 	for _, size := range []int{2048, 3072} {
 		size := size
 		t.Run(strconv.Itoa(size), func(t *testing.T) {
@@ -53,6 +56,9 @@ func TestRSAEncryptDecryptPKCS1(t *testing.T) {
 }
 
 func TestRSAEncryptDecryptPKCS1_MissingPrecomputedValues(t *testing.T) {
+	if !openssl.SupportsRSAPKCS1v15Encryption() {
+		t.Skip("RSA PKCS1 v1.5 encryption not supported")
+	}
 	n, e, d, p, q, dp, dq, qinv, err := openssl.GenerateKeyRSA(2048)
 	if err != nil {
 		t.Fatalf("GenerateKeyRSA: %v", err)
@@ -388,6 +394,9 @@ func fromBase36(base36 string) *big.Int {
 }
 
 func BenchmarkEncryptRSAPKCS1(b *testing.B) {
+	if !openssl.SupportsRSAPKCS1v15Encryption() {
+		b.Skip("RSA PKCS1 v1.5 encryption not supported")
+	}
 	b.StopTimer()
 	// Public key length should be at least of 2048 bits, else OpenSSL will report an error when running in FIPS mode.
 	n := fromBase36("14314132931241006650998084889274020608918049032671858325988396851334124245188214251956198731333464217832226406088020736932173064754214329009979944037640912127943488972644697423190955557435910767690712778463524983667852819010259499695177313115447116110358524558307947613422897787329221478860907963827160223559690523660574329011927531289655711860504630573766609239332569210831325633840174683944553667352219670930408593321661375473885147973879086994006440025257225431977751512374815915392249179976902953721486040787792801849818254465486633791826766873076617116727073077821584676715609985777563958286637185868165868520557")
