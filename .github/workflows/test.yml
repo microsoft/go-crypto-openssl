@@ -22,7 +22,7 @@ jobs:
     # backend source.
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
     - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
       with:
         go-version-file: go.mod
@@ -47,7 +47,7 @@ jobs:
       with:
         go-version: ${{ matrix.go-version }}
         go-download-base-url: "https://aka.ms/golang/release/latest"
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
     - name: Verify go generate leaves no changes
       run: |
         go generate ./...
@@ -117,7 +117,7 @@ jobs:
       with:
         go-version: ${{ matrix.go-version }}
         go-download-base-url: "https://aka.ms/golang/release/latest"
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
     - name: Run Test
       run: go test -shuffle=on -gcflags=all=-d=checkptr -count 10 -v ./...
       env:
@@ -146,7 +146,7 @@ jobs:
     runs-on: ubuntu-latest
     container: ${{ matrix.image }}
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
     - name: Install required packages
       if: startsWith(matrix.image, 'fedora')
       run: |
@@ -189,7 +189,7 @@ jobs:
     - name: Setup qemu for Loong64
       if: ${{ matrix.architecture == 'loong64' }}
       run: docker run --privileged --rm tonistiigi/binfmt --install all
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
     - name: Run tests on ${{matrix.architecture}}
       run: |
         if [ "${{matrix.architecture}}" = "loong64" ]; then
@@ -231,7 +231,7 @@ jobs:
         cgo: [1, 0]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
     - name: Run tests on FreeBSD
       uses: vmactions/freebsd-vm@a6de9343ef5747433d9c25784c90e84998b9d69a # v1.4.6
       with:
@@ -262,7 +262,7 @@ jobs:
   cgolessbuild:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
     - name: Run Build
       run: CGO_ENABLED=0 GOOS=windows GOARCH=386 go build ./...
 
