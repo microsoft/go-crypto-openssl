@@ -5,14 +5,13 @@ package openssl_test
 
 import (
 	"bytes"
-	"hash"
 	"testing"
 
 	openssl "github.com/microsoft/go-crypto-openssl/openssl"
 )
 
 type hkdfTest struct {
-	hash   func() hash.Hash
+	hash   func() *openssl.Hash
 	master []byte
 	salt   []byte
 	prk    []byte
@@ -336,7 +335,7 @@ func TestExpandHKDFLimit(t *testing.T) {
 }
 
 type tls13kdfTest struct {
-	hash  func() hash.Hash
+	hash  func() *openssl.Hash
 	prk   []byte
 	label []byte
 	ctx   []byte

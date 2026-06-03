@@ -5,7 +5,6 @@ package openssl_test
 
 import (
 	"bytes"
-	"io"
 	"testing"
 
 	"github.com/microsoft/go-crypto-openssl/openssl"
@@ -34,7 +33,7 @@ func TestHashBufferingWithClone(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Write some data that stays in buffer
-			h := openssl.NewSHA256().(openssl.HashCloner)
+			h := openssl.NewSHA256()
 			h.Write(tt.data)
 
 			// Clone while data is buffered
@@ -219,7 +218,7 @@ func TestHashBufferingWriteByte(t *testing.T) {
 	// Write bytes one at a time
 	data := []byte("hello")
 	for _, b := range data {
-		if err := h.(io.ByteWriter).WriteByte(b); err != nil {
+		if err := h.WriteByte(b); err != nil {
 			t.Fatalf("WriteByte failed: %v", err)
 		}
 	}
@@ -244,7 +243,7 @@ func TestHashBufferingWriteString(t *testing.T) {
 	// Write string
 	const s = "hello world"
 
-	n, err := h.(io.StringWriter).WriteString(s)
+	n, err := h.WriteString(s)
 	if err != nil || n != len(s) {
 		t.Fatalf("WriteString returned (%v, %d), want (nil, %d)", err, n, len(s))
 	}
@@ -344,7 +343,7 @@ func TestHashBufferingMixedSizes(t *testing.T) {
 // TestHashBufferingCloneAtBufferBoundary tests cloning when buffer is exactly full
 func TestHashBufferingCloneAtBufferBoundary(t *testing.T) {
 	t.Parallel()
-	h := openssl.NewSHA256().(openssl.HashCloner)
+	h := openssl.NewSHA256()
 
 	// Write exactly openssl.HashBufSize bytes
 	data := bytes.Repeat([]byte("a"), openssl.HashBufSize)

@@ -23,10 +23,10 @@ func SupportsTLS1PRF() bool {
 	}
 }
 
-// TLS1PRF implements the TLS 1.0/1.1 pseudo-random function if h is nil,
+// TLS1PRF implements the TLS 1.0/1.1 pseudo-random function if fh is nil,
 // else it implements the TLS 1.2 pseudo-random function.
 // The pseudo-random number will be written to result and will be of length len(result).
-func TLS1PRF(result, secret, label, seed []byte, fh func() hash.Hash) error {
+func TLS1PRF[H hash.Hash](result, secret, label, seed []byte, fh func() H) error {
 	var md ossl.EVP_MD_PTR
 	if fh == nil {
 		// TLS 1.0/1.1 PRF doesn't allow to specify the hash function,

@@ -83,7 +83,7 @@ var hkdfAllZerosSalt [64]byte
 // ExtractHDKF implements the HDKF extract step.
 // If salt is nil, then this function replaces it internally with a buffer of
 // zeros whose length equals the output length of the specified hash algorithm.
-func ExtractHKDF(h func() hash.Hash, secret, salt []byte) ([]byte, error) {
+func ExtractHKDF[H hash.Hash](h func() H, secret, salt []byte) ([]byte, error) {
 	if !SupportsHKDF() {
 		return nil, errUnsupportedVersion()
 	}
@@ -142,7 +142,7 @@ func ExtractHKDF(h func() hash.Hash, secret, salt []byte) ([]byte, error) {
 }
 
 // ExpandHKDF derives a key from the given hash, key, and optional context info.
-func ExpandHKDF(h func() hash.Hash, pseudorandomKey, info []byte, keyLength int) ([]byte, error) {
+func ExpandHKDF[H hash.Hash](h func() H, pseudorandomKey, info []byte, keyLength int) ([]byte, error) {
 	if !SupportsHKDF() {
 		return nil, errUnsupportedVersion()
 	}
@@ -191,7 +191,7 @@ func ExpandHKDF(h func() hash.Hash, pseudorandomKey, info []byte, keyLength int)
 
 // ExpandTLS13KDF derives a key from the given hash, key, label and context. It will use
 // "TLS13-KDF" algorithm to do so.
-func ExpandTLS13KDF(h func() hash.Hash, pseudorandomKey, label, context []byte, keyLength int) ([]byte, error) {
+func ExpandTLS13KDF[H hash.Hash](h func() H, pseudorandomKey, label, context []byte, keyLength int) ([]byte, error) {
 	if !SupportsTLS13KDF() {
 		return nil, errUnsupportedVersion()
 	}

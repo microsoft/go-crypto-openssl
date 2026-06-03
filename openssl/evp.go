@@ -22,7 +22,7 @@ var cacheMD sync.Map
 // This is used to avoid aborting the program when calling
 // an unsupported hash function. It is the caller's responsibility
 // to check the returned value.
-func hashFuncHash(fn func() hash.Hash) (h hash.Hash, err error) {
+func hashFuncHash[H hash.Hash](fn func() H) (h hash.Hash, err error) {
 	defer func() {
 		r := recover()
 		if r == nil {
@@ -59,7 +59,7 @@ func hashToCryptoHash(h hash.Hash) crypto.Hash {
 
 // hashFuncToMD converts a hash.Hash function to a GOossl.EVP_MD_PTR.
 // See [hashFuncHash] for details on error handling.
-func hashFuncToMD(fn func() hash.Hash) (ossl.EVP_MD_PTR, error) {
+func hashFuncToMD[H hash.Hash](fn func() H) (ossl.EVP_MD_PTR, error) {
 	h, err := hashFuncHash(fn)
 	if err != nil {
 		return nil, err
