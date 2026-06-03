@@ -9,7 +9,6 @@ import (
 	"encoding"
 	"errors"
 	"hash"
-	"io"
 	"runtime"
 	"strings"
 	"testing"
@@ -23,7 +22,7 @@ import (
 	"github.com/microsoft/go-crypto-openssl/openssl"
 )
 
-func cryptoToHash(h crypto.Hash) func() hash.Hash {
+func cryptoToHash(h crypto.Hash) func() *openssl.Hash {
 	switch h {
 	case crypto.MD4:
 		return openssl.NewMD4
@@ -44,13 +43,13 @@ func cryptoToHash(h crypto.Hash) func() hash.Hash {
 	case crypto.SHA512_256:
 		return openssl.NewSHA512_256
 	case crypto.SHA3_224:
-		return func() hash.Hash { return openssl.NewSHA3_224() }
+		return openssl.NewSHA3_224
 	case crypto.SHA3_256:
-		return func() hash.Hash { return openssl.NewSHA3_256() }
+		return openssl.NewSHA3_256
 	case crypto.SHA3_384:
-		return func() hash.Hash { return openssl.NewSHA3_384() }
+		return openssl.NewSHA3_384
 	case crypto.SHA3_512:
-		return func() hash.Hash { return openssl.NewSHA3_512() }
+		return openssl.NewSHA3_512
 	}
 	return nil
 }
@@ -124,10 +123,7 @@ func TestHash_BinaryMarshaler(t *testing.T) {
 				t.Skip("hash not supported")
 			}
 
-			hashMarshaler, ok := cryptoToHash(ch)().(hashEncoding)
-			if !ok {
-				t.Fatal("BinaryMarshaler not supported")
-			}
+			hashMarshaler := cryptoToHash(ch)()
 
 			if _, err := hashMarshaler.Write(msg); err != nil {
 				t.Fatalf("Write failed: %v", err)
@@ -135,13 +131,13 @@ func TestHash_BinaryMarshaler(t *testing.T) {
 
 			state, err := hashMarshaler.MarshalBinary()
 			if err != nil {
-				if strings.Contains(err.Error(), "hash state is not marshallable") {
+				if errors.Is(err, errors.ErrUnsupported) || strings.Contains(err.Error(), "hash state is not marshallable") {
 					t.Skip("BinaryMarshaler not supported")
 				}
 				t.Fatalf("MarshalBinary failed: %v", err)
 			}
 
-			hashUnmarshaler := cryptoToHash(ch)().(hashEncoding)
+			hashUnmarshaler := cryptoToHash(ch)()
 			if err := hashUnmarshaler.UnmarshalBinary(state); err != nil {
 				t.Fatalf("UnmarshalBinary failed: %v", err)
 			}
@@ -181,10 +177,7 @@ func TestHash_BinaryAppender(t *testing.T) {
 				t.Skip("not supported")
 			}
 
-			hashWithBinaryAppender, ok := cryptoToHash(ch)().(hashEncodingAppender)
-			if !ok {
-				t.Fatal("AppendBinary not supported")
-			}
+			hashWithBinaryAppender := cryptoToHash(ch)()
 
 			// Create a slice with 10 elements
 			prebuiltSlice := make([]byte, 10)
@@ -213,10 +206,7 @@ func TestHash_BinaryAppender(t *testing.T) {
 			// Use only the newly appended part of the slice
 			appendedState := state[10:]
 
-			h2, ok := cryptoToHash(ch)().(hashEncoding)
-			if !ok {
-				t.Skip("not supported")
-			}
+			h2 := cryptoToHash(ch)()
 
 			if err := h2.UnmarshalBinary(appendedState); err != nil {
 				t.Errorf("could not unmarshal: %v", err)
@@ -236,7 +226,7 @@ func TestHash_Clone(t *testing.T) {
 			if !openssl.SupportsHash(ch) {
 				t.Skip("not supported")
 			}
-			h := cryptoToHash(ch)().(openssl.HashCloner)
+			h := cryptoToHash(ch)()
 			_, err := h.Write(msg)
 			if err != nil {
 				t.Fatal(err)
@@ -285,10 +275,7 @@ func TestHash_ByteWriter(t *testing.T) {
 			if !openssl.SupportsHash(ch) {
 				t.Skip("not supported")
 			}
-			bwh := cryptoToHash(ch)().(interface {
-				hash.Hash
-				io.ByteWriter
-			})
+			bwh := cryptoToHash(ch)()
 			initSum := bwh.Sum(nil)
 			for i := range len(msg) {
 				bwh.WriteByte(msg[i])
@@ -312,8 +299,8 @@ func TestHash_StringWriter(t *testing.T) {
 			}
 			h := cryptoToHash(ch)()
 			initSum := h.Sum(nil)
-			h.(io.StringWriter).WriteString("")
-			h.(io.StringWriter).WriteString(string(msg))
+			h.WriteString("")
+			h.WriteString(string(msg))
 			h.Reset()
 			sum := h.Sum(nil)
 			if !bytes.Equal(sum, initSum) {
@@ -544,9 +531,9 @@ func TestHashAllocationsWithTypeAsserts(t *testing.T) {
 	allocs := testing.AllocsPerRun(100, func() {
 		h := openssl.NewSHA256()
 		h.Write([]byte{1, 2, 3})
-		marshaled, _ := h.(encoding.BinaryMarshaler).MarshalBinary()
-		marshaled, _ = h.(encoding.BinaryAppender).AppendBinary(marshaled[:0])
-		h.(encoding.BinaryUnmarshaler).UnmarshalBinary(marshaled)
+		marshaled, _ := h.MarshalBinary()
+		marshaled, _ = h.AppendBinary(marshaled[:0])
+		h.UnmarshalBinary(marshaled)
 	})
 	const maxAllocs = 2
 	if allocs > float64(maxAllocs) {

@@ -34,8 +34,6 @@ const (
 // maxHashSize is the size of SHA52 and SHA3_512, the largest hashes we support.
 const maxHashSize = 64
 
-type HashCloner = hash.Cloner
-
 func hashOneShot(ch crypto.Hash, p []byte, sum []byte) bool {
 	_, err := ossl.EVP_Digest(p, sum, nil, loadHash(ch, true).md, nil)
 	return err == nil
@@ -159,49 +157,48 @@ func SumSHA3_512(p []byte) (sum [64]byte) {
 }
 
 // NewMD4 returns a new MD4 hash.
-// The returned hash doesn't implement encoding.BinaryMarshaler and
-// encoding.BinaryUnmarshaler.
-func NewMD4() hash.Hash {
+// State marshaling and unmarshaling return errors.ErrUnsupported.
+func NewMD4() *Hash {
 	return newHash(crypto.MD4)
 }
 
 // NewMD5 returns a new MD5 hash.
-func NewMD5() hash.Hash {
+func NewMD5() *Hash {
 	return newHash(crypto.MD5)
 }
 
 // NewSHA1 returns a new SHA1 hash.
-func NewSHA1() hash.Hash {
+func NewSHA1() *Hash {
 	return newHash(crypto.SHA1)
 }
 
 // NewSHA224 returns a new SHA224 hash.
-func NewSHA224() hash.Hash {
+func NewSHA224() *Hash {
 	return newHash(crypto.SHA224)
 }
 
 // NewSHA256 returns a new SHA256 hash.
-func NewSHA256() hash.Hash {
+func NewSHA256() *Hash {
 	return newHash(crypto.SHA256)
 }
 
 // NewSHA384 returns a new SHA384 hash.
-func NewSHA384() hash.Hash {
+func NewSHA384() *Hash {
 	return newHash(crypto.SHA384)
 }
 
 // NewSHA512 returns a new SHA512 hash.
-func NewSHA512() hash.Hash {
+func NewSHA512() *Hash {
 	return newHash(crypto.SHA512)
 }
 
 // NewSHA512_224 returns a new SHA512_224 hash.
-func NewSHA512_224() hash.Hash {
+func NewSHA512_224() *Hash {
 	return newHash(crypto.SHA512_224)
 }
 
 // NewSHA512_256 returns a new SHA512_256 hash.
-func NewSHA512_256() hash.Hash {
+func NewSHA512_256() *Hash {
 	return newHash(crypto.SHA512_256)
 }
 
@@ -226,7 +223,7 @@ func NewSHA3_512() *Hash {
 }
 
 var _ hash.Hash = (*Hash)(nil)
-var _ HashCloner = (*Hash)(nil)
+var _ hash.Cloner = (*Hash)(nil)
 
 // FIPSApprovedHash reports whether this hash algorithm is FIPS 140-3 approved.
 func FIPSApprovedHash(h hash.Hash) bool {
@@ -271,7 +268,7 @@ func newHash(ch crypto.Hash) *Hash {
 	// Don't call init() yet, it would be wasteful
 	// if the caller only wants to know the hash type. This
 	// is a common pattern in this package, as some functions
-	// accept a `func() hash.Hash` parameter and call it just
+	// accept a hash constructor parameter and call it just
 	// to know the hash type.
 	return &Hash{alg: loadHash(ch, true)}
 }
@@ -406,7 +403,7 @@ func (h *Hash) Sum(in []byte) []byte {
 // Clone returns a new Hash object that is a deep clone of itself.
 // The duplicate object contains all state and data contained in the
 // original object at the point of duplication.
-func (h *Hash) Clone() (HashCloner, error) {
+func (h *Hash) Clone() (hash.Cloner, error) {
 	h2 := &Hash{alg: h.alg, nbuf: h.nbuf}
 	copy(h2.buf[:h.nbuf], h.buf[:h.nbuf])
 	if h.ctx != nil {

@@ -33,7 +33,7 @@ var fetchPBKDF2 = sync.OnceValues(func() (ossl.EVP_KDF_PTR, error) {
 	return kdf, nil
 })
 
-func PBKDF2(password, salt []byte, iter, keyLen int, fh func() hash.Hash) ([]byte, error) {
+func PBKDF2[H hash.Hash](password, salt []byte, iter, keyLen int, fh func() H) ([]byte, error) {
 	h, err := hashFuncHash(fh)
 	if err != nil {
 		return nil, err

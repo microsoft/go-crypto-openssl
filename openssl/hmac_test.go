@@ -5,7 +5,6 @@ package openssl_test
 
 import (
 	"bytes"
-	"hash"
 	"testing"
 
 	"github.com/microsoft/go-crypto-openssl/openssl"
@@ -14,7 +13,7 @@ import (
 func TestHMAC(t *testing.T) {
 	var tests = []struct {
 		name string
-		fn   func() hash.Hash
+		fn   func() *openssl.Hash
 	}{
 		{"sha1", openssl.NewSHA1},
 		{"sha224", openssl.NewSHA224},

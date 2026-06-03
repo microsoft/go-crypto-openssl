@@ -13,10 +13,10 @@ import (
 )
 
 // NewHMAC returns a new HMAC using OpenSSL.
-// The function h must return a hash implemented by
-// OpenSSL (for example, h could be openssl.NewSHA256).
-// If h is not recognized, NewHMAC returns nil.
-func NewHMAC(fh func() hash.Hash, key []byte) hash.Hash {
+// The function fh must return a hash implemented by
+// OpenSSL (for example, [NewSHA256]).
+// If fh is not recognized, NewHMAC returns nil.
+func NewHMAC[H hash.Hash](fh func() H, key []byte) hash.Hash {
 	h, _ := hashFuncHash(fh)
 	md := hashToMD(h)
 	if md == nil {
@@ -233,7 +233,7 @@ func (h *opensslHMAC) Sum(in []byte) []byte {
 	return append(in, h.sum[:h.size]...)
 }
 
-func (h *opensslHMAC) Clone() (HashCloner, error) {
+func (h *opensslHMAC) Clone() (hash.Cloner, error) {
 	switch major() {
 	case 1:
 		ctx2, err := ossl.HMAC_CTX_new()
