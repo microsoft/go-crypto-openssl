@@ -158,9 +158,14 @@ func TestTLS1PRF(t *testing.T) {
 				t.Skip("skipping: hash not supported")
 			}
 			result := make([]byte, len(tt.out))
-			err := openssl.TLS1PRF(result, tt.secret, tt.label, tt.seed, cryptoToHash(tt.hash))
+			var err error
+			if tt.hash == crypto.MD5SHA1 {
+				err = openssl.TLS1PRF[*openssl.Hash](result, tt.secret, tt.label, tt.seed, nil)
+			} else {
+				err = openssl.TLS1PRF(result, tt.secret, tt.label, tt.seed, cryptoToHash(tt.hash))
+			}
 			if err != nil {
-				t.Fatalf("error deriving TLS 1.2 PRF: %v.", err)
+				t.Fatalf("error deriving TLS PRF: %v.", err)
 			}
 			if !bytes.Equal(result, tt.out) {
 				t.Errorf("incorrect key output: have %v, need %v.", result, tt.out)

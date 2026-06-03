@@ -131,7 +131,7 @@ func TestHash_BinaryMarshaler(t *testing.T) {
 
 			state, err := hashMarshaler.MarshalBinary()
 			if err != nil {
-				if strings.Contains(err.Error(), "hash state is not marshallable") {
+				if errors.Is(err, errors.ErrUnsupported) || strings.Contains(err.Error(), "hash state is not marshallable") {
 					t.Skip("BinaryMarshaler not supported")
 				}
 				t.Fatalf("MarshalBinary failed: %v", err)

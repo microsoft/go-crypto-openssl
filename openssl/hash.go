@@ -157,8 +157,7 @@ func SumSHA3_512(p []byte) (sum [64]byte) {
 }
 
 // NewMD4 returns a new MD4 hash.
-// The returned hash doesn't implement encoding.BinaryMarshaler and
-// encoding.BinaryUnmarshaler.
+// State marshaling and unmarshaling return errors.ErrUnsupported.
 func NewMD4() *Hash {
 	return newHash(crypto.MD4)
 }

@@ -13,9 +13,9 @@ import (
 )
 
 // NewHMAC returns a new HMAC using OpenSSL.
-// The function h must return a hash implemented by
+// The function fh must return a hash implemented by
 // OpenSSL (for example, [NewSHA256]).
-// If h is not recognized, NewHMAC returns nil.
+// If fh is not recognized, NewHMAC returns nil.
 func NewHMAC[H hash.Hash](fh func() H, key []byte) hash.Hash {
 	h, _ := hashFuncHash(fh)
 	md := hashToMD(h)

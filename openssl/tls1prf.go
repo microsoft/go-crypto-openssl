@@ -25,12 +25,14 @@ func SupportsTLS1PRF() bool {
 
 // TLS1PRF implements the TLS 1.0/1.1 pseudo-random function if fh is nil,
 // else it implements the TLS 1.2 pseudo-random function.
+// To use TLS 1.0/1.1 mode with nil fh, specify the type parameter explicitly,
+// for example TLS1PRF[hash.Hash](result, secret, label, seed, nil).
 // The pseudo-random number will be written to result and will be of length len(result).
 func TLS1PRF[H hash.Hash](result, secret, label, seed []byte, fh func() H) error {
 	var md ossl.EVP_MD_PTR
 	if fh == nil {
 		// TLS 1.0/1.1 PRF doesn't allow to specify the hash function,
-		// it always uses MD5SHA1. If h is nil, then assume
+		// it always uses MD5SHA1. If fh is nil, then assume
 		// that the caller wants to use TLS 1.0/1.1 PRF.
 		// OpenSSL detects this case by checking if the hash
 		// function is MD5SHA1.

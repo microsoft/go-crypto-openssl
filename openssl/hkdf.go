@@ -80,7 +80,7 @@ func newHKDFCtx1(md ossl.EVP_MD_PTR, mode int32, secret, salt, pseudorandomKey, 
 // used with HKDF.
 var hkdfAllZerosSalt [64]byte
 
-// ExtractHDKF implements the HDKF extract step.
+// ExtractHKDF implements the HKDF extract step.
 // If salt is nil, then this function replaces it internally with a buffer of
 // zeros whose length equals the output length of the specified hash algorithm.
 func ExtractHKDF[H hash.Hash](h func() H, secret, salt []byte) ([]byte, error) {
