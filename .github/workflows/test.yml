@@ -215,13 +215,8 @@ jobs:
                 ln -sf /usr/lib/s390x-linux-gnu/ld64.so.1 /lib64/ld64.so.1
                 ;;
             esac
-            # TODO: Remove -checklinkname=0 once go tip no longer requires it.
-            LDFLAGS=''
-            if [ '${{ matrix.go-version }}' = 'tip' ]; then
-              LDFLAGS='-ldflags=-checklinkname=0'
-            fi
-            go test -shuffle=on -count 3 \$LDFLAGS -v ./...
-            go test -bench=./... -run='^$' -benchtime=1x \$LDFLAGS ./...
+            go test -shuffle=on -count 3 -v ./...
+            go test -bench=./... -run='^$' -benchtime=1x ./...
           "
 
   freebsd:
