@@ -177,6 +177,26 @@ func (key *PrivateKeyMLDSA) Bytes() []byte {
 	return key.seed[:]
 }
 
+// Equal reports whether key and other represent the same private key.
+func (key *PrivateKeyMLDSA) Equal(other *PrivateKeyMLDSA) bool {
+	if other == nil {
+		return false
+	}
+	a, err := createMLDSAPrivateKey(key.params.keyType, key.seed[:])
+	if err != nil {
+		return false
+	}
+	defer ossl.EVP_PKEY_free(a)
+	b, err := createMLDSAPrivateKey(other.params.keyType, other.seed[:])
+	if err != nil {
+		return false
+	}
+	defer ossl.EVP_PKEY_free(b)
+	// Equal cannot return an error; treat any failure as inequality.
+	ret, _ := ossl.EVP_PKEY_eq(a, b)
+	return ret == 1
+}
+
 // Parameters returns the parameters associated with this private key.
 func (key *PrivateKeyMLDSA) Parameters() MLDSAParameters { return key.params }
 
@@ -232,6 +252,26 @@ func NewPublicKeyMLDSA(params MLDSAParameters, publicKey []byte) (*PublicKeyMLDS
 // Bytes returns the public key encoding.
 func (key *PublicKeyMLDSA) Bytes() []byte {
 	return key.bytes[:key.params.publicKeySize]
+}
+
+// Equal reports whether key and other represent the same public key.
+func (key *PublicKeyMLDSA) Equal(other *PublicKeyMLDSA) bool {
+	if other == nil {
+		return false
+	}
+	a, err := createMLDSAPublicKey(key.params.keyType, key.bytes[:key.params.publicKeySize])
+	if err != nil {
+		return false
+	}
+	defer ossl.EVP_PKEY_free(a)
+	b, err := createMLDSAPublicKey(other.params.keyType, other.bytes[:other.params.publicKeySize])
+	if err != nil {
+		return false
+	}
+	defer ossl.EVP_PKEY_free(b)
+	// Equal cannot return an error; treat any failure as inequality.
+	ret, _ := ossl.EVP_PKEY_eq(a, b)
+	return ret == 1
 }
 
 // Parameters returns the parameters associated with this public key.

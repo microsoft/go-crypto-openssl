@@ -66,6 +66,8 @@ package ossl
 #cgo nocallback _mkcgo_EVP_PKEY_Q_keygen_X25519
 #cgo noescape _mkcgo_EVP_PKEY_derive
 #cgo nocallback _mkcgo_EVP_PKEY_derive
+#cgo noescape _mkcgo_EVP_PKEY_eq
+#cgo nocallback _mkcgo_EVP_PKEY_eq
 #cgo noescape _mkcgo_EVP_PKEY_get_bn_param
 #cgo nocallback _mkcgo_EVP_PKEY_get_bn_param
 #cgo noescape _mkcgo_EVP_PKEY_get_raw_private_key
@@ -956,6 +958,12 @@ func EVP_PKEY_encrypt_init(arg0 EVP_PKEY_CTX_PTR) (int32, error) {
 	var _err C.uintptr_t
 	_ret := C._mkcgo_EVP_PKEY_encrypt_init(arg0, mkcgoNoEscape(&_err))
 	return int32(_ret), newMkcgoErr("EVP_PKEY_encrypt_init", uintptr(_err))
+}
+
+func EVP_PKEY_eq(a EVP_PKEY_PTR, b EVP_PKEY_PTR) (int32, error) {
+	var _err C.uintptr_t
+	_ret := C._mkcgo_EVP_PKEY_eq(a, b, mkcgoNoEscape(&_err))
+	return int32(_ret), newMkcgoErr("EVP_PKEY_eq", uintptr(_err))
 }
 
 func EVP_PKEY_free(arg0 EVP_PKEY_PTR) {

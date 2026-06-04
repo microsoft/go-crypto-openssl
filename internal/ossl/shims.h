@@ -303,6 +303,7 @@ int EVP_PKEY_set1_encoded_public_key(_EVP_PKEY_PTR pkey, const unsigned char *pu
 size_t EVP_PKEY_get1_encoded_public_key(_EVP_PKEY_PTR pkey, unsigned char **ppub) __attribute__((tag("3")));
 int EVP_PKEY_get_bn_param(const _EVP_PKEY_PTR pkey, const char *key_name, _BIGNUM_PTR *bn) __attribute__((tag("3"),noescape,nocallback));
 int EVP_PKEY_get_octet_string_param(const _EVP_PKEY_PTR pkey, const char *key_name, unsigned char *buf, size_t buf_len, size_t *out_len) __attribute__((tag("3"),slice("buf","buf_len")));
+int EVP_PKEY_eq(const _EVP_PKEY_PTR a, const _EVP_PKEY_PTR b) __attribute__((tag("3"),noescape,nocallback));
 int EVP_PKEY_up_ref(_EVP_PKEY_PTR key);
 int EVP_PKEY_set1_EC_KEY(_EVP_PKEY_PTR pkey, _EC_KEY_PTR key) __attribute__((tag("legacy_1")));
 int EVP_PKEY_CTX_set0_rsa_oaep_label(_EVP_PKEY_CTX_PTR ctx, void *label, int labellen) __attribute__((tag("3"),slice("label","labellen")));
