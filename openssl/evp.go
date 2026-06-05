@@ -88,8 +88,27 @@ type hashAlgorithm struct {
 	blockSize      int
 	provider       provider
 	marshallable   bool
+	hasSerialize   bool // EVP_MD_CTX_serialize/deserialize available
 	magic          string
 	marshalledSize int
+}
+
+// probeSerialize reports whether EVP_MD_CTX_serialize works for the given
+// digest. Not all algorithms support serialization (e.g. MD5 and SHA-1
+// may not in OpenSSL 4.0). We probe by creating a temporary context,
+// initializing it, and attempting a size-query serialize call.
+func probeSerialize(md ossl.EVP_MD_PTR) bool {
+	ctx, err := ossl.EVP_MD_CTX_new()
+	if err != nil {
+		return false
+	}
+	defer ossl.EVP_MD_CTX_free(ctx)
+	if _, err := ossl.EVP_DigestInit_ex(ctx, md, nil); err != nil {
+		return false
+	}
+	var outlen int
+	_, err = ossl.EVP_MD_CTX_serialize(ctx, nil, &outlen)
+	return err == nil
 }
 
 // loadHash converts a crypto.Hash to a EVP_MD.
@@ -183,21 +202,34 @@ func loadHash(ch crypto.Hash, must bool) (h *hashAlgorithm) {
 	default:
 		if prov := ossl.EVP_MD_get0_provider(hash.md); prov != nil {
 			cname := ossl.OSSL_PROVIDER_get0_name(prov)
-			// Marshalability depends on knowing the EVP_MD_CTX internal
-			// layout for this major (see getOSSLDigetsContext). Untested
-			// majors loaded via GODEBUG=ms_opensslallowuntested=1 leave
-			// marshallable false so MarshalBinary/UnmarshalBinary return
-			// errMarshallUnsupported{} instead of touching unknown memory.
-			known := knownMajor()
 			switch goString(cname) {
 			case "default":
 				hash.provider = providerOSSLDefault
-				hash.marshallable = known && hash.magic != ""
 			case "fips":
 				hash.provider = providerOSSLFIPS
-				hash.marshallable = known && hash.magic != ""
 			case "symcryptprovider":
 				hash.provider = providerSymCrypt
+			}
+		}
+		// When EVP_MD_CTX_serialize is available (OpenSSL 4+) and the
+		// provider supports it for this algorithm, use it for marshaling.
+		// This avoids unsafe hacks that assume specific EVP_MD_CTX memory
+		// layouts and provider-specific serialization methods.
+		if hash.magic != "" && ossl.EVP_MD_CTX_serialize_Available() && probeSerialize(hash.md) {
+			hash.hasSerialize = true
+			hash.marshallable = true
+		} else {
+			// Fall back to the legacy approach that depends on knowing the
+			// EVP_MD_CTX internal layout for this major version
+			// (see getOSSLDigetsContext). Untested majors loaded via
+			// GODEBUG=ms_opensslallowuntested=1 leave marshallable false so
+			// MarshalBinary/UnmarshalBinary return errMarshallUnsupported{}
+			// instead of touching unknown memory.
+			known := knownMajor()
+			switch hash.provider {
+			case providerOSSLDefault, providerOSSLFIPS:
+				hash.marshallable = known && hash.magic != ""
+			case providerSymCrypt:
 				hash.marshallable = known && hash.magic != "" && isSymCryptHashStateSerializable(hash.md)
 			}
 		}

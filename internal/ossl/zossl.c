@@ -107,10 +107,12 @@ int (*_g_EVP_MAC_init)(_EVP_MAC_CTX_PTR, const unsigned char*, size_t, const _OS
 int (*_g_EVP_MAC_update)(_EVP_MAC_CTX_PTR, const unsigned char*, size_t);
 int (*_g_EVP_MD_CTX_copy_ex)(_EVP_MD_CTX_PTR, const _EVP_MD_CTX_PTR);
 int (*_g_EVP_MD_CTX_ctrl)(_EVP_MD_CTX_PTR, int, int, void*);
+int (*_g_EVP_MD_CTX_deserialize)(_EVP_MD_CTX_PTR, const unsigned char*, size_t);
 void (*_g_EVP_MD_CTX_free)(_EVP_MD_CTX_PTR);
 int (*_g_EVP_MD_CTX_get_params)(_EVP_MD_CTX_PTR, _OSSL_PARAM_PTR);
 const _OSSL_PARAM_PTR (*_g_EVP_MD_CTX_gettable_params)(_EVP_MD_CTX_PTR);
 _EVP_MD_CTX_PTR (*_g_EVP_MD_CTX_new)(void);
+int (*_g_EVP_MD_CTX_serialize)(_EVP_MD_CTX_PTR, unsigned char*, size_t*);
 int (*_g_EVP_MD_CTX_set_params)(_EVP_MD_CTX_PTR, const _OSSL_PARAM_PTR);
 const _OSSL_PARAM_PTR (*_g_EVP_MD_CTX_settable_params)(_EVP_MD_CTX_PTR);
 _EVP_MD_PTR (*_g_EVP_MD_fetch)(_OSSL_LIB_CTX_PTR, const char*, const char*);
@@ -522,8 +524,10 @@ void __mkcgo_load_3(void* handle) {
 	__mkcgo__dlsym(EVP_MAC_final)
 	__mkcgo__dlsym(EVP_MAC_init)
 	__mkcgo__dlsym(EVP_MAC_update)
+	__mkcgo__dlsym_nocheck(EVP_MD_CTX_deserialize, EVP_MD_CTX_deserialize)
 	__mkcgo__dlsym(EVP_MD_CTX_get_params)
 	__mkcgo__dlsym(EVP_MD_CTX_gettable_params)
+	__mkcgo__dlsym_nocheck(EVP_MD_CTX_serialize, EVP_MD_CTX_serialize)
 	__mkcgo__dlsym(EVP_MD_CTX_set_params)
 	__mkcgo__dlsym(EVP_MD_CTX_settable_params)
 	__mkcgo__dlsym(EVP_MD_fetch)
@@ -599,8 +603,10 @@ void __mkcgo_unload_3() {
 	_g_EVP_MAC_final = NULL;
 	_g_EVP_MAC_init = NULL;
 	_g_EVP_MAC_update = NULL;
+	_g_EVP_MD_CTX_deserialize = NULL;
 	_g_EVP_MD_CTX_get_params = NULL;
 	_g_EVP_MD_CTX_gettable_params = NULL;
+	_g_EVP_MD_CTX_serialize = NULL;
 	_g_EVP_MD_CTX_set_params = NULL;
 	_g_EVP_MD_CTX_settable_params = NULL;
 	_g_EVP_MD_fetch = NULL;
@@ -1309,6 +1315,16 @@ int _mkcgo_EVP_MD_CTX_ctrl(_EVP_MD_CTX_PTR _arg0, int _arg1, int _arg2, void* _a
 	return _ret;
 }
 
+int _mkcgo_available_EVP_MD_CTX_deserialize() {
+	return _g_EVP_MD_CTX_deserialize != NULL;
+}
+
+int _mkcgo_EVP_MD_CTX_deserialize(_EVP_MD_CTX_PTR _arg0, const unsigned char* _arg1, size_t _arg2, uintptr_t *_err_state) {
+	int _ret = _g_EVP_MD_CTX_deserialize(_arg0, _arg1, _arg2);
+	if (_ret <= 0) *_err_state = mkcgo_err_retrieve();
+	return _ret;
+}
+
 void _mkcgo_EVP_MD_CTX_free(_EVP_MD_CTX_PTR _arg0) {
 	_g_EVP_MD_CTX_free(_arg0);
 }
@@ -1328,6 +1344,16 @@ const _OSSL_PARAM_PTR _mkcgo_EVP_MD_CTX_gettable_params(_EVP_MD_CTX_PTR _arg0, u
 _EVP_MD_CTX_PTR _mkcgo_EVP_MD_CTX_new(uintptr_t *_err_state) {
 	_EVP_MD_CTX_PTR _ret = _g_EVP_MD_CTX_new();
 	if (_ret == NULL) *_err_state = mkcgo_err_retrieve();
+	return _ret;
+}
+
+int _mkcgo_available_EVP_MD_CTX_serialize() {
+	return _g_EVP_MD_CTX_serialize != NULL;
+}
+
+int _mkcgo_EVP_MD_CTX_serialize(_EVP_MD_CTX_PTR _arg0, unsigned char* _arg1, size_t* _arg2, uintptr_t *_err_state) {
+	int _ret = _g_EVP_MD_CTX_serialize(_arg0, _arg1, _arg2);
+	if (_ret <= 0) *_err_state = mkcgo_err_retrieve();
 	return _ret;
 }
 

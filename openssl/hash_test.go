@@ -147,6 +147,12 @@ func TestHash_BinaryMarshaler(t *testing.T) {
 			}
 
 			// Test that the hash state is compatible with native Go.
+			// When the serialize-based path is in use (OpenSSL 4+), the
+			// marshaled format is OpenSSL's opaque serialization, which
+			// differs from Go's stdlib binary format.
+			if openssl.HashUsesSerialize(ch) {
+				return
+			}
 			h, ok := ch.New().(hashEncoding)
 			if !ok {
 				// The standard library doesn't support encoding this hash.

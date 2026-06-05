@@ -46,8 +46,12 @@ package ossl
 #cgo nocallback _mkcgo_EVP_MAC_init
 #cgo noescape _mkcgo_EVP_MAC_update
 #cgo nocallback _mkcgo_EVP_MAC_update
+#cgo noescape _mkcgo_EVP_MD_CTX_deserialize
+#cgo nocallback _mkcgo_EVP_MD_CTX_deserialize
 #cgo noescape _mkcgo_EVP_MD_CTX_get_params
 #cgo nocallback _mkcgo_EVP_MD_CTX_get_params
+#cgo noescape _mkcgo_EVP_MD_CTX_serialize
+#cgo nocallback _mkcgo_EVP_MD_CTX_serialize
 #cgo noescape _mkcgo_EVP_MD_CTX_set_params
 #cgo nocallback _mkcgo_EVP_MD_CTX_set_params
 #cgo noescape _mkcgo_EVP_PKEY_CTX_set_params
@@ -715,6 +719,16 @@ func EVP_MD_CTX_ctrl(ctx EVP_MD_CTX_PTR, cmd int32, p1 int32, p2 unsafe.Pointer)
 	return int32(_ret), newMkcgoErr("EVP_MD_CTX_ctrl", uintptr(_err))
 }
 
+func EVP_MD_CTX_deserialize_Available() bool {
+	return C._mkcgo_available_EVP_MD_CTX_deserialize() != 0
+}
+
+func EVP_MD_CTX_deserialize(ctx EVP_MD_CTX_PTR, in []byte) (int32, error) {
+	var _err C.uintptr_t
+	_ret := C._mkcgo_EVP_MD_CTX_deserialize(ctx, (*C.uchar)(unsafe.Pointer(unsafe.SliceData(in))), C.size_t(len(in)), mkcgoNoEscape(&_err))
+	return int32(_ret), newMkcgoErr("EVP_MD_CTX_deserialize", uintptr(_err))
+}
+
 func EVP_MD_CTX_free(ctx EVP_MD_CTX_PTR) {
 	C._mkcgo_EVP_MD_CTX_free(ctx)
 }
@@ -735,6 +749,19 @@ func EVP_MD_CTX_new() (EVP_MD_CTX_PTR, error) {
 	var _err C.uintptr_t
 	_ret := C._mkcgo_EVP_MD_CTX_new(mkcgoNoEscape(&_err))
 	return _ret, newMkcgoErr("EVP_MD_CTX_new", uintptr(_err))
+}
+
+func EVP_MD_CTX_serialize_Available() bool {
+	return C._mkcgo_available_EVP_MD_CTX_serialize() != 0
+}
+
+func EVP_MD_CTX_serialize(ctx EVP_MD_CTX_PTR, out []byte, outlen *int) (int32, error) {
+	if outlen != nil && int(*outlen) > len(out) {
+		panic("EVP_MD_CTX_serialize: *outlen exceeds len(out)")
+	}
+	var _err C.uintptr_t
+	_ret := C._mkcgo_EVP_MD_CTX_serialize(ctx, (*C.uchar)(unsafe.Pointer(unsafe.SliceData(out))), (*C.size_t)(unsafe.Pointer(outlen)), mkcgoNoEscape(&_err))
+	return int32(_ret), newMkcgoErr("EVP_MD_CTX_serialize", uintptr(_err))
 }
 
 func EVP_MD_CTX_set_params(ctx EVP_MD_CTX_PTR, params OSSL_PARAM_PTR) (int32, error) {

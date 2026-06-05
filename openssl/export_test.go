@@ -3,6 +3,8 @@
 
 package openssl
 
+import "crypto"
+
 var ErrOpen = errOpen
 
 // MLKEM constants for testing against the stdlib
@@ -27,3 +29,9 @@ var (
 )
 
 var HashBufSize = hashBufSize
+
+// HashUsesSerialize reports whether the given hash uses EVP_MD_CTX_serialize for marshaling.
+func HashUsesSerialize(ch crypto.Hash) bool {
+	alg := loadHash(ch, false)
+	return alg != nil && alg.hasSerialize
+}

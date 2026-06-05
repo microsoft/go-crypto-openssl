@@ -778,6 +778,18 @@ func EVP_MD_CTX_ctrl(ctx EVP_MD_CTX_PTR, cmd int32, p1 int32, p2 unsafe.Pointer)
 	return int32(r0), newMkcgoErr("EVP_MD_CTX_ctrl", _err)
 }
 
+func EVP_MD_CTX_deserialize_Available() bool {
+	return _mkcgo_EVP_MD_CTX_deserialize != 0
+}
+
+var _mkcgo_EVP_MD_CTX_deserialize uintptr
+
+func EVP_MD_CTX_deserialize(ctx EVP_MD_CTX_PTR, in []byte) (int32, error) {
+	var _err uintptr
+	r0, _ := syscallN(3, _mkcgo_EVP_MD_CTX_deserialize, uintptr(ctx), uintptr(unsafe.Pointer(unsafe.SliceData(in))), uintptr(len(in)), uintptr(unsafe.Pointer(&_err)))
+	return int32(r0), newMkcgoErr("EVP_MD_CTX_deserialize", _err)
+}
+
 var _mkcgo_EVP_MD_CTX_free uintptr
 
 func EVP_MD_CTX_free(ctx EVP_MD_CTX_PTR) {
@@ -806,6 +818,21 @@ func EVP_MD_CTX_new() (EVP_MD_CTX_PTR, error) {
 	var _err uintptr
 	r0, _ := syscallN(1, _mkcgo_EVP_MD_CTX_new, uintptr(unsafe.Pointer(&_err)))
 	return EVP_MD_CTX_PTR(r0), newMkcgoErr("EVP_MD_CTX_new", _err)
+}
+
+func EVP_MD_CTX_serialize_Available() bool {
+	return _mkcgo_EVP_MD_CTX_serialize != 0
+}
+
+var _mkcgo_EVP_MD_CTX_serialize uintptr
+
+func EVP_MD_CTX_serialize(ctx EVP_MD_CTX_PTR, out []byte, outlen *int) (int32, error) {
+	if outlen != nil && int(*outlen) > len(out) {
+		panic("EVP_MD_CTX_serialize: *outlen exceeds len(out)")
+	}
+	var _err uintptr
+	r0, _ := syscallN(3, _mkcgo_EVP_MD_CTX_serialize, uintptr(ctx), uintptr(unsafe.Pointer(unsafe.SliceData(out))), uintptr(unsafe.Pointer(outlen)), uintptr(unsafe.Pointer(&_err)))
+	return int32(r0), newMkcgoErr("EVP_MD_CTX_serialize", _err)
 }
 
 var _mkcgo_EVP_MD_CTX_set_params uintptr
@@ -2215,8 +2242,10 @@ func MkcgoLoad_3(handle unsafe.Pointer) {
 	_mkcgo_EVP_MAC_final = dlsym(handle, "EVP_MAC_final\x00", false)
 	_mkcgo_EVP_MAC_init = dlsym(handle, "EVP_MAC_init\x00", false)
 	_mkcgo_EVP_MAC_update = dlsym(handle, "EVP_MAC_update\x00", false)
+	_mkcgo_EVP_MD_CTX_deserialize = dlsym(handle, "EVP_MD_CTX_deserialize\x00", true)
 	_mkcgo_EVP_MD_CTX_get_params = dlsym(handle, "EVP_MD_CTX_get_params\x00", false)
 	_mkcgo_EVP_MD_CTX_gettable_params = dlsym(handle, "EVP_MD_CTX_gettable_params\x00", false)
+	_mkcgo_EVP_MD_CTX_serialize = dlsym(handle, "EVP_MD_CTX_serialize\x00", true)
 	_mkcgo_EVP_MD_CTX_set_params = dlsym(handle, "EVP_MD_CTX_set_params\x00", false)
 	_mkcgo_EVP_MD_CTX_settable_params = dlsym(handle, "EVP_MD_CTX_settable_params\x00", false)
 	_mkcgo_EVP_MD_fetch = dlsym(handle, "EVP_MD_fetch\x00", false)
@@ -2292,8 +2321,10 @@ func MkcgoUnload_3() {
 	_mkcgo_EVP_MAC_final = 0
 	_mkcgo_EVP_MAC_init = 0
 	_mkcgo_EVP_MAC_update = 0
+	_mkcgo_EVP_MD_CTX_deserialize = 0
 	_mkcgo_EVP_MD_CTX_get_params = 0
 	_mkcgo_EVP_MD_CTX_gettable_params = 0
+	_mkcgo_EVP_MD_CTX_serialize = 0
 	_mkcgo_EVP_MD_CTX_set_params = 0
 	_mkcgo_EVP_MD_CTX_settable_params = 0
 	_mkcgo_EVP_MD_fetch = 0

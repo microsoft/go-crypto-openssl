@@ -109,6 +109,8 @@ jobs:
           # the non-intel macOS runners use ARM64
           {os: macos-15-intel, openssl-version: /usr/local/opt/openssl@3/lib/libcrypto.3.dylib},
           {os: macos-15, openssl-version: /opt/homebrew/opt/openssl@3/lib/libcrypto.3.dylib},
+          {os: macos-26-intel, openssl-version: /usr/local/opt/openssl@4/lib/libcrypto.4.dylib},
+          {os: macos-26, openssl-version: /opt/homebrew/opt/openssl@4/lib/libcrypto.4.dylib},
           {os: windows-2022, openssl-version: libcrypto-3-x64.dll}
         ]
     runs-on: ${{ matrix.host.os }}
@@ -118,6 +120,9 @@ jobs:
         go-version: ${{ matrix.go-version }}
         go-download-base-url: "https://aka.ms/golang/release/latest"
     - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+    - name: Install OpenSSL 4
+      if: ${{ runner.os == 'macOS' && contains(matrix.host.openssl-version, 'openssl@4') }}
+      run: brew install openssl@4
     - name: Run Test
       run: go test -shuffle=on -gcflags=all=-d=checkptr -count 10 -v ./...
       env:

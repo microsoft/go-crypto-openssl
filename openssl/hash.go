@@ -441,6 +441,9 @@ func (d *Hash) MarshalBinary() ([]byte, error) {
 	if d.alg == nil || !d.alg.marshallable {
 		return nil, errMarshallUnsupported{}
 	}
+	if d.alg.hasSerialize {
+		return d.serializeAppendBinary(nil)
+	}
 	buf := make([]byte, 0, d.alg.marshalledSize)
 	return d.AppendBinary(buf)
 }
@@ -449,6 +452,9 @@ func (d *Hash) AppendBinary(buf []byte) ([]byte, error) {
 	defer runtime.KeepAlive(d)
 	if d.alg == nil || !d.alg.marshallable {
 		return nil, errMarshallUnsupported{}
+	}
+	if d.alg.hasSerialize {
+		return d.serializeAppendBinary(buf)
 	}
 	d.flush()
 	switch d.alg.provider {
@@ -470,6 +476,9 @@ func (d *Hash) UnmarshalBinary(b []byte) error {
 	if len(b) < len(d.alg.magic) || string(b[:len(d.alg.magic)]) != d.alg.magic {
 		return errors.New("openssl: invalid hash state identifier")
 	}
+	if d.alg.hasSerialize {
+		return d.serializeUnmarshalBinary(b)
+	}
 	if len(b) != d.alg.marshalledSize {
 		return errors.New("openssl: invalid hash state size")
 	}
@@ -481,6 +490,41 @@ func (d *Hash) UnmarshalBinary(b []byte) error {
 	default:
 		panic("openssl: unknown hash provider" + strconv.Itoa(int(d.alg.provider)))
 	}
+}
+
+// serializeAppendBinary uses EVP_MD_CTX_serialize to marshal the hash state.
+// The format is: magic + opaque OpenSSL serialized data.
+func (d *Hash) serializeAppendBinary(buf []byte) ([]byte, error) {
+	defer runtime.KeepAlive(d)
+	d.flush()
+	// Query the required buffer size.
+	var outlen int
+	if _, err := ossl.EVP_MD_CTX_serialize(d.ctx, nil, &outlen); err != nil {
+		return nil, err
+	}
+	total := len(d.alg.magic) + outlen
+	if cap(buf)-len(buf) < total {
+		buf = append(make([]byte, 0, len(buf)+total), buf...)
+	}
+	buf = append(buf, d.alg.magic...)
+	off := len(buf)
+	buf = buf[:off+outlen]
+	if _, err := ossl.EVP_MD_CTX_serialize(d.ctx, buf[off:], &outlen); err != nil {
+		return nil, err
+	}
+	return buf[:off+outlen], nil
+}
+
+// serializeUnmarshalBinary uses EVP_MD_CTX_deserialize to restore the hash state.
+// The expected format is: magic + opaque OpenSSL serialized data.
+func (d *Hash) serializeUnmarshalBinary(b []byte) error {
+	defer runtime.KeepAlive(d)
+	d.init()
+	data := b[len(d.alg.magic):]
+	if _, err := ossl.EVP_MD_CTX_deserialize(d.ctx, data); err != nil {
+		return err
+	}
+	return nil
 }
 
 // appendUint64 appends x into b as a big endian byte sequence.
