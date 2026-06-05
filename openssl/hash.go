@@ -441,9 +441,6 @@ func (d *Hash) MarshalBinary() ([]byte, error) {
 	if d.alg == nil || !d.alg.marshallable {
 		return nil, errMarshallUnsupported{}
 	}
-	if d.alg.hasSerialize {
-		return d.serializeAppendBinary(nil)
-	}
 	buf := make([]byte, 0, d.alg.marshalledSize)
 	return d.AppendBinary(buf)
 }
@@ -476,11 +473,11 @@ func (d *Hash) UnmarshalBinary(b []byte) error {
 	if len(b) < len(d.alg.magic) || string(b[:len(d.alg.magic)]) != d.alg.magic {
 		return errors.New("openssl: invalid hash state identifier")
 	}
-	if d.alg.hasSerialize {
-		return d.serializeUnmarshalBinary(b)
-	}
 	if len(b) != d.alg.marshalledSize {
 		return errors.New("openssl: invalid hash state size")
+	}
+	if d.alg.hasSerialize {
+		return d.serializeUnmarshalBinary(b)
 	}
 	switch d.alg.provider {
 	case providerOSSLDefault, providerOSSLFIPS:
@@ -492,8 +489,9 @@ func (d *Hash) UnmarshalBinary(b []byte) error {
 	}
 }
 
-// serializeAppendBinary uses EVP_MD_CTX_serialize to marshal the hash state.
-// The format is: magic + opaque OpenSSL serialized data.
+// serializeAppendBinary uses EVP_MD_CTX_serialize to get the opaque
+// provider-specific hash state, then converts it to Go's standard hash
+// binary format so the output is compatible with crypto/sha256 etc.
 func (d *Hash) serializeAppendBinary(buf []byte) ([]byte, error) {
 	defer runtime.KeepAlive(d)
 	d.flush()
@@ -502,26 +500,45 @@ func (d *Hash) serializeAppendBinary(buf []byte) ([]byte, error) {
 	if _, err := ossl.EVP_MD_CTX_serialize(d.ctx, nil, &outlen); err != nil {
 		return nil, err
 	}
-	total := len(d.alg.magic) + outlen
-	if cap(buf)-len(buf) < total {
-		buf = append(make([]byte, 0, len(buf)+total), buf...)
-	}
-	buf = append(buf, d.alg.magic...)
-	off := len(buf)
-	buf = buf[:off+outlen]
-	if _, err := ossl.EVP_MD_CTX_serialize(d.ctx, buf[off:], &outlen); err != nil {
+	// Use a stack-allocated buffer. The cgo calls are noescape so the
+	// buffer won't escape to the heap.
+	var tmp [sha512SerializeLen]byte
+	serialized := tmp[:outlen]
+	if _, err := ossl.EVP_MD_CTX_serialize(d.ctx, serialized, &outlen); err != nil {
 		return nil, err
 	}
-	return buf[:off+outlen], nil
+	serialized = serialized[:outlen]
+	// Convert the provider-specific opaque data to Go's standard format.
+	buf = append(buf, d.alg.magic...)
+	switch d.alg.provider {
+	case providerOSSLDefault, providerOSSLFIPS:
+		return osslHashSerializedAppendBinary(serialized, d.alg.ch, buf)
+	default:
+		return nil, errors.New("openssl: unsupported provider for hash serialization")
+	}
 }
 
-// serializeUnmarshalBinary uses EVP_MD_CTX_deserialize to restore the hash state.
-// The expected format is: magic + opaque OpenSSL serialized data.
+// serializeUnmarshalBinary converts Go's standard hash binary format to the
+// provider-specific opaque representation and restores it via EVP_MD_CTX_deserialize.
 func (d *Hash) serializeUnmarshalBinary(b []byte) error {
 	defer runtime.KeepAlive(d)
 	d.init()
 	data := b[len(d.alg.magic):]
-	if _, err := ossl.EVP_MD_CTX_deserialize(d.ctx, data); err != nil {
+	// Build the serialized blob into a stack-allocated buffer.
+	// The cgo calls are noescape so the buffer won't escape to the heap.
+	var tmp [sha512SerializeLen]byte
+	var serialized []byte
+	var err error
+	switch d.alg.provider {
+	case providerOSSLDefault, providerOSSLFIPS:
+		serialized, err = osslHashBuildSerialized(d.alg.ch, data, tmp[:0])
+	default:
+		return errors.New("openssl: unsupported provider for hash deserialization")
+	}
+	if err != nil {
+		return err
+	}
+	if _, err := ossl.EVP_MD_CTX_deserialize(d.ctx, serialized); err != nil {
 		return err
 	}
 	return nil
