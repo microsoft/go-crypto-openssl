@@ -9,6 +9,7 @@ import (
 	"errors"
 	"hash"
 	"runtime"
+	"sync"
 	"unsafe"
 
 	"github.com/microsoft/go-crypto-openssl/internal/ossl"
@@ -224,6 +225,40 @@ func DecryptRSAPKCS1(priv *PrivateKeyRSA, ciphertext []byte) ([]byte, error) {
 func EncryptRSAPKCS1(pub *PublicKeyRSA, msg []byte) ([]byte, error) {
 	return evpEncrypt(pub.withKey, ossl.RSA_PKCS1_PADDING, nil, nil, nil, msg)
 }
+
+// SupportsRSAPKCS1v15Encryption returns true if RSA PKCS1 v1.5 padding is supported for encryption and decryption.
+var SupportsRSAPKCS1v15Encryption = sync.OnceValue(func() bool {
+	n, e, _, _, _, _, _, _, err := GenerateKeyRSA(2048)
+	if err != nil {
+		return false
+	}
+	pub, err := NewPublicKeyRSA(n, e)
+	if err != nil {
+		return false
+	}
+	supported := false
+	_ = pub.withKey(func(pkey ossl.EVP_PKEY_PTR) error {
+		ctx, err := ossl.EVP_PKEY_CTX_new(pkey, nil)
+		if err != nil {
+			return err
+		}
+		defer ossl.EVP_PKEY_CTX_free(ctx)
+		if _, err := ossl.EVP_PKEY_encrypt_init(ctx); err != nil {
+			return err
+		}
+		if _, err := ossl.EVP_PKEY_CTX_ctrl(ctx, ossl.EVP_PKEY_RSA, -1, ossl.EVP_PKEY_CTRL_RSA_PADDING, ossl.RSA_PKCS1_PADDING, nil); err != nil {
+			return err
+		}
+		in := []byte("test")
+		var outLen int
+		if _, err := ossl.EVP_PKEY_encrypt(ctx, nil, &outLen, base(in), len(in)); err != nil {
+			return err
+		}
+		supported = true
+		return nil
+	})
+	return supported
+})
 
 func DecryptRSANoPadding(priv *PrivateKeyRSA, ciphertext []byte) ([]byte, error) {
 	ret, err := evpDecrypt(priv.withKey, ossl.RSA_NO_PADDING, nil, nil, nil, ciphertext)

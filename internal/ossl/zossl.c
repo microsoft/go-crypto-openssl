@@ -62,6 +62,7 @@ _EVP_CIPHER_PTR (*_g_EVP_CIPHER_fetch)(_OSSL_LIB_CTX_PTR, const char*, const cha
 const char* (*_g_EVP_CIPHER_get0_name)(const _EVP_CIPHER_PTR);
 int (*_g_EVP_CIPHER_get_block_size)(const _EVP_CIPHER_PTR);
 int (*_g_EVP_CipherInit_ex)(_EVP_CIPHER_CTX_PTR, const _EVP_CIPHER_PTR, _ENGINE_PTR, const unsigned char*, const unsigned char*, int);
+int (*_g_EVP_CipherInit_ex2)(_EVP_CIPHER_CTX_PTR, const _EVP_CIPHER_PTR, const unsigned char*, const unsigned char*, int, const _OSSL_PARAM_PTR);
 int (*_g_EVP_CipherUpdate)(_EVP_CIPHER_CTX_PTR, unsigned char*, int*, const unsigned char*, int);
 int (*_g_EVP_DecryptFinal_ex)(_EVP_CIPHER_CTX_PTR, unsigned char*, int*);
 int (*_g_EVP_DecryptInit_ex)(_EVP_CIPHER_CTX_PTR, const _EVP_CIPHER_PTR, _ENGINE_PTR, const unsigned char*, const unsigned char*);
@@ -121,6 +122,7 @@ int (*_g_EVP_PKEY_CTX_set1_hkdf_key)(_EVP_PKEY_CTX_PTR, const unsigned char*, in
 int (*_g_EVP_PKEY_CTX_set1_hkdf_salt)(_EVP_PKEY_CTX_PTR, const unsigned char*, int);
 int (*_g_EVP_PKEY_CTX_set_hkdf_md)(_EVP_PKEY_CTX_PTR, const _EVP_MD_PTR);
 int (*_g_EVP_PKEY_CTX_set_hkdf_mode)(_EVP_PKEY_CTX_PTR, int);
+int (*_g_EVP_PKEY_CTX_set_params)(_EVP_PKEY_CTX_PTR, const _OSSL_PARAM_PTR);
 _EVP_PKEY_PTR (*_g_EVP_PKEY_Q_keygen)(_OSSL_LIB_CTX_PTR, const char*, const char*, ...);
 int (*_g_EVP_PKEY_assign)(_EVP_PKEY_PTR, int, void*);
 int (*_g_EVP_PKEY_decrypt)(_EVP_PKEY_CTX_PTR, unsigned char*, size_t*, const unsigned char*, size_t);
@@ -484,6 +486,7 @@ void __mkcgo_load_3(void* handle) {
 	__mkcgo__dlsym(EVP_CIPHER_fetch)
 	__mkcgo__dlsym(EVP_CIPHER_get0_name)
 	__mkcgo__dlsym(EVP_CIPHER_get_block_size)
+	__mkcgo__dlsym(EVP_CipherInit_ex2)
 	__mkcgo__dlsym(EVP_KDF_CTX_free)
 	__mkcgo__dlsym(EVP_KDF_CTX_get_kdf_size)
 	__mkcgo__dlsym(EVP_KDF_CTX_new)
@@ -517,6 +520,7 @@ void __mkcgo_load_3(void* handle) {
 	__mkcgo__dlsym(EVP_PKEY_CTX_set1_hkdf_salt)
 	__mkcgo__dlsym(EVP_PKEY_CTX_set_hkdf_md)
 	__mkcgo__dlsym(EVP_PKEY_CTX_set_hkdf_mode)
+	__mkcgo__dlsym(EVP_PKEY_CTX_set_params)
 	__mkcgo__dlsym(EVP_PKEY_Q_keygen)
 	__mkcgo__dlsym(EVP_PKEY_fromdata)
 	__mkcgo__dlsym(EVP_PKEY_fromdata_init)
@@ -552,6 +556,7 @@ void __mkcgo_unload_3() {
 	_g_EVP_CIPHER_fetch = NULL;
 	_g_EVP_CIPHER_get0_name = NULL;
 	_g_EVP_CIPHER_get_block_size = NULL;
+	_g_EVP_CipherInit_ex2 = NULL;
 	_g_EVP_KDF_CTX_free = NULL;
 	_g_EVP_KDF_CTX_get_kdf_size = NULL;
 	_g_EVP_KDF_CTX_new = NULL;
@@ -585,6 +590,7 @@ void __mkcgo_unload_3() {
 	_g_EVP_PKEY_CTX_set1_hkdf_salt = NULL;
 	_g_EVP_PKEY_CTX_set_hkdf_md = NULL;
 	_g_EVP_PKEY_CTX_set_hkdf_mode = NULL;
+	_g_EVP_PKEY_CTX_set_params = NULL;
 	_g_EVP_PKEY_Q_keygen = NULL;
 	_g_EVP_PKEY_fromdata = NULL;
 	_g_EVP_PKEY_fromdata_init = NULL;
@@ -1000,6 +1006,12 @@ int _mkcgo_EVP_CipherInit_ex(_EVP_CIPHER_CTX_PTR _arg0, const _EVP_CIPHER_PTR _a
 	return _ret;
 }
 
+int _mkcgo_EVP_CipherInit_ex2(_EVP_CIPHER_CTX_PTR _arg0, const _EVP_CIPHER_PTR _arg1, const unsigned char* _arg2, const unsigned char* _arg3, int _arg4, const _OSSL_PARAM_PTR _arg5, mkcgo_err_state *_err_state) {
+	int _ret = _g_EVP_CipherInit_ex2(_arg0, _arg1, _arg2, _arg3, _arg4, _arg5);
+	if (_ret <= 0) *_err_state = mkcgo_err_retrieve();
+	return _ret;
+}
+
 int _mkcgo_EVP_CipherUpdate(_EVP_CIPHER_CTX_PTR _arg0, unsigned char* _arg1, int* _arg2, const unsigned char* _arg3, int _arg4, mkcgo_err_state *_err_state) {
 	int _ret = _g_EVP_CipherUpdate(_arg0, _arg1, _arg2, _arg3, _arg4);
 	if (_ret <= 0) *_err_state = mkcgo_err_retrieve();
@@ -1328,6 +1340,12 @@ int _mkcgo_EVP_PKEY_CTX_set_hkdf_md(_EVP_PKEY_CTX_PTR _arg0, const _EVP_MD_PTR _
 
 int _mkcgo_EVP_PKEY_CTX_set_hkdf_mode(_EVP_PKEY_CTX_PTR _arg0, int _arg1, mkcgo_err_state *_err_state) {
 	int _ret = _g_EVP_PKEY_CTX_set_hkdf_mode(_arg0, _arg1);
+	if (_ret <= 0) *_err_state = mkcgo_err_retrieve();
+	return _ret;
+}
+
+int _mkcgo_EVP_PKEY_CTX_set_params(_EVP_PKEY_CTX_PTR _arg0, const _OSSL_PARAM_PTR _arg1, mkcgo_err_state *_err_state) {
+	int _ret = _g_EVP_PKEY_CTX_set_params(_arg0, _arg1);
 	if (_ret <= 0) *_err_state = mkcgo_err_retrieve();
 	return _ret;
 }

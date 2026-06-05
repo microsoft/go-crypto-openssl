@@ -63,6 +63,10 @@ const ( //checkheader:ignore
 	_OSSL_KDF_PARAM_SALT   cString = "salt\x00"
 	_OSSL_KDF_PARAM_MODE   cString = "mode\x00"
 
+	// KDF FIPS parameters
+	_OSSL_KDF_PARAM_FIPS_KEY_CHECK        cString = "key-check\x00"
+	_OSSL_CIPHER_PARAM_FIPS_ENCRYPT_CHECK cString = "encrypt-check\x00"
+
 	// TLS3-KDF parameters
 	_OSSL_KDF_PARAM_PREFIX cString = "prefix\x00"
 	_OSSL_KDF_PARAM_LABEL  cString = "label\x00"
@@ -87,6 +91,13 @@ const ( //checkheader:ignore
 	_OSSL_PKEY_PARAM_RSA_EXPONENT1    cString = "rsa-exponent1\x00"
 	_OSSL_PKEY_PARAM_RSA_EXPONENT2    cString = "rsa-exponent2\x00"
 	_OSSL_PKEY_PARAM_RSA_COEFFICIENT1 cString = "rsa-coefficient1\x00"
+
+	// Signature parameters
+	_OSSL_SIGNATURE_PARAM_DIGEST                     cString = "digest\x00"
+	_OSSL_SIGNATURE_PARAM_PAD_MODE                   cString = "pad-mode\x00"
+	_OSSL_SIGNATURE_PARAM_PSS_SALTLEN                cString = "saltlen\x00"
+	_OSSL_SIGNATURE_PARAM_FIPS_RSA_PSS_SALTLEN_CHECK cString = "rsa-pss-saltlen-check\x00"
+	_OSSL_PKEY_RSA_PAD_MODE_PSS                      cString = "pss\x00"
 
 	// MAC parameters
 	_OSSL_MAC_PARAM_DIGEST cString = "digest\x00"

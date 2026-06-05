@@ -159,6 +159,7 @@ _EVP_CIPHER_PTR _mkcgo_EVP_CIPHER_fetch(_OSSL_LIB_CTX_PTR, const char*, const ch
 const char* _mkcgo_EVP_CIPHER_get0_name(const _EVP_CIPHER_PTR);
 int _mkcgo_EVP_CIPHER_get_block_size(const _EVP_CIPHER_PTR);
 int _mkcgo_EVP_CipherInit_ex(_EVP_CIPHER_CTX_PTR, const _EVP_CIPHER_PTR, _ENGINE_PTR, const unsigned char*, const unsigned char*, int, mkcgo_err_state *);
+int _mkcgo_EVP_CipherInit_ex2(_EVP_CIPHER_CTX_PTR, const _EVP_CIPHER_PTR, const unsigned char*, const unsigned char*, int, const _OSSL_PARAM_PTR, mkcgo_err_state *);
 int _mkcgo_EVP_CipherUpdate(_EVP_CIPHER_CTX_PTR, unsigned char*, int*, const unsigned char*, int, mkcgo_err_state *);
 int _mkcgo_EVP_DecryptFinal_ex(_EVP_CIPHER_CTX_PTR, unsigned char*, int*, mkcgo_err_state *);
 int _mkcgo_EVP_DecryptInit_ex(_EVP_CIPHER_CTX_PTR, const _EVP_CIPHER_PTR, _ENGINE_PTR, const unsigned char*, const unsigned char*, mkcgo_err_state *);
@@ -218,6 +219,7 @@ int _mkcgo_EVP_PKEY_CTX_set1_hkdf_key(_EVP_PKEY_CTX_PTR, const unsigned char*, i
 int _mkcgo_EVP_PKEY_CTX_set1_hkdf_salt(_EVP_PKEY_CTX_PTR, const unsigned char*, int, mkcgo_err_state *);
 int _mkcgo_EVP_PKEY_CTX_set_hkdf_md(_EVP_PKEY_CTX_PTR, const _EVP_MD_PTR, mkcgo_err_state *);
 int _mkcgo_EVP_PKEY_CTX_set_hkdf_mode(_EVP_PKEY_CTX_PTR, int, mkcgo_err_state *);
+int _mkcgo_EVP_PKEY_CTX_set_params(_EVP_PKEY_CTX_PTR, const _OSSL_PARAM_PTR, mkcgo_err_state *);
 _EVP_PKEY_PTR _mkcgo_EVP_PKEY_Q_keygen_EC(_OSSL_LIB_CTX_PTR, const char*, const char*, const char*, mkcgo_err_state *);
 _EVP_PKEY_PTR _mkcgo_EVP_PKEY_Q_keygen_ED25519(_OSSL_LIB_CTX_PTR, const char*, const char*, mkcgo_err_state *);
 _EVP_PKEY_PTR _mkcgo_EVP_PKEY_Q_keygen_RSA(_OSSL_LIB_CTX_PTR, const char*, const char*, size_t, mkcgo_err_state *);

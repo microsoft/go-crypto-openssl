@@ -406,6 +406,12 @@ func EVP_CipherInit_ex(ctx EVP_CIPHER_CTX_PTR, __type EVP_CIPHER_PTR, impl ENGIN
 	return int32(_ret), newMkcgoErr("EVP_CipherInit_ex", _err)
 }
 
+func EVP_CipherInit_ex2(ctx EVP_CIPHER_CTX_PTR, __type EVP_CIPHER_PTR, key *byte, iv *byte, enc int32, params OSSL_PARAM_PTR) (int32, error) {
+	var _err C.mkcgo_err_state
+	_ret := C._mkcgo_EVP_CipherInit_ex2(ctx, __type, (*C.uchar)(unsafe.Pointer(key)), (*C.uchar)(unsafe.Pointer(iv)), C.int(enc), params, mkcgoNoEscape(&_err))
+	return int32(_ret), newMkcgoErr("EVP_CipherInit_ex2", _err)
+}
+
 func EVP_CipherUpdate(ctx EVP_CIPHER_CTX_PTR, out *byte, outl *int32, in *byte, inl int32) (int32, error) {
 	var _err C.mkcgo_err_state
 	_ret := C._mkcgo_EVP_CipherUpdate(ctx, (*C.uchar)(unsafe.Pointer(out)), (*C.int)(unsafe.Pointer(outl)), (*C.uchar)(unsafe.Pointer(in)), C.int(inl), mkcgoNoEscape(&_err))
@@ -736,6 +742,12 @@ func EVP_PKEY_CTX_set_hkdf_mode(arg0 EVP_PKEY_CTX_PTR, arg1 int32) (int32, error
 	var _err C.mkcgo_err_state
 	_ret := C._mkcgo_EVP_PKEY_CTX_set_hkdf_mode(arg0, C.int(arg1), mkcgoNoEscape(&_err))
 	return int32(_ret), newMkcgoErr("EVP_PKEY_CTX_set_hkdf_mode", _err)
+}
+
+func EVP_PKEY_CTX_set_params(ctx EVP_PKEY_CTX_PTR, params OSSL_PARAM_PTR) (int32, error) {
+	var _err C.mkcgo_err_state
+	_ret := C._mkcgo_EVP_PKEY_CTX_set_params(ctx, params, mkcgoNoEscape(&_err))
+	return int32(_ret), newMkcgoErr("EVP_PKEY_CTX_set_params", _err)
 }
 
 func EVP_PKEY_Q_keygen_EC(ctx OSSL_LIB_CTX_PTR, propq *byte, __type *byte, arg1 *byte) (EVP_PKEY_PTR, error) {
