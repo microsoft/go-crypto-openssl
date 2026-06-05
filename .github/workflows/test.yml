@@ -74,8 +74,12 @@ jobs:
       fail-fast: false
       matrix:
         go-version: [1.22.x, 1.23.x]
-        openssl-version: [/usr/local/opt/openssl@3/lib/libcrypto.3.dylib]
-    runs-on: macos-13
+        host: [
+          # the non-intel macOS runners use ARM64
+          {os: macos-15-intel, openssl-version: /usr/local/opt/openssl@3/lib/libcrypto.3.dylib},
+          {os: macos-15, openssl-version: /opt/homebrew/opt/openssl@3/lib/libcrypto.3.dylib}
+        ]
+    runs-on: ${{ matrix.host.os }}
     steps:
     - name: Install Go
       uses: actions/setup-go@v5
@@ -86,7 +90,7 @@ jobs:
     - name: Run Test
       run: go test -gcflags=all=-d=checkptr -count 10 -v ./...
       env:
-        GO_OPENSSL_VERSION_OVERRIDE: ${{ matrix.openssl-version }}
+        GO_OPENSSL_VERSION_OVERRIDE: ${{ matrix.host.openssl-version }}
   azurelinux:
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/oss/go/microsoft/golang:1.23-azurelinux3.0
