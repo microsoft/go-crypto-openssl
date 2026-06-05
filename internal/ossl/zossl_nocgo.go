@@ -1120,6 +1120,14 @@ func EVP_PKEY_encrypt_init(arg0 EVP_PKEY_CTX_PTR) (int32, error) {
 	return int32(r0), newMkcgoErr("EVP_PKEY_encrypt_init", _err)
 }
 
+var _mkcgo_EVP_PKEY_eq uintptr
+
+func EVP_PKEY_eq(a EVP_PKEY_PTR, b EVP_PKEY_PTR) (int32, error) {
+	var _err uintptr
+	r0, _ := syscallN(3, _mkcgo_EVP_PKEY_eq, uintptr(a), uintptr(b), uintptr(unsafe.Pointer(&_err)))
+	return int32(r0), newMkcgoErr("EVP_PKEY_eq", _err)
+}
+
 var _mkcgo_EVP_PKEY_free uintptr
 
 func EVP_PKEY_free(arg0 EVP_PKEY_PTR) {
@@ -2231,6 +2239,7 @@ func MkcgoLoad_3(handle unsafe.Pointer) {
 	_mkcgo_EVP_PKEY_decapsulate_init = dlsym(handle, "EVP_PKEY_decapsulate_init\x00", false)
 	_mkcgo_EVP_PKEY_encapsulate = dlsym(handle, "EVP_PKEY_encapsulate\x00", false)
 	_mkcgo_EVP_PKEY_encapsulate_init = dlsym(handle, "EVP_PKEY_encapsulate_init\x00", false)
+	_mkcgo_EVP_PKEY_eq = dlsym(handle, "EVP_PKEY_eq\x00", false)
 	_mkcgo_EVP_PKEY_fromdata = dlsym(handle, "EVP_PKEY_fromdata\x00", false)
 	_mkcgo_EVP_PKEY_fromdata_init = dlsym(handle, "EVP_PKEY_fromdata_init\x00", false)
 	_mkcgo_EVP_PKEY_get1_encoded_public_key = dlsym(handle, "EVP_PKEY_get1_encoded_public_key\x00", false)
@@ -2307,6 +2316,7 @@ func MkcgoUnload_3() {
 	_mkcgo_EVP_PKEY_decapsulate_init = 0
 	_mkcgo_EVP_PKEY_encapsulate = 0
 	_mkcgo_EVP_PKEY_encapsulate_init = 0
+	_mkcgo_EVP_PKEY_eq = 0
 	_mkcgo_EVP_PKEY_fromdata = 0
 	_mkcgo_EVP_PKEY_fromdata_init = 0
 	_mkcgo_EVP_PKEY_get1_encoded_public_key = 0

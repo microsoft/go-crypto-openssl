@@ -145,6 +145,7 @@ int (*_g_EVP_PKEY_encapsulate)(_EVP_PKEY_CTX_PTR, unsigned char*, size_t*, unsig
 int (*_g_EVP_PKEY_encapsulate_init)(_EVP_PKEY_CTX_PTR, const _OSSL_PARAM_PTR);
 int (*_g_EVP_PKEY_encrypt)(_EVP_PKEY_CTX_PTR, unsigned char*, size_t*, const unsigned char*, size_t);
 int (*_g_EVP_PKEY_encrypt_init)(_EVP_PKEY_CTX_PTR);
+int (*_g_EVP_PKEY_eq)(const _EVP_PKEY_PTR, const _EVP_PKEY_PTR);
 void (*_g_EVP_PKEY_free)(_EVP_PKEY_PTR);
 int (*_g_EVP_PKEY_fromdata)(_EVP_PKEY_CTX_PTR, _EVP_PKEY_PTR*, int, _OSSL_PARAM_PTR);
 int (*_g_EVP_PKEY_fromdata_init)(_EVP_PKEY_CTX_PTR);
@@ -545,6 +546,7 @@ void __mkcgo_load_3(void* handle) {
 	__mkcgo__dlsym(EVP_PKEY_decapsulate_init)
 	__mkcgo__dlsym(EVP_PKEY_encapsulate)
 	__mkcgo__dlsym(EVP_PKEY_encapsulate_init)
+	__mkcgo__dlsym(EVP_PKEY_eq)
 	__mkcgo__dlsym(EVP_PKEY_fromdata)
 	__mkcgo__dlsym(EVP_PKEY_fromdata_init)
 	__mkcgo__dlsym(EVP_PKEY_get1_encoded_public_key)
@@ -621,6 +623,7 @@ void __mkcgo_unload_3() {
 	_g_EVP_PKEY_decapsulate_init = NULL;
 	_g_EVP_PKEY_encapsulate = NULL;
 	_g_EVP_PKEY_encapsulate_init = NULL;
+	_g_EVP_PKEY_eq = NULL;
 	_g_EVP_PKEY_fromdata = NULL;
 	_g_EVP_PKEY_fromdata_init = NULL;
 	_g_EVP_PKEY_get1_encoded_public_key = NULL;
@@ -1544,6 +1547,12 @@ int _mkcgo_EVP_PKEY_encrypt(_EVP_PKEY_CTX_PTR _arg0, unsigned char* _arg1, size_
 
 int _mkcgo_EVP_PKEY_encrypt_init(_EVP_PKEY_CTX_PTR _arg0, uintptr_t *_err_state) {
 	int _ret = _g_EVP_PKEY_encrypt_init(_arg0);
+	if (_ret <= 0) *_err_state = mkcgo_err_retrieve();
+	return _ret;
+}
+
+int _mkcgo_EVP_PKEY_eq(const _EVP_PKEY_PTR _arg0, const _EVP_PKEY_PTR _arg1, uintptr_t *_err_state) {
+	int _ret = _g_EVP_PKEY_eq(_arg0, _arg1);
 	if (_ret <= 0) *_err_state = mkcgo_err_retrieve();
 	return _ret;
 }

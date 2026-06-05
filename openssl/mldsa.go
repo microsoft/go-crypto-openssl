@@ -177,6 +177,31 @@ func (key *PrivateKeyMLDSA) Bytes() []byte {
 	return key.seed[:]
 }
 
+// Equal reports whether key and other represent the same private key.
+func (key *PrivateKeyMLDSA) Equal(other *PrivateKeyMLDSA) bool {
+	if other == nil {
+		return false
+	}
+	a, err := newMLDSAPrivatePkey(key.params.keyType, key.seed[:])
+	if err != nil {
+		return false
+	}
+	defer ossl.EVP_PKEY_free(a)
+	b, err := newMLDSAPrivatePkey(other.params.keyType, other.seed[:])
+	if err != nil {
+		return false
+	}
+	defer ossl.EVP_PKEY_free(b)
+	// EVP_PKEY_eq returns 1 if inputs match, 0 if they don't match, -1 if the
+	// key types are different, and -2 if the operation is not supported. We
+	// don't care about the reason, only if they match or aren't confirmed to
+	// match. The error return drains the OpenSSL error queue when the
+	// comparison fails (e.g. on cross-parameter-set inputs), so we keep it
+	// here rather than tagging the binding noerror.
+	ret, _ := ossl.EVP_PKEY_eq(a, b)
+	return ret == 1
+}
+
 // Parameters returns the parameters associated with this private key.
 func (key *PrivateKeyMLDSA) Parameters() MLDSAParameters { return key.params }
 
@@ -219,7 +244,7 @@ func NewPublicKeyMLDSA(params MLDSAParameters, publicKey []byte) (*PublicKeyMLDS
 		return nil, errors.New("mldsa: invalid public key size")
 	}
 	// Validate by attempting a key import.
-	pkey, err := createMLDSAPublicKey(params.keyType, publicKey)
+	pkey, err := newMLDSAPublicPkey(params.keyType, publicKey)
 	if err != nil {
 		return nil, err
 	}
@@ -232,6 +257,31 @@ func NewPublicKeyMLDSA(params MLDSAParameters, publicKey []byte) (*PublicKeyMLDS
 // Bytes returns the public key encoding.
 func (key *PublicKeyMLDSA) Bytes() []byte {
 	return key.bytes[:key.params.publicKeySize]
+}
+
+// Equal reports whether key and other represent the same public key.
+func (key *PublicKeyMLDSA) Equal(other *PublicKeyMLDSA) bool {
+	if other == nil {
+		return false
+	}
+	a, err := newMLDSAPublicPkey(key.params.keyType, key.bytes[:key.params.publicKeySize])
+	if err != nil {
+		return false
+	}
+	defer ossl.EVP_PKEY_free(a)
+	b, err := newMLDSAPublicPkey(other.params.keyType, other.bytes[:other.params.publicKeySize])
+	if err != nil {
+		return false
+	}
+	defer ossl.EVP_PKEY_free(b)
+	// EVP_PKEY_eq returns 1 if inputs match, 0 if they don't match, -1 if the
+	// key types are different, and -2 if the operation is not supported. We
+	// don't care about the reason, only if they match or aren't confirmed to
+	// match. The error return drains the OpenSSL error queue when the
+	// comparison fails (e.g. on cross-parameter-set inputs), so we keep it
+	// here rather than tagging the binding noerror.
+	ret, _ := ossl.EVP_PKEY_eq(a, b)
+	return ret == 1
 }
 
 // Parameters returns the parameters associated with this public key.
@@ -265,8 +315,8 @@ func generateMLDSASeed(keyType int32, seed []byte) error {
 	return err
 }
 
-// createMLDSAPrivateKey creates an ML-DSA EVP_PKEY from a 32-byte seed.
-func createMLDSAPrivateKey(id int32, seed []byte) (ossl.EVP_PKEY_PTR, error) {
+// newMLDSAPrivatePkey creates an ML-DSA EVP_PKEY from a 32-byte seed.
+func newMLDSAPrivatePkey(id int32, seed []byte) (ossl.EVP_PKEY_PTR, error) {
 	if len(seed) != privateKeySizeMLDSA {
 		return nil, errors.New("mldsa: invalid seed size")
 	}
@@ -285,8 +335,8 @@ func createMLDSAPrivateKey(id int32, seed []byte) (ossl.EVP_PKEY_PTR, error) {
 	return newEvpFromParams(id, ossl.EVP_PKEY_KEYPAIR, params)
 }
 
-// createMLDSAPublicKey creates an ML-DSA EVP_PKEY from encoded public key bytes.
-func createMLDSAPublicKey(id int32, pubKeyBytes []byte) (ossl.EVP_PKEY_PTR, error) {
+// newMLDSAPublicPkey creates an ML-DSA EVP_PKEY from encoded public key bytes.
+func newMLDSAPublicPkey(id int32, pubKeyBytes []byte) (ossl.EVP_PKEY_PTR, error) {
 	bld := newParamBuilder()
 	defer bld.finalize()
 
@@ -304,7 +354,7 @@ func createMLDSAPublicKey(id int32, pubKeyBytes []byte) (ossl.EVP_PKEY_PTR, erro
 // mldsaExtractPublicKey derives and copies the encoded public key bytes from
 // a private key seed.
 func mldsaExtractPublicKey(params MLDSAParameters, seed, dst []byte) error {
-	pkey, err := createMLDSAPrivateKey(params.keyType, seed)
+	pkey, err := newMLDSAPrivatePkey(params.keyType, seed)
 	if err != nil {
 		return err
 	}
@@ -342,7 +392,7 @@ func mldsaSigParams(context string, externalMu bool) (ossl.OSSL_PARAM_PTR, error
 }
 
 func mldsaSign(params MLDSAParameters, seed, message []byte, context string) ([]byte, error) {
-	pkey, err := createMLDSAPrivateKey(params.keyType, seed)
+	pkey, err := newMLDSAPrivatePkey(params.keyType, seed)
 	if err != nil {
 		return nil, err
 	}
@@ -352,7 +402,7 @@ func mldsaSign(params MLDSAParameters, seed, message []byte, context string) ([]
 }
 
 func mldsaSignExternalMu(params MLDSAParameters, seed, mu []byte) ([]byte, error) {
-	pkey, err := createMLDSAPrivateKey(params.keyType, seed)
+	pkey, err := newMLDSAPrivatePkey(params.keyType, seed)
 	if err != nil {
 		return nil, err
 	}
@@ -398,7 +448,7 @@ func mldsaVerify(params MLDSAParameters, publicKey, message, signature []byte, c
 	if len(signature) != params.signatureSize {
 		return errors.New("mldsa: invalid signature length")
 	}
-	pkey, err := createMLDSAPublicKey(params.keyType, publicKey)
+	pkey, err := newMLDSAPublicPkey(params.keyType, publicKey)
 	if err != nil {
 		return err
 	}
@@ -411,7 +461,7 @@ func mldsaVerifyExternalMu(params MLDSAParameters, publicKey, mu, signature []by
 	if len(signature) != params.signatureSize {
 		return errors.New("mldsa: invalid signature length")
 	}
-	pkey, err := createMLDSAPublicKey(params.keyType, publicKey)
+	pkey, err := newMLDSAPublicPkey(params.keyType, publicKey)
 	if err != nil {
 		return err
 	}

@@ -267,6 +267,7 @@ int _mkcgo_EVP_PKEY_encapsulate(_EVP_PKEY_CTX_PTR, unsigned char*, size_t*, unsi
 int _mkcgo_EVP_PKEY_encapsulate_init(_EVP_PKEY_CTX_PTR, const _OSSL_PARAM_PTR, uintptr_t *);
 int _mkcgo_EVP_PKEY_encrypt(_EVP_PKEY_CTX_PTR, unsigned char*, size_t*, const unsigned char*, size_t, uintptr_t *);
 int _mkcgo_EVP_PKEY_encrypt_init(_EVP_PKEY_CTX_PTR, uintptr_t *);
+int _mkcgo_EVP_PKEY_eq(const _EVP_PKEY_PTR, const _EVP_PKEY_PTR, uintptr_t *);
 void _mkcgo_EVP_PKEY_free(_EVP_PKEY_PTR);
 int _mkcgo_EVP_PKEY_fromdata(_EVP_PKEY_CTX_PTR, _EVP_PKEY_PTR*, int, _OSSL_PARAM_PTR, uintptr_t *);
 int _mkcgo_EVP_PKEY_fromdata_init(_EVP_PKEY_CTX_PTR, uintptr_t *);

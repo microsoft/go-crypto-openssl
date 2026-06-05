@@ -172,6 +172,82 @@ func testMLDSARoundTrip(t *testing.T, params openssl.MLDSAParameters) {
 	}
 }
 
+func TestMLDSAEqual(t *testing.T) {
+	t.Parallel()
+	for _, test := range mldsaParameterTests {
+		t.Run(test.name, func(t *testing.T) {
+			testMLDSAEqual(t, test.params)
+		})
+	}
+}
+
+func testMLDSAEqual(t *testing.T, params openssl.MLDSAParameters) {
+	if !openssl.SupportsMLDSA(params) {
+		t.Skipf("%s not supported on this platform", params)
+	}
+	t.Parallel()
+
+	key, err := openssl.GenerateKeyMLDSA(params)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// A key must be equal to itself.
+	if !key.Equal(key) {
+		t.Error("private key is not equal to itself")
+	}
+	if !key.PublicKey().Equal(key.PublicKey()) {
+		t.Error("public key is not equal to itself")
+	}
+	// A key reconstructed from the same seed must compare equal.
+	same, err := openssl.NewPrivateKeyMLDSA(params, key.Bytes())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !key.Equal(same) {
+		t.Error("private keys from the same seed are not equal")
+	}
+	if !key.PublicKey().Equal(same.PublicKey()) {
+		t.Error("public keys from the same seed are not equal")
+	}
+
+	// An independently generated key must not compare equal.
+	other, err := openssl.GenerateKeyMLDSA(params)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if key.Equal(other) {
+		t.Error("private keys from different seeds are equal")
+	}
+	if key.PublicKey().Equal(other.PublicKey()) {
+		t.Error("public keys from different seeds are equal")
+	}
+
+	if key.Equal(nil) {
+		t.Error("private key equal to nil")
+	}
+	if key.PublicKey().Equal(nil) {
+		t.Error("public key equal to nil")
+	}
+
+	// Keys of a different parameter set built from the same seed must not
+	// compare equal.
+	for _, otherTest := range mldsaParameterTests {
+		if otherTest.params.String() == params.String() || !openssl.SupportsMLDSA(otherTest.params) {
+			continue
+		}
+		crossParams, err := openssl.NewPrivateKeyMLDSA(otherTest.params, key.Bytes())
+		if err != nil {
+			t.Fatalf("NewPrivateKeyMLDSA(%s): %v", otherTest.params, err)
+		}
+		if key.Equal(crossParams) {
+			t.Errorf("private keys of %s and %s are equal", params, otherTest.params)
+		}
+		if key.PublicKey().Equal(crossParams.PublicKey()) {
+			t.Errorf("public keys of %s and %s are equal", params, otherTest.params)
+		}
+	}
+}
+
 func TestMLDSABadLengths(t *testing.T) {
 	t.Parallel()
 	for _, test := range mldsaParameterTests {
