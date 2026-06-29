@@ -33,9 +33,6 @@ var filesToSkip = makeSet(
 	"update_tool.go",
 	"generate.go",
 	"fakecgo.lock",
-	// TODO remove once https://github.com/ebitengine/purego/pull/422 has been merged
-	"trampolines_s390x.s",
-	"trampolines_linux_s390x.s",
 )
 
 func makeSet(items ...string) map[string]bool {
@@ -183,7 +180,8 @@ func modifyBuildTags(content []byte) []byte {
 	lines := bytes.Split(content, []byte("\n"))
 	for i, line := range lines {
 		if bytes.HasPrefix(line, []byte("//go:build")) {
-			lines[i] = []byte("//go:build !cgo && (darwin || freebsd || linux)")
+			// We don't support NetBSD so remove the netbsd constraint
+			lines[i] = bytes.ReplaceAll(line, []byte(" || netbsd"), nil)
 		}
 	}
 	return bytes.Join(lines, []byte("\n"))
