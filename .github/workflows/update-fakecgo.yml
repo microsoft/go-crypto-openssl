@@ -11,15 +11,13 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
+  issues: write
 
 jobs:
   check-and-update:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: v2
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
@@ -52,20 +50,39 @@ jobs:
         id: git-check
         run: git diff --exit-code -- . ':!internal/fakecgo/fakecgo.lock' || echo "has_changes=true" >> $GITHUB_OUTPUT
 
-      - name: Create Pull Request
+      - name: Create update branch
         if: steps.git-check.outputs.has_changes == 'true'
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
-        with:
-          commit-message: 'chore: update fakecgo dependencies to ${{ steps.check-new.outputs.new_hash }}'
-          title: 'chore: update fakecgo dependencies'
-          body: |
-            This PR updates the fakecgo dependencies from the upstream [ebitengine/purego](https://github.com/ebitengine/purego) repository.
-            
-            **Previous commit**: `${{ steps.check-current.outputs.current_hash }}`
-            **New commit**: `${{ steps.check-new.outputs.new_hash }}`
-            
-            Changes: https://github.com/ebitengine/purego/compare/${{ steps.check-current.outputs.current_hash }}...${{ steps.check-new.outputs.new_hash }}
-            
-            This PR was automatically created by the [update-fakecgo workflow](.github/workflows/update-fakecgo.yml).
-          branch: update-fakecgo-dependencies
-          delete-branch: true
+        env:
+          NEW_HASH: ${{ steps.check-new.outputs.new_hash }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add internal/fakecgo
+          git commit -m "chore: update fakecgo dependencies to ${NEW_HASH}"
+          git push --force origin HEAD:update-fakecgo-dependencies
+
+      - name: Create or update issue
+        if: steps.git-check.outputs.has_changes == 'true'
+        env:
+          BASE_BRANCH: ${{ github.event.repository.default_branch }}
+          GH_TOKEN: ${{ github.token }}
+          CURRENT_HASH: ${{ steps.check-current.outputs.current_hash }}
+          NEW_HASH: ${{ steps.check-new.outputs.new_hash }}
+        run: |
+          title="chore: update fakecgo dependencies"
+          issue_number=$(gh issue list --state open --search "${title} in:title" --json number,title,author \
+            | jq -r --arg title "${title}" 'map(select(.title == $title and ((.author.login // "") == "github-actions[bot]"))) | first | .number // empty')
+          body=$(printf '%s\n' \
+            "An update to the fakecgo dependencies is ready." \
+            "" \
+            "**Previous commit**: \`${CURRENT_HASH}\`" \
+            "**New commit**: \`${NEW_HASH}\`" \
+            "" \
+            "Changes: https://github.com/ebitengine/purego/compare/${CURRENT_HASH}...${NEW_HASH}" \
+            "" \
+            "[Create the pull request](https://github.com/${GITHUB_REPOSITORY}/compare/${BASE_BRANCH}...update-fakecgo-dependencies?expand=1)")
+          if [ -n "${issue_number}" ]; then
+            gh issue edit "${issue_number}" --body "${body}"
+          else
+            gh issue create --title "${title}" --body "${body}"
+          fi
