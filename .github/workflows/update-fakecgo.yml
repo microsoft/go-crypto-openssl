@@ -70,8 +70,8 @@ jobs:
           NEW_HASH: ${{ steps.check-new.outputs.new_hash }}
         run: |
           title="chore: update fakecgo dependencies"
-          issue_number=$(gh issue list --state open --search "${title} in:title" --json number,title \
-            | jq -r --arg title "${title}" 'map(select(.title == $title)) | first | .number // empty')
+          issue_number=$(gh issue list --state open --search "${title} in:title" --json number,title,author \
+            | jq -r --arg title "${title}" 'map(select(.title == $title and ((.author.login // "") == "github-actions[bot]"))) | first | .number // empty')
           body=$(printf '%s\n' \
             "An update to the fakecgo dependencies is ready." \
             "" \
