@@ -140,7 +140,7 @@ jobs:
       matrix:
         image: [
           mcr.microsoft.com/oss/go/microsoft/golang:1.26-azurelinux3.0,
-          mcr.microsoft.com/oss/go/microsoft/golang:1.26-cbl-mariner2.0,
+          mcr.microsoft.com/oss/go/microsoft/golang:1.27-azurelinux3.0,
           fedora:latest,
         ]
     runs-on: ubuntu-latest
