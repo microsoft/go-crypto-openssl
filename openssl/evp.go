@@ -600,6 +600,12 @@ func newEvpFromParams(id int32, selection int32, params ossl.OSSL_PARAM_PTR) (os
 		ctx, err = ossl.EVP_PKEY_CTX_new_from_name(nil, _KeyTypeMLKEM768.ptr(), nil)
 	case ossl.EVP_PKEY_MLKEM_1024:
 		ctx, err = ossl.EVP_PKEY_CTX_new_from_name(nil, _KeyTypeMLKEM1024.ptr(), nil)
+	case ossl.EVP_PKEY_ML_DSA_44:
+		ctx, err = ossl.EVP_PKEY_CTX_new_from_name(nil, _KeyTypeMLDSA44.ptr(), nil)
+	case ossl.EVP_PKEY_ML_DSA_65:
+		ctx, err = ossl.EVP_PKEY_CTX_new_from_name(nil, _KeyTypeMLDSA65.ptr(), nil)
+	case ossl.EVP_PKEY_ML_DSA_87:
+		ctx, err = ossl.EVP_PKEY_CTX_new_from_name(nil, _KeyTypeMLDSA87.ptr(), nil)
 	default:
 		ctx, err = ossl.EVP_PKEY_CTX_new_id(id, nil)
 	}
