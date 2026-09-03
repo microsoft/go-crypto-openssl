@@ -53,8 +53,10 @@ func SupportsMLDSA(params MLDSAParameters) bool {
 		return supportsMLDSA44()
 	case _KeyTypeMLDSA65:
 		return supportsMLDSA65()
-	default:
+	case _KeyTypeMLDSA87:
 		return supportsMLDSA87()
+	default:
+		return false
 	}
 }
 
