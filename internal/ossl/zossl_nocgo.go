@@ -903,6 +903,14 @@ func EVP_PKEY_CTX_new(arg0 EVP_PKEY_PTR, arg1 ENGINE_PTR) (EVP_PKEY_CTX_PTR, err
 	return EVP_PKEY_CTX_PTR(r0), newMkcgoErr("EVP_PKEY_CTX_new", _err)
 }
 
+var _mkcgo_EVP_PKEY_CTX_new_from_name uintptr
+
+func EVP_PKEY_CTX_new_from_name(libctx OSSL_LIB_CTX_PTR, name *byte, propquery *byte) (EVP_PKEY_CTX_PTR, error) {
+	var _err uintptr
+	r0, _ := syscallN(1, _mkcgo_EVP_PKEY_CTX_new_from_name, uintptr(libctx), uintptr(mkcgoEscapePtrOssl(unsafe.Pointer(name))), uintptr(mkcgoEscapePtrOssl(unsafe.Pointer(propquery))), uintptr(unsafe.Pointer(&_err)))
+	return EVP_PKEY_CTX_PTR(r0), newMkcgoErr("EVP_PKEY_CTX_new_from_name", _err)
+}
+
 var _mkcgo_EVP_PKEY_CTX_new_from_pkey uintptr
 
 func EVP_PKEY_CTX_new_from_pkey(libctx OSSL_LIB_CTX_PTR, pkey EVP_PKEY_PTR, propquery *byte) (EVP_PKEY_CTX_PTR, error) {
@@ -2227,6 +2235,7 @@ func MkcgoLoad_3(handle unsafe.Pointer) {
 	_mkcgo_EVP_MD_get_size = dlsym(handle, "EVP_MD_get_size\x00", false)
 	_mkcgo_EVP_MD_get_type = dlsym(handle, "EVP_MD_get_type\x00", false)
 	_mkcgo_EVP_PKEY_CTX_add1_hkdf_info = dlsym(handle, "EVP_PKEY_CTX_add1_hkdf_info\x00", false)
+	_mkcgo_EVP_PKEY_CTX_new_from_name = dlsym(handle, "EVP_PKEY_CTX_new_from_name\x00", false)
 	_mkcgo_EVP_PKEY_CTX_new_from_pkey = dlsym(handle, "EVP_PKEY_CTX_new_from_pkey\x00", false)
 	_mkcgo_EVP_PKEY_CTX_set0_rsa_oaep_label = dlsym(handle, "EVP_PKEY_CTX_set0_rsa_oaep_label\x00", false)
 	_mkcgo_EVP_PKEY_CTX_set1_hkdf_key = dlsym(handle, "EVP_PKEY_CTX_set1_hkdf_key\x00", false)
@@ -2304,6 +2313,7 @@ func MkcgoUnload_3() {
 	_mkcgo_EVP_MD_get_size = 0
 	_mkcgo_EVP_MD_get_type = 0
 	_mkcgo_EVP_PKEY_CTX_add1_hkdf_info = 0
+	_mkcgo_EVP_PKEY_CTX_new_from_name = 0
 	_mkcgo_EVP_PKEY_CTX_new_from_pkey = 0
 	_mkcgo_EVP_PKEY_CTX_set0_rsa_oaep_label = 0
 	_mkcgo_EVP_PKEY_CTX_set1_hkdf_key = 0
