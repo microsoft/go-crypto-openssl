@@ -58,8 +58,6 @@ enum {
 	_EVP_PKEY_HKDF = 1036,
 	_EVP_PKEY_ED25519 = 1087,
 	_EVP_PKEY_DSA = 116,
-	_EVP_PKEY_MLKEM_768 = 1455,
-	_EVP_PKEY_MLKEM_1024 = 1456,
 	_EVP_PKEY_ML_DSA_44 = 1457,
 	_EVP_PKEY_ML_DSA_65 = 1458,
 	_EVP_PKEY_ML_DSA_87 = 1459,
@@ -83,8 +81,6 @@ enum {
 	_NID_secp224r1 = 713,
 	_NID_secp384r1 = 715,
 	_NID_secp521r1 = 716,
-	_NID_ML_KEM_768 = 1455,
-	_NID_ML_KEM_1024 = 1456,
 	_NID_ML_DSA_44 = 1457,
 	_NID_ML_DSA_65 = 1458,
 	_NID_ML_DSA_87 = 1459,
@@ -241,6 +237,7 @@ int _mkcgo_EVP_PKEY_CTX_add1_hkdf_info(_EVP_PKEY_CTX_PTR, const unsigned char*, 
 int _mkcgo_EVP_PKEY_CTX_ctrl(_EVP_PKEY_CTX_PTR, int, int, int, int, void*, uintptr_t *);
 void _mkcgo_EVP_PKEY_CTX_free(_EVP_PKEY_CTX_PTR);
 _EVP_PKEY_CTX_PTR _mkcgo_EVP_PKEY_CTX_new(_EVP_PKEY_PTR, _ENGINE_PTR, uintptr_t *);
+_EVP_PKEY_CTX_PTR _mkcgo_EVP_PKEY_CTX_new_from_name(_OSSL_LIB_CTX_PTR, const char*, const char*, uintptr_t *);
 _EVP_PKEY_CTX_PTR _mkcgo_EVP_PKEY_CTX_new_from_pkey(_OSSL_LIB_CTX_PTR, _EVP_PKEY_PTR, const char*, uintptr_t *);
 _EVP_PKEY_CTX_PTR _mkcgo_EVP_PKEY_CTX_new_id(int, _ENGINE_PTR, uintptr_t *);
 int _mkcgo_EVP_PKEY_CTX_set0_rsa_oaep_label(_EVP_PKEY_CTX_PTR, unsigned char*, int, uintptr_t *);

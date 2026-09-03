@@ -76,7 +76,7 @@ type DecapsulationKeyMLKEM768 [seedSizeMLKEM]byte
 // the default crypto/rand source. The decapsulation key must be kept secret.
 func GenerateKeyMLKEM768() (DecapsulationKeyMLKEM768, error) {
 	var dk DecapsulationKeyMLKEM768
-	if err := generateMLKEMSeed(ossl.EVP_PKEY_MLKEM_768, dk[:]); err != nil {
+	if err := generateMLKEMSeed(_KeyTypeMLKEM768, dk[:]); err != nil {
 		return DecapsulationKeyMLKEM768{}, err
 	}
 	return dk, nil
@@ -106,13 +106,13 @@ func (dk DecapsulationKeyMLKEM768) Bytes() []byte {
 //
 // The shared key must be kept secret.
 func (dk DecapsulationKeyMLKEM768) Decapsulate(ciphertext []byte) (sharedKey []byte, err error) {
-	return performDecapsulation(ossl.NID_ML_KEM_768, dk[:], ciphertext)
+	return performDecapsulation(_KeyTypeMLKEM768, dk[:], ciphertext)
 }
 
 // EncapsulationKey returns the public encapsulation key necessary to produce
 // ciphertexts.
 func (dk DecapsulationKeyMLKEM768) EncapsulationKey() EncapsulationKeyMLKEM768 {
-	ekBytes := extractEncapsulationKeyBytes(ossl.NID_ML_KEM_768, dk[:], encapsulationKeySizeMLKEM768)
+	ekBytes := extractEncapsulationKeyBytes(_KeyTypeMLKEM768, dk[:], encapsulationKeySizeMLKEM768)
 	var ek EncapsulationKeyMLKEM768
 	copy(ek[:], ekBytes)
 	return ek
@@ -144,11 +144,11 @@ func (ek EncapsulationKeyMLKEM768) Bytes() []byte {
 //
 // The shared key must be kept secret.
 func (ek EncapsulationKeyMLKEM768) Encapsulate() (sharedKey, ciphertext []byte) {
-	return performEncapsulation(ossl.NID_ML_KEM_768, ciphertextSizeMLKEM768, ek[:])
+	return performEncapsulation(_KeyTypeMLKEM768, ciphertextSizeMLKEM768, ek[:])
 }
 
-func performEncapsulation(id int32, ciphertextSize int, ek []byte) (sharedKey, ciphertext []byte) {
-	pkey, err := createMLKEMPublicKey(id, ek)
+func performEncapsulation(name cString, ciphertextSize int, ek []byte) (sharedKey, ciphertext []byte) {
+	pkey, err := createMLKEMPublicKey(name, ek)
 	if err != nil {
 		panic(err)
 	}
@@ -180,12 +180,12 @@ func performEncapsulation(id int32, ciphertextSize int, ek []byte) (sharedKey, c
 	return sharedKey[:sharedKeyLen], ciphertext[:ciphertextLen]
 }
 
-func performDecapsulation(id int32, seed, ciphertext []byte) (sharedKey []byte, err error) {
+func performDecapsulation(name cString, seed, ciphertext []byte) (sharedKey []byte, err error) {
 	if len(ciphertext) == 0 {
 		return nil, errors.New("mlkem: invalid ciphertext size")
 	}
 
-	pkey, err := createMLKEMPrivateKey(id, seed)
+	pkey, err := createMLKEMPrivateKey(name, seed)
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +221,7 @@ type DecapsulationKeyMLKEM1024 [seedSizeMLKEM]byte
 // the default crypto/rand source. The decapsulation key must be kept secret.
 func GenerateKeyMLKEM1024() (DecapsulationKeyMLKEM1024, error) {
 	var dk DecapsulationKeyMLKEM1024
-	if err := generateMLKEMSeed(ossl.EVP_PKEY_MLKEM_1024, dk[:]); err != nil {
+	if err := generateMLKEMSeed(_KeyTypeMLKEM1024, dk[:]); err != nil {
 		return DecapsulationKeyMLKEM1024{}, err
 	}
 	return dk, nil
@@ -251,13 +251,13 @@ func (dk DecapsulationKeyMLKEM1024) Bytes() []byte {
 //
 // The shared key must be kept secret.
 func (dk DecapsulationKeyMLKEM1024) Decapsulate(ciphertext []byte) (sharedKey []byte, err error) {
-	return performDecapsulation(ossl.NID_ML_KEM_1024, dk[:], ciphertext)
+	return performDecapsulation(_KeyTypeMLKEM1024, dk[:], ciphertext)
 }
 
 // EncapsulationKey returns the public encapsulation key necessary to produce
 // ciphertexts.
 func (dk DecapsulationKeyMLKEM1024) EncapsulationKey() EncapsulationKeyMLKEM1024 {
-	ekBytes := extractEncapsulationKeyBytes(ossl.NID_ML_KEM_1024, dk[:], encapsulationKeySizeMLKEM1024)
+	ekBytes := extractEncapsulationKeyBytes(_KeyTypeMLKEM1024, dk[:], encapsulationKeySizeMLKEM1024)
 	var ek EncapsulationKeyMLKEM1024
 	copy(ek[:], ekBytes)
 	return ek
@@ -289,14 +289,14 @@ func (ek EncapsulationKeyMLKEM1024) Bytes() []byte {
 //
 // The shared key must be kept secret.
 func (ek EncapsulationKeyMLKEM1024) Encapsulate() (sharedKey, ciphertext []byte) {
-	return performEncapsulation(ossl.NID_ML_KEM_1024, ciphertextSizeMLKEM1024, ek[:])
+	return performEncapsulation(_KeyTypeMLKEM1024, ciphertextSizeMLKEM1024, ek[:])
 }
 
 // Helper functions
 
 // generateMLKEMSeed generates a new ML-KEM seed by creating a key and extracting its seed parameter.
-func generateMLKEMSeed(keyType int32, seed []byte) error {
-	pkey, err := generateEVPPKey(keyType, 0, "")
+func generateMLKEMSeed(name cString, seed []byte) error {
+	pkey, err := ossl.EVP_PKEY_Q_keygen_MLKEM(nil, nil, name.ptr())
 	if err != nil {
 		return err
 	}
@@ -307,7 +307,7 @@ func generateMLKEMSeed(keyType int32, seed []byte) error {
 }
 
 // createMLKEMPrivateKey creates an ML-KEM private key from a seed
-func createMLKEMPrivateKey(id int32, seed []byte) (ossl.EVP_PKEY_PTR, error) {
+func createMLKEMPrivateKey(name cString, seed []byte) (ossl.EVP_PKEY_PTR, error) {
 	if len(seed) != seedSizeMLKEM {
 		return nil, errors.New("mlkem: invalid seed size")
 	}
@@ -323,11 +323,11 @@ func createMLKEMPrivateKey(id int32, seed []byte) (ossl.EVP_PKEY_PTR, error) {
 	}
 	defer ossl.OSSL_PARAM_free(params)
 
-	return newEvpFromParams(id, ossl.EVP_PKEY_KEYPAIR, params)
+	return newEvpFromParamsName(name, ossl.EVP_PKEY_KEYPAIR, params)
 }
 
 // createMLKEMPublicKey creates an ML-KEM public key from encoded bytes.
-func createMLKEMPublicKey(id int32, pubKeyBytes []byte) (ossl.EVP_PKEY_PTR, error) {
+func createMLKEMPublicKey(name cString, pubKeyBytes []byte) (ossl.EVP_PKEY_PTR, error) {
 	bld := newParamBuilder()
 	defer bld.finalize()
 
@@ -339,12 +339,12 @@ func createMLKEMPublicKey(id int32, pubKeyBytes []byte) (ossl.EVP_PKEY_PTR, erro
 	}
 	defer ossl.OSSL_PARAM_free(params)
 
-	return newEvpFromParams(id, ossl.EVP_PKEY_PUBLIC_KEY, params)
+	return newEvpFromParamsName(name, ossl.EVP_PKEY_PUBLIC_KEY, params)
 }
 
 // extractEncapsulationKeyBytes extracts the encapsulation key bytes from a decapsulation key.
-func extractEncapsulationKeyBytes(id int32, seed []byte, expectedSize int) []byte {
-	pkey, err := createMLKEMPrivateKey(id, seed)
+func extractEncapsulationKeyBytes(name cString, seed []byte, expectedSize int) []byte {
+	pkey, err := createMLKEMPrivateKey(name, seed)
 	if err != nil {
 		panic(err)
 	}
