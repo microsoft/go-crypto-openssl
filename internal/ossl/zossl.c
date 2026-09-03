@@ -124,6 +124,7 @@ int (*_g_EVP_PKEY_CTX_add1_hkdf_info)(_EVP_PKEY_CTX_PTR, const unsigned char*, i
 int (*_g_EVP_PKEY_CTX_ctrl)(_EVP_PKEY_CTX_PTR, int, int, int, int, void*);
 void (*_g_EVP_PKEY_CTX_free)(_EVP_PKEY_CTX_PTR);
 _EVP_PKEY_CTX_PTR (*_g_EVP_PKEY_CTX_new)(_EVP_PKEY_PTR, _ENGINE_PTR);
+_EVP_PKEY_CTX_PTR (*_g_EVP_PKEY_CTX_new_from_name)(_OSSL_LIB_CTX_PTR, const char*, const char*);
 _EVP_PKEY_CTX_PTR (*_g_EVP_PKEY_CTX_new_from_pkey)(_OSSL_LIB_CTX_PTR, _EVP_PKEY_PTR, const char*);
 _EVP_PKEY_CTX_PTR (*_g_EVP_PKEY_CTX_new_id)(int, _ENGINE_PTR);
 int (*_g_EVP_PKEY_CTX_set0_rsa_oaep_label)(_EVP_PKEY_CTX_PTR, unsigned char*, int);
@@ -534,6 +535,7 @@ void __mkcgo_load_3(void* handle) {
 	__mkcgo__dlsym(EVP_MD_get_size)
 	__mkcgo__dlsym(EVP_MD_get_type)
 	__mkcgo__dlsym(EVP_PKEY_CTX_add1_hkdf_info)
+	__mkcgo__dlsym(EVP_PKEY_CTX_new_from_name)
 	__mkcgo__dlsym(EVP_PKEY_CTX_new_from_pkey)
 	__mkcgo__dlsym(EVP_PKEY_CTX_set0_rsa_oaep_label)
 	__mkcgo__dlsym(EVP_PKEY_CTX_set1_hkdf_key)
@@ -611,6 +613,7 @@ void __mkcgo_unload_3() {
 	_g_EVP_MD_get_size = NULL;
 	_g_EVP_MD_get_type = NULL;
 	_g_EVP_PKEY_CTX_add1_hkdf_info = NULL;
+	_g_EVP_PKEY_CTX_new_from_name = NULL;
 	_g_EVP_PKEY_CTX_new_from_pkey = NULL;
 	_g_EVP_PKEY_CTX_set0_rsa_oaep_label = NULL;
 	_g_EVP_PKEY_CTX_set1_hkdf_key = NULL;
@@ -1391,6 +1394,12 @@ void _mkcgo_EVP_PKEY_CTX_free(_EVP_PKEY_CTX_PTR _arg0) {
 
 _EVP_PKEY_CTX_PTR _mkcgo_EVP_PKEY_CTX_new(_EVP_PKEY_PTR _arg0, _ENGINE_PTR _arg1, uintptr_t *_err_state) {
 	_EVP_PKEY_CTX_PTR _ret = _g_EVP_PKEY_CTX_new(_arg0, _arg1);
+	if (_ret == NULL) *_err_state = mkcgo_err_retrieve();
+	return _ret;
+}
+
+_EVP_PKEY_CTX_PTR _mkcgo_EVP_PKEY_CTX_new_from_name(_OSSL_LIB_CTX_PTR _arg0, const char* _arg1, const char* _arg2, uintptr_t *_err_state) {
+	_EVP_PKEY_CTX_PTR _ret = _g_EVP_PKEY_CTX_new_from_name(_arg0, _arg1, _arg2);
 	if (_ret == NULL) *_err_state = mkcgo_err_retrieve();
 	return _ret;
 }

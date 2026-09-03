@@ -801,6 +801,12 @@ func EVP_PKEY_CTX_new(arg0 EVP_PKEY_PTR, arg1 ENGINE_PTR) (EVP_PKEY_CTX_PTR, err
 	return _ret, newMkcgoErr("EVP_PKEY_CTX_new", uintptr(_err))
 }
 
+func EVP_PKEY_CTX_new_from_name(libctx OSSL_LIB_CTX_PTR, name *byte, propquery *byte) (EVP_PKEY_CTX_PTR, error) {
+	var _err C.uintptr_t
+	_ret := C._mkcgo_EVP_PKEY_CTX_new_from_name(libctx, (*C.char)(unsafe.Pointer(name)), (*C.char)(unsafe.Pointer(propquery)), mkcgoNoEscape(&_err))
+	return _ret, newMkcgoErr("EVP_PKEY_CTX_new_from_name", uintptr(_err))
+}
+
 func EVP_PKEY_CTX_new_from_pkey(libctx OSSL_LIB_CTX_PTR, pkey EVP_PKEY_PTR, propquery *byte) (EVP_PKEY_CTX_PTR, error) {
 	var _err C.uintptr_t
 	_ret := C._mkcgo_EVP_PKEY_CTX_new_from_pkey(libctx, pkey, (*C.char)(unsafe.Pointer(propquery)), mkcgoNoEscape(&_err))

@@ -339,6 +339,7 @@ _EVP_PKEY_PTR EVP_PKEY_Q_keygen_MLDSA(_OSSL_LIB_CTX_PTR ctx, const char *propq, 
 
 _EVP_PKEY_CTX_PTR EVP_PKEY_CTX_new(_EVP_PKEY_PTR arg0, _ENGINE_PTR arg1);
 _EVP_PKEY_CTX_PTR EVP_PKEY_CTX_new_id(int id, _ENGINE_PTR e);
+_EVP_PKEY_CTX_PTR EVP_PKEY_CTX_new_from_name(_OSSL_LIB_CTX_PTR libctx, const char *name, const char *propquery) __attribute__((tag("3")));
 _EVP_PKEY_CTX_PTR EVP_PKEY_CTX_new_from_pkey(_OSSL_LIB_CTX_PTR libctx, _EVP_PKEY_PTR pkey, const char *propquery) __attribute__((tag("3")));
 void EVP_PKEY_CTX_free(_EVP_PKEY_CTX_PTR arg0);
 int EVP_PKEY_CTX_ctrl(_EVP_PKEY_CTX_PTR ctx, int keytype, int optype, int cmd, int p1, void *p2);

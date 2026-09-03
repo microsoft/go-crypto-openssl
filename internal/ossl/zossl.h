@@ -241,6 +241,7 @@ int _mkcgo_EVP_PKEY_CTX_add1_hkdf_info(_EVP_PKEY_CTX_PTR, const unsigned char*, 
 int _mkcgo_EVP_PKEY_CTX_ctrl(_EVP_PKEY_CTX_PTR, int, int, int, int, void*, uintptr_t *);
 void _mkcgo_EVP_PKEY_CTX_free(_EVP_PKEY_CTX_PTR);
 _EVP_PKEY_CTX_PTR _mkcgo_EVP_PKEY_CTX_new(_EVP_PKEY_PTR, _ENGINE_PTR, uintptr_t *);
+_EVP_PKEY_CTX_PTR _mkcgo_EVP_PKEY_CTX_new_from_name(_OSSL_LIB_CTX_PTR, const char*, const char*, uintptr_t *);
 _EVP_PKEY_CTX_PTR _mkcgo_EVP_PKEY_CTX_new_from_pkey(_OSSL_LIB_CTX_PTR, _EVP_PKEY_PTR, const char*, uintptr_t *);
 _EVP_PKEY_CTX_PTR _mkcgo_EVP_PKEY_CTX_new_id(int, _ENGINE_PTR, uintptr_t *);
 int _mkcgo_EVP_PKEY_CTX_set0_rsa_oaep_label(_EVP_PKEY_CTX_PTR, unsigned char*, int, uintptr_t *);
