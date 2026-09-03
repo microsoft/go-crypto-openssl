@@ -43,8 +43,8 @@ func SupportsMLKEM1024() bool {
 
 var supportsMLKEM768 = sync.OnceValue(func() bool {
 	// EVP_KEYMGMT_fetch was added in OpenSSL 3.0; if it is not available we
-	// are on 1.x and ML-KEM is not supported. On 3.0–3.4 the fetch returns
-	// nil for the ML-KEM algorithm name, which the probe reports as false.
+	// are on 1.x and ML-KEM is not supported. Providers without ML-KEM return
+	// nil for the algorithm name, which the probe reports as false.
 	if !ossl.EVP_KEYMGMT_fetch_Available() {
 		return false
 	}
