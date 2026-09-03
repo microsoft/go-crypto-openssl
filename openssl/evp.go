@@ -247,16 +247,6 @@ func generateEVPPKey(id, bits int32, curve string) (ossl.EVP_PKEY_PTR, error) {
 			pkey, err = ossl.EVP_PKEY_Q_keygen_ED25519(nil, nil, _KeyTypeED25519.ptr())
 		case ossl.EVP_PKEY_X25519:
 			pkey, err = ossl.EVP_PKEY_Q_keygen_X25519(nil, nil, _KeyTypeX25519.ptr())
-		case ossl.EVP_PKEY_MLKEM_768:
-			pkey, err = ossl.EVP_PKEY_Q_keygen_MLKEM(nil, nil, _KeyTypeMLKEM768.ptr())
-		case ossl.EVP_PKEY_MLKEM_1024:
-			pkey, err = ossl.EVP_PKEY_Q_keygen_MLKEM(nil, nil, _KeyTypeMLKEM1024.ptr())
-		case ossl.EVP_PKEY_ML_DSA_44:
-			pkey, err = ossl.EVP_PKEY_Q_keygen_MLDSA(nil, nil, _KeyTypeMLDSA44.ptr())
-		case ossl.EVP_PKEY_ML_DSA_65:
-			pkey, err = ossl.EVP_PKEY_Q_keygen_MLDSA(nil, nil, _KeyTypeMLDSA65.ptr())
-		case ossl.EVP_PKEY_ML_DSA_87:
-			pkey, err = ossl.EVP_PKEY_Q_keygen_MLDSA(nil, nil, _KeyTypeMLDSA87.ptr())
 		default:
 			panic("unsupported key type '" + strconv.Itoa(int(id)) + "'")
 		}
@@ -594,6 +584,26 @@ func getECKey(pkey ossl.EVP_PKEY_PTR) ossl.EC_KEY_PTR {
 
 func newEvpFromParams(id int32, selection int32, params ossl.OSSL_PARAM_PTR) (ossl.EVP_PKEY_PTR, error) {
 	ctx, err := ossl.EVP_PKEY_CTX_new_id(id, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer ossl.EVP_PKEY_CTX_free(ctx)
+	if _, err := ossl.EVP_PKEY_fromdata_init(ctx); err != nil {
+		return nil, err
+	}
+	var pkey ossl.EVP_PKEY_PTR
+	if _, err := ossl.EVP_PKEY_fromdata(ctx, &pkey, selection, params); err != nil {
+		//versionguardcheck:ignore OpenSSL 3.0.0–3.0.2 leak EVP_PKEY on error: https://github.com/openssl/openssl/issues/17407.
+		if major() == 3 && minor() == 0 && patch() <= 2 {
+			ossl.EVP_PKEY_free(pkey)
+		}
+		return nil, err
+	}
+	return pkey, nil
+}
+
+func newEvpFromParamsName(name cString, selection int32, params ossl.OSSL_PARAM_PTR) (ossl.EVP_PKEY_PTR, error) {
+	ctx, err := ossl.EVP_PKEY_CTX_new_from_name(nil, name.ptr(), nil)
 	if err != nil {
 		return nil, err
 	}

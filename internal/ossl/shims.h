@@ -54,11 +54,7 @@ enum {
 	_EVP_PKEY_HKDF        = 1036,
 	_EVP_PKEY_ED25519     = 1087,
 	_EVP_PKEY_DSA         = 116,
-    _EVP_PKEY_MLKEM_768  = 1455,
-    _EVP_PKEY_MLKEM_1024 = 1456,
-    _EVP_PKEY_ML_DSA_44  = 1457,
-    _EVP_PKEY_ML_DSA_65  = 1458,
-    _EVP_PKEY_ML_DSA_87  = 1459,
+
 	_EVP_PKEY_OP_DERIVE = (1 << 10), // this value differs between OpenSSL 1 and 3, but we only use it in 1
 	_EVP_MAX_MD_SIZE    = 64,
 
@@ -85,12 +81,6 @@ enum {
 	_NID_secp224r1        = 713,
 	_NID_secp384r1        = 715,
 	_NID_secp521r1        = 716,
-
-	_NID_ML_KEM_768 = 1455,
-	_NID_ML_KEM_1024 = 1456,
-	_NID_ML_DSA_44 = 1457,
-	_NID_ML_DSA_65 = 1458,
-	_NID_ML_DSA_87 = 1459,
 
 	_RSA_PKCS1_PADDING                 = 1,
 	_RSA_NO_PADDING                    = 3,
@@ -339,6 +329,7 @@ _EVP_PKEY_PTR EVP_PKEY_Q_keygen_MLDSA(_OSSL_LIB_CTX_PTR ctx, const char *propq, 
 
 _EVP_PKEY_CTX_PTR EVP_PKEY_CTX_new(_EVP_PKEY_PTR arg0, _ENGINE_PTR arg1);
 _EVP_PKEY_CTX_PTR EVP_PKEY_CTX_new_id(int id, _ENGINE_PTR e);
+_EVP_PKEY_CTX_PTR EVP_PKEY_CTX_new_from_name(_OSSL_LIB_CTX_PTR libctx, const char *name, const char *propquery) __attribute__((tag("3")));
 _EVP_PKEY_CTX_PTR EVP_PKEY_CTX_new_from_pkey(_OSSL_LIB_CTX_PTR libctx, _EVP_PKEY_PTR pkey, const char *propquery) __attribute__((tag("3")));
 void EVP_PKEY_CTX_free(_EVP_PKEY_CTX_PTR arg0);
 int EVP_PKEY_CTX_ctrl(_EVP_PKEY_CTX_PTR ctx, int keytype, int optype, int cmd, int p1, void *p2);
