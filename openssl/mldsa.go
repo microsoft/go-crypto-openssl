@@ -82,7 +82,7 @@ var (
 // MLDSAParameters represents one of the fixed ML-DSA parameter sets.
 type MLDSAParameters struct {
 	name          string
-	keyType   cString
+	keyType       cString
 	publicKeySize int
 	signatureSize int
 }
@@ -90,19 +90,19 @@ type MLDSAParameters struct {
 var (
 	mldsa44 = MLDSAParameters{
 		name:          "ML-DSA-44",
-		keyType:   _KeyTypeMLDSA44,
+		keyType:       _KeyTypeMLDSA44,
 		publicKeySize: publicKeySizeMLDSA44,
 		signatureSize: signatureSizeMLDSA44,
 	}
 	mldsa65 = MLDSAParameters{
 		name:          "ML-DSA-65",
-		keyType:   _KeyTypeMLDSA65,
+		keyType:       _KeyTypeMLDSA65,
 		publicKeySize: publicKeySizeMLDSA65,
 		signatureSize: signatureSizeMLDSA65,
 	}
 	mldsa87 = MLDSAParameters{
 		name:          "ML-DSA-87",
-		keyType:   _KeyTypeMLDSA87,
+		keyType:       _KeyTypeMLDSA87,
 		publicKeySize: publicKeySizeMLDSA87,
 		signatureSize: signatureSizeMLDSA87,
 	}
