@@ -46,11 +46,11 @@ const (
 // callers must probe each parameter set they intend to use.
 func SupportsMLDSA(params MLDSAParameters) bool {
 	switch params.keyType {
-	case ossl.EVP_PKEY_ML_DSA_44:
+	case _KeyTypeMLDSA44:
 		return supportsMLDSA44()
-	case ossl.EVP_PKEY_ML_DSA_65:
+	case _KeyTypeMLDSA65:
 		return supportsMLDSA65()
-	case ossl.EVP_PKEY_ML_DSA_87:
+	case _KeyTypeMLDSA87:
 		return supportsMLDSA87()
 	default:
 		return false
@@ -82,8 +82,7 @@ var (
 // MLDSAParameters represents one of the fixed ML-DSA parameter sets.
 type MLDSAParameters struct {
 	name          string
-	keyType       int32
-	keyTypeName   cString
+	keyType   cString
 	publicKeySize int
 	signatureSize int
 }
@@ -91,22 +90,19 @@ type MLDSAParameters struct {
 var (
 	mldsa44 = MLDSAParameters{
 		name:          "ML-DSA-44",
-		keyType:       ossl.EVP_PKEY_ML_DSA_44,
-		keyTypeName:   _KeyTypeMLDSA44,
+		keyType:   _KeyTypeMLDSA44,
 		publicKeySize: publicKeySizeMLDSA44,
 		signatureSize: signatureSizeMLDSA44,
 	}
 	mldsa65 = MLDSAParameters{
 		name:          "ML-DSA-65",
-		keyType:       ossl.EVP_PKEY_ML_DSA_65,
-		keyTypeName:   _KeyTypeMLDSA65,
+		keyType:   _KeyTypeMLDSA65,
 		publicKeySize: publicKeySizeMLDSA65,
 		signatureSize: signatureSizeMLDSA65,
 	}
 	mldsa87 = MLDSAParameters{
 		name:          "ML-DSA-87",
-		keyType:       ossl.EVP_PKEY_ML_DSA_87,
-		keyTypeName:   _KeyTypeMLDSA87,
+		keyType:   _KeyTypeMLDSA87,
 		publicKeySize: publicKeySizeMLDSA87,
 		signatureSize: signatureSizeMLDSA87,
 	}
@@ -304,8 +300,8 @@ func (key *PublicKeyMLDSA) VerifyExternalMu(mu, signature []byte) error {
 // Helper functions
 
 // generateMLDSASeed generates a new ML-DSA private key and extracts the seed.
-func generateMLDSASeed(keyType int32, seed []byte) error {
-	pkey, err := generateEVPPKey(keyType, 0, "")
+func generateMLDSASeed(name cString, seed []byte) error {
+	pkey, err := ossl.EVP_PKEY_Q_keygen_MLDSA(nil, nil, name.ptr())
 	if err != nil {
 		return err
 	}
@@ -316,7 +312,7 @@ func generateMLDSASeed(keyType int32, seed []byte) error {
 }
 
 // newMLDSAPrivatePkey creates an ML-DSA EVP_PKEY from a 32-byte seed.
-func newMLDSAPrivatePkey(id int32, seed []byte) (ossl.EVP_PKEY_PTR, error) {
+func newMLDSAPrivatePkey(name cString, seed []byte) (ossl.EVP_PKEY_PTR, error) {
 	if len(seed) != privateKeySizeMLDSA {
 		return nil, errors.New("mldsa: invalid seed size")
 	}
@@ -332,11 +328,11 @@ func newMLDSAPrivatePkey(id int32, seed []byte) (ossl.EVP_PKEY_PTR, error) {
 	}
 	defer ossl.OSSL_PARAM_free(params)
 
-	return newEvpFromParams(id, ossl.EVP_PKEY_KEYPAIR, params)
+	return newEvpFromParams(name, ossl.EVP_PKEY_KEYPAIR, params)
 }
 
 // newMLDSAPublicPkey creates an ML-DSA EVP_PKEY from encoded public key bytes.
-func newMLDSAPublicPkey(id int32, pubKeyBytes []byte) (ossl.EVP_PKEY_PTR, error) {
+func newMLDSAPublicPkey(name cString, pubKeyBytes []byte) (ossl.EVP_PKEY_PTR, error) {
 	bld := newParamBuilder()
 	defer bld.finalize()
 
@@ -348,7 +344,7 @@ func newMLDSAPublicPkey(id int32, pubKeyBytes []byte) (ossl.EVP_PKEY_PTR, error)
 	}
 	defer ossl.OSSL_PARAM_free(params)
 
-	return newEvpFromParams(id, ossl.EVP_PKEY_PUBLIC_KEY, params)
+	return newEvpFromParams(name, ossl.EVP_PKEY_PUBLIC_KEY, params)
 }
 
 // mldsaExtractPublicKey derives and copies the encoded public key bytes from

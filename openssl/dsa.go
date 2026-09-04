@@ -258,7 +258,7 @@ func newDSA3(params DSAParameters, x, y BigInt) (ossl.EVP_PKEY_PTR, error) {
 		return nil, err
 	}
 	defer ossl.OSSL_PARAM_free(bldparams)
-	pkey, err := newEvpFromParams(ossl.EVP_PKEY_DSA, selection, bldparams)
+	pkey, err := newEvpFromParams(_KeyTypeDSA, selection, bldparams)
 	if err != nil {
 		return nil, err
 	}
