@@ -226,7 +226,7 @@ func newECDHPkey3(nid int32, bytes []byte, isPrivate bool) (ossl.EVP_PKEY_PTR, e
 		return nil, err
 	}
 	defer ossl.OSSL_PARAM_free(params)
-	pkey, err := newEvpFromParams(ossl.EVP_PKEY_EC, selection, params)
+	pkey, err := newEvpFromParams(_KeyTypeEC, selection, params)
 	if err != nil {
 		return nil, err
 	}
