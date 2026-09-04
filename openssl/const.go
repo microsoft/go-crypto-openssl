@@ -35,6 +35,7 @@ func (s cString) ptr() *byte {
 const ( //checkheader:ignore
 	// Key types
 	_KeyTypeRSA              cString = "RSA\x00"
+	_KeyTypeDSA              cString = "DSA\x00"
 	_KeyTypeEC               cString = "EC\x00"
 	_KeyTypeED25519          cString = "ED25519\x00"
 	_KeyTypeX25519           cString = "X25519\x00"
