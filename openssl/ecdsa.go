@@ -208,5 +208,5 @@ func newECDSAKey3(nid int32, bx, by, bd ossl.BIGNUM_PTR) (ossl.EVP_PKEY_PTR, err
 		return nil, err
 	}
 	defer ossl.OSSL_PARAM_free(params)
-	return newEvpFromParams(ossl.EVP_PKEY_EC, selection, params)
+	return newEvpFromParams(_KeyTypeEC, selection, params)
 }

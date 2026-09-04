@@ -352,7 +352,7 @@ func newRSAKey3(isPriv bool, n, e, d, p, q, dp, dq, qinv BigInt) (ossl.EVP_PKEY_
 	if isPriv {
 		selection = ossl.EVP_PKEY_KEYPAIR
 	}
-	return newEvpFromParams(ossl.EVP_PKEY_RSA, int32(selection), params)
+	return newEvpFromParams(_KeyTypeRSA, int32(selection), params)
 }
 
 // SupportsRSAPKCS1v15Encryption returns true if the RSA PKCS1 v1.5 padding is supported for encryption and decryption.
