@@ -136,6 +136,7 @@ func tls1PRF3(result, secret, label, seed []byte, md ossl.EVP_MD_PTR) error {
 	bld.addOctetString(_OSSL_KDF_PARAM_SECRET, secret)
 	bld.addOctetString(_OSSL_KDF_PARAM_SEED, label)
 	bld.addOctetString(_OSSL_KDF_PARAM_SEED, seed)
+	bld.addInt32(_OSSL_KDF_PARAM_FIPS_EMS_CHECK, 0)
 	params, err := bld.build()
 	if err != nil {
 		return err
