@@ -49,14 +49,24 @@ func generateGoCommon(src *mkcgo.Source, w io.Writer) {
 		return
 	}
 	printHeader(w)
+	printExtraBuildTags(w)
 	fmt.Fprintf(w, "package %s\n\n", *packageName)
 	generateGoEnums(src.Enums, w)
+}
+
+// printExtraBuildTags also constrains C sources, so an alternative backend can
+// exclude the traditional cgo implementation without compiling its C shims.
+func printExtraBuildTags(w io.Writer) {
+	if *extratags != "" {
+		fmt.Fprintf(w, "//go:build %s\n\n", *extratags)
+	}
 }
 
 // generateGoCgo output Go source file from src.
 func generateGoCgo(src *mkcgo.Source, w io.Writer) {
 	// Output header notice and package declaration.
 	printHeader(w)
+	printExtraBuildTags(w)
 	fmt.Fprintf(w, "package %s\n\n", *packageName)
 
 	// This block outputs C header includes and forward declarations for loader functions.
@@ -292,6 +302,7 @@ func generateCHeader(src *mkcgo.Source, w io.Writer) {
 func generateC(src *mkcgo.Source, w io.Writer) {
 	// Header and includes.
 	printHeader(w)
+	printExtraBuildTags(w)
 
 	fmt.Fprintf(w, "#include <stddef.h>\n")
 	fmt.Fprintf(w, "#include <stdlib.h>\n")

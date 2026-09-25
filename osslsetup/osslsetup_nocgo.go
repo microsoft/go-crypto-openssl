@@ -7,7 +7,7 @@ package osslsetup
 
 import "unsafe"
 
-// goString converts a C string pointer to a Go string for nocgo mode
+// goString converts a C string pointer to a Go string without C.GoString.
 func goString(ptr *byte) string {
 	if ptr == nil {
 		return ""
