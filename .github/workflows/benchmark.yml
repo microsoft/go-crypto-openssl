@@ -26,7 +26,7 @@ concurrency:
 
 jobs:
   benchmark:
-    uses: microsoft/go-infra/.github/workflows/benchmark.yml@6b1ca4059143cb9fe597e9fb19ba40e16d051d3f # v0.0.17
+    uses: microsoft/go-infra/.github/workflows/benchmark.yml@d38578e09d4278d489388a659d65cc5c0ba6063b # v0.0.18
     permissions:
       actions: read
       contents: read
@@ -34,7 +34,6 @@ jobs:
     with:
       default-base-ref: main
       dispatch-base-ref: ${{ inputs.base-ref }}
-      go-version: 1.26.x
       matrix: |
         {
           "runs-on": ["ubuntu-22.04", "ubuntu-24.04-arm"],
