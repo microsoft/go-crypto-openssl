@@ -11,12 +11,16 @@ package osslsetup
 import "C"
 import (
 	"errors"
+	"runtime"
 	"unsafe"
 )
 
 func dlopen(file string) (handle unsafe.Pointer, err error) {
 	cv := C.CString(file)
 	defer C.free(unsafe.Pointer(cv))
+	// dlerror is local to the thread that called dlopen.
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
 	handle = C.dlopen(cv, C.RTLD_LAZY|C.RTLD_LOCAL)
 	if handle == nil {
 		errstr := C.GoString(C.dlerror())
@@ -26,6 +30,8 @@ func dlopen(file string) (handle unsafe.Pointer, err error) {
 }
 
 func dlclose(handle unsafe.Pointer) error {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
 	if C.dlclose(handle) != 0 {
 		errstr := C.GoString(C.dlerror())
 		return errors.New("openssl: can't close libcrypto: " + errstr)

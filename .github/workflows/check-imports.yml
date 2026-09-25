@@ -36,5 +36,5 @@ jobs:
           -pkg ./internal/ossl \
           -allow errors,unsafe \
           -pkg ./osslsetup \
-          -allow errors,strconv,sync,syscall,unsafe \
+          -allow errors,runtime,strconv,sync,syscall,unsafe \
           -pkg ./openssl
