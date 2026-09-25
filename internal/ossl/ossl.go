@@ -4,9 +4,10 @@
 // Package ossl provides a Go interface to OpenSSL.
 package ossl
 
-//go:generate go run ../../cmd/mkcgo -out zossl.go -mode dynload -package ossl shims.h
-//go:generate go run ../../cmd/mkcgo -out zossl.go -nocgo -mode dynload -package ossl shims.h
+//go:generate go run ../../cmd/mkcgo -out zossl.go -mode dynload -package ossl -tags !goexperiment.cgo2 shims.h
+//go:generate go run ../../cmd/mkcgo -out zossl.go -nocgo -mode dynload -package ossl -tags "!goexperiment.cgo2 || !cgo" shims.h
 //go:generate go run ../../cmd/mkcgo -out zdl.go -nocgo -mode dynamic -noerrors -package ossl -tags unix dl.h
+//go:generate go run ../../cmd/mkcgo -out zossl.go -cgo2 -mode dynload -package ossl shims.h
 
 import "unsafe"
 

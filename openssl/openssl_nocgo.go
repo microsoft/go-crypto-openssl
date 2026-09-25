@@ -7,7 +7,7 @@ package openssl
 
 import "unsafe"
 
-// goString converts a C string pointer to a Go string for nocgo mode
+// goString converts a C string pointer to a Go string without C.GoString.
 func goString(ptr *byte) string {
 	if ptr == nil {
 		return ""
@@ -23,7 +23,7 @@ func goString(ptr *byte) string {
 	return string(result)
 }
 
-// goBytes converts a C byte array to a Go byte slice for nocgo mode
+// goBytes converts a C byte array to a Go byte slice without C.GoBytes.
 func goBytes(ptr unsafe.Pointer, length int) []byte {
 	if ptr == nil || length == 0 {
 		return nil
