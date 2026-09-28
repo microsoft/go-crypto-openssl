@@ -22,6 +22,7 @@ var (
 	includeHeader = flag.String("include", "", "include header file")
 	packageName   = flag.String("package", "", "package name")
 	nocgo         = flag.Bool("nocgo", false, "don't use cgo")
+	cgo2          = flag.Bool("cgo2", false, "generate Go bindings for GOEXPERIMENT=cgo2 (requires the upstream prototype)")
 	mode          = flag.String("mode", "dynamic", "symbol load mode: dynamic, dynload")
 	private       = flag.Bool("private", false, "all Go generated symbols are kept unexported")
 	noerrors      = flag.Bool("noerrors", false, "disable error handling")
@@ -93,7 +94,14 @@ func main() {
 	}
 	var outFiles []outFile
 
-	if *nocgo {
+	if *cgo2 {
+		var gobuf, bindings bytes.Buffer
+		if err := generateGoCgo2(&src, &gobuf, &bindings); err != nil {
+			log.Fatal(err)
+		}
+		outFiles = append(outFiles, outFile{"_cgo2.go", gobuf.Bytes()})
+		outFiles = append(outFiles, outFile{"_cgo2_bindings.go", bindings.Bytes()})
+	} else if *nocgo {
 		// Generate nocgo mode files
 		var nocgoGoBuffer, assemblyBuffer bytes.Buffer
 		generateGoNocgo(&src, &nocgoGoBuffer)
@@ -114,9 +122,11 @@ func main() {
 		outFiles = append(outFiles, outFile{".c", cbuf.Bytes()})
 	}
 
-	var commonGoBuffer bytes.Buffer
-	generateGoCommon(&src, &commonGoBuffer)
-	outFiles = append(outFiles, outFile{".go", commonGoBuffer.Bytes()})
+	if !*cgo2 {
+		var commonGoBuffer bytes.Buffer
+		generateGoCommon(&src, &commonGoBuffer)
+		outFiles = append(outFiles, outFile{".go", commonGoBuffer.Bytes()})
+	}
 
 	for _, f := range outFiles {
 		data := f.data
