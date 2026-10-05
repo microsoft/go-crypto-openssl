@@ -552,7 +552,7 @@ var _mkcgo_EVP_DigestSignInit uintptr
 
 func EVP_DigestSignInit(ctx EVP_MD_CTX_PTR, pctx *EVP_PKEY_CTX_PTR, __type EVP_MD_PTR, e ENGINE_PTR, pkey EVP_PKEY_PTR) (int32, error) {
 	var _err uintptr
-	r0, _ := syscallN(3, _mkcgo_EVP_DigestSignInit, uintptr(ctx), uintptr(mkcgoEscapePtrOssl(unsafe.Pointer(pctx))), uintptr(__type), uintptr(e), uintptr(pkey), uintptr(unsafe.Pointer(&_err)))
+	r0, _ := syscallN(3, _mkcgo_EVP_DigestSignInit, uintptr(ctx), uintptr(unsafe.Pointer(pctx)), uintptr(__type), uintptr(e), uintptr(pkey), uintptr(unsafe.Pointer(&_err)))
 	return int32(r0), newMkcgoErr("EVP_DigestSignInit", _err)
 }
 
@@ -580,7 +580,7 @@ var _mkcgo_EVP_DigestVerify uintptr
 
 func EVP_DigestVerify(ctx EVP_MD_CTX_PTR, sigret []byte, tbs []byte) (int32, error) {
 	var _err uintptr
-	r0, _ := syscallN(3, _mkcgo_EVP_DigestVerify, uintptr(ctx), uintptr(mkcgoEscapePtrOssl(unsafe.Pointer(unsafe.SliceData(sigret)))), uintptr(len(sigret)), uintptr(mkcgoEscapePtrOssl(unsafe.Pointer(unsafe.SliceData(tbs)))), uintptr(len(tbs)), uintptr(unsafe.Pointer(&_err)))
+	r0, _ := syscallN(3, _mkcgo_EVP_DigestVerify, uintptr(ctx), uintptr(unsafe.Pointer(unsafe.SliceData(sigret))), uintptr(len(sigret)), uintptr(unsafe.Pointer(unsafe.SliceData(tbs))), uintptr(len(tbs)), uintptr(unsafe.Pointer(&_err)))
 	return int32(r0), newMkcgoErr("EVP_DigestVerify", _err)
 }
 
@@ -596,7 +596,7 @@ var _mkcgo_EVP_DigestVerifyInit uintptr
 
 func EVP_DigestVerifyInit(ctx EVP_MD_CTX_PTR, pctx *EVP_PKEY_CTX_PTR, __type EVP_MD_PTR, e ENGINE_PTR, pkey EVP_PKEY_PTR) (int32, error) {
 	var _err uintptr
-	r0, _ := syscallN(3, _mkcgo_EVP_DigestVerifyInit, uintptr(ctx), uintptr(mkcgoEscapePtrOssl(unsafe.Pointer(pctx))), uintptr(__type), uintptr(e), uintptr(pkey), uintptr(unsafe.Pointer(&_err)))
+	r0, _ := syscallN(3, _mkcgo_EVP_DigestVerifyInit, uintptr(ctx), uintptr(unsafe.Pointer(pctx)), uintptr(__type), uintptr(e), uintptr(pkey), uintptr(unsafe.Pointer(&_err)))
 	return int32(r0), newMkcgoErr("EVP_DigestVerifyInit", _err)
 }
 
@@ -1146,7 +1146,7 @@ var _mkcgo_EVP_PKEY_fromdata uintptr
 
 func EVP_PKEY_fromdata(ctx EVP_PKEY_CTX_PTR, pkey *EVP_PKEY_PTR, selection int32, params OSSL_PARAM_PTR) (int32, error) {
 	var _err uintptr
-	r0, _ := syscallN(3, _mkcgo_EVP_PKEY_fromdata, uintptr(ctx), uintptr(mkcgoEscapePtrOssl(unsafe.Pointer(pkey))), uintptr(selection), uintptr(params), uintptr(unsafe.Pointer(&_err)))
+	r0, _ := syscallN(3, _mkcgo_EVP_PKEY_fromdata, uintptr(ctx), uintptr(unsafe.Pointer(pkey)), uintptr(selection), uintptr(params), uintptr(unsafe.Pointer(&_err)))
 	return int32(r0), newMkcgoErr("EVP_PKEY_fromdata", _err)
 }
 
@@ -1210,7 +1210,7 @@ var _mkcgo_EVP_PKEY_get_octet_string_param uintptr
 
 func EVP_PKEY_get_octet_string_param(pkey EVP_PKEY_PTR, key_name *byte, buf []byte, out_len *int) (int32, error) {
 	var _err uintptr
-	r0, _ := syscallN(3, _mkcgo_EVP_PKEY_get_octet_string_param, uintptr(pkey), uintptr(mkcgoEscapePtrOssl(unsafe.Pointer(key_name))), uintptr(mkcgoEscapePtrOssl(unsafe.Pointer(unsafe.SliceData(buf)))), uintptr(len(buf)), uintptr(mkcgoEscapePtrOssl(unsafe.Pointer(out_len))), uintptr(unsafe.Pointer(&_err)))
+	r0, _ := syscallN(3, _mkcgo_EVP_PKEY_get_octet_string_param, uintptr(pkey), uintptr(unsafe.Pointer(key_name)), uintptr(unsafe.Pointer(unsafe.SliceData(buf))), uintptr(len(buf)), uintptr(unsafe.Pointer(out_len)), uintptr(unsafe.Pointer(&_err)))
 	return int32(r0), newMkcgoErr("EVP_PKEY_get_octet_string_param", _err)
 }
 

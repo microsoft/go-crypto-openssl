@@ -6,6 +6,7 @@ package openssl_test
 import (
 	"bytes"
 	"encoding/hex"
+	"strings"
 	"testing"
 
 	"github.com/microsoft/go-crypto-openssl/openssl"
@@ -172,6 +173,50 @@ func testMLDSARoundTrip(t *testing.T, params openssl.MLDSAParameters) {
 	}
 }
 
+func TestMLDSAContexts(t *testing.T) {
+	t.Parallel()
+	for _, test := range mldsaParameterTests {
+		t.Run(test.name, func(t *testing.T) {
+			if !openssl.SupportsMLDSA(test.params) {
+				t.Skipf("%s not supported on this platform", test.params)
+			}
+			t.Parallel()
+			key, err := openssl.GenerateKeyMLDSA(test.params)
+			if err != nil {
+				t.Fatal(err)
+			}
+			publicKey := key.PublicKey()
+			message := []byte("message")
+			for _, context := range []struct {
+				name  string
+				value string
+			}{
+				{"empty", ""},
+				{"literal", "context"},
+				{"binary", "\x00context\xff\x00"},
+				{"maximum", strings.Repeat("c", 255)},
+			} {
+				t.Run(context.name, func(t *testing.T) {
+					signature, err := key.Sign(message, context.value)
+					if err != nil {
+						t.Fatalf("Sign: %v", err)
+					}
+					if err := publicKey.Verify(message, signature, context.value); err != nil {
+						t.Fatalf("Verify: %v", err)
+					}
+					wrongContext := "wrong"
+					if context.value != "" {
+						wrongContext = context.value[:len(context.value)-1]
+					}
+					if err := publicKey.Verify(message, signature, wrongContext); err == nil {
+						t.Error("Verify accepted a different context")
+					}
+				})
+			}
+		})
+	}
+}
+
 func TestMLDSAEqual(t *testing.T) {
 	t.Parallel()
 	for _, test := range mldsaParameterTests {
@@ -333,11 +378,26 @@ func testMLDSABadLengths(t *testing.T, params openssl.MLDSAParameters) {
 	if _, err := privateKey.Sign(message, string(make([]byte, 256))); err == nil {
 		t.Error("Sign accepted a long context")
 	}
+	if err := publicKey.Verify(message, signature, string(make([]byte, 256))); err == nil {
+		t.Error("Verify accepted a long context")
+	}
 	if _, err := privateKey.SignExternalMu(make([]byte, 63)); err == nil {
 		t.Error("SignExternalMu accepted a short mu")
 	}
+	if _, err := privateKey.SignExternalMu(make([]byte, 65)); err == nil {
+		t.Error("SignExternalMu accepted a long mu")
+	}
 	if err := publicKey.VerifyExternalMu(make([]byte, 63), signature); err == nil {
 		t.Error("VerifyExternalMu accepted a short mu")
+	}
+	if err := publicKey.VerifyExternalMu(make([]byte, 65), signature); err == nil {
+		t.Error("VerifyExternalMu accepted a long mu")
+	}
+	if err := publicKey.VerifyExternalMu(make([]byte, 64), signature[:params.SignatureSize()-1]); err == nil {
+		t.Error("VerifyExternalMu accepted a short signature")
+	}
+	if err := publicKey.VerifyExternalMu(make([]byte, 64), append(signature, 0)); err == nil {
+		t.Error("VerifyExternalMu accepted a long signature")
 	}
 }
 
