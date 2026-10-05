@@ -6,6 +6,7 @@ package openssl
 import (
 	"errors"
 	"sync"
+	"unsafe"
 
 	"github.com/microsoft/go-crypto-openssl/internal/ossl"
 )
@@ -379,7 +380,9 @@ func mldsaSigParams(context string, externalMu bool) (ossl.OSSL_PARAM_PTR, error
 	bld := newParamBuilder()
 	defer bld.finalize()
 	if context != "" {
-		bld.addOctetString(_OSSL_SIGNATURE_PARAM_CONTEXT_STRING, []byte(context))
+		// The builder only reads these bytes and pins them until build copies
+		// them into the native OSSL_PARAM array.
+		bld.addOctetString(_OSSL_SIGNATURE_PARAM_CONTEXT_STRING, unsafe.Slice(unsafe.StringData(context), len(context)))
 	}
 	if externalMu {
 		bld.addInt32(_OSSL_SIGNATURE_PARAM_MU, 1)

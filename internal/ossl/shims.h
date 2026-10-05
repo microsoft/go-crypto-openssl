@@ -144,6 +144,9 @@ typedef int point_conversion_form_t;
 // Only add functions that have been observed to benefit from these
 // directives, not every function that is merely expected to meet
 // the noescape/nocallback criteria.
+// Output slots can receive C-owned handles without their addresses escaping.
+// nocallback excludes callbacks into Go, not native provider/ENGINE dispatch:
+// this package does not register Go cryptographic or provider callbacks.
 
 // BIO API
 const _BIO_METHOD_PTR BIO_s_mem(void) __attribute__((tag(""),tag("init_3"),noerror));
@@ -225,11 +228,11 @@ int EVP_DigestFinal_ex(_EVP_MD_CTX_PTR ctx, unsigned char *md, unsigned int *s) 
 int EVP_DigestFinalXOF(_EVP_MD_CTX_PTR ctx, unsigned char *md, size_t mdlen) __attribute__((tag("33"),noescape,nocallback,slice("md","mdlen")));
 int EVP_DigestSqueeze(_EVP_MD_CTX_PTR ctx, unsigned char *out, size_t outlen) __attribute__((tag("33"),optional,noescape,nocallback,slice("out","outlen")));
 int EVP_DigestSign(_EVP_MD_CTX_PTR ctx, unsigned char *sigret, size_t *siglen, const unsigned char *tbs, size_t tbslen) __attribute__((noescape,nocallback,slice("sigret","siglen"),slice("tbs","tbslen")));
-int EVP_DigestSignInit(_EVP_MD_CTX_PTR ctx, _EVP_PKEY_CTX_PTR *pctx, const _EVP_MD_PTR type, _ENGINE_PTR e, _EVP_PKEY_PTR pkey);
+int EVP_DigestSignInit(_EVP_MD_CTX_PTR ctx, _EVP_PKEY_CTX_PTR *pctx, const _EVP_MD_PTR type, _ENGINE_PTR e, _EVP_PKEY_PTR pkey) __attribute__((noescape,nocallback));
 int EVP_DigestSignFinal(_EVP_MD_CTX_PTR ctx, unsigned char *sig, size_t *siglen) __attribute__((slice("sig","siglen")));
-int EVP_DigestVerifyInit(_EVP_MD_CTX_PTR ctx, _EVP_PKEY_CTX_PTR *pctx, const _EVP_MD_PTR type, _ENGINE_PTR e, _EVP_PKEY_PTR pkey);
+int EVP_DigestVerifyInit(_EVP_MD_CTX_PTR ctx, _EVP_PKEY_CTX_PTR *pctx, const _EVP_MD_PTR type, _ENGINE_PTR e, _EVP_PKEY_PTR pkey) __attribute__((noescape,nocallback));
 int EVP_DigestVerifyFinal(_EVP_MD_CTX_PTR ctx, const unsigned char *sig, size_t siglen) __attribute__((slice("sig","siglen")));
-int EVP_DigestVerify(_EVP_MD_CTX_PTR ctx, const unsigned char *sigret, size_t siglen, const unsigned char *tbs, size_t tbslen) __attribute__((slice("sigret","siglen"),slice("tbs","tbslen")));
+int EVP_DigestVerify(_EVP_MD_CTX_PTR ctx, const unsigned char *sigret, size_t siglen, const unsigned char *tbs, size_t tbslen) __attribute__((noescape,nocallback,slice("sigret","siglen"),slice("tbs","tbslen")));
 
 // HMAC API
 int HMAC_Init_ex(_HMAC_CTX_PTR arg0, const void *arg1, int arg2, const _EVP_MD_PTR arg3, _ENGINE_PTR arg4) __attribute__((tag("legacy_1"),noescape,nocallback,slice("arg1","arg2")));
@@ -292,7 +295,7 @@ _DSA_PTR EVP_PKEY_get0_DSA(_EVP_PKEY_PTR pkey) __attribute__((tag("legacy_1")));
 int EVP_PKEY_set1_encoded_public_key(_EVP_PKEY_PTR pkey, const unsigned char *pub, size_t publen) __attribute__((tag("3"),slice("pub","publen")));
 size_t EVP_PKEY_get1_encoded_public_key(_EVP_PKEY_PTR pkey, unsigned char **ppub) __attribute__((tag("3")));
 int EVP_PKEY_get_bn_param(const _EVP_PKEY_PTR pkey, const char *key_name, _BIGNUM_PTR *bn) __attribute__((tag("3"),noescape,nocallback));
-int EVP_PKEY_get_octet_string_param(const _EVP_PKEY_PTR pkey, const char *key_name, unsigned char *buf, size_t buf_len, size_t *out_len) __attribute__((tag("3"),slice("buf","buf_len")));
+int EVP_PKEY_get_octet_string_param(const _EVP_PKEY_PTR pkey, const char *key_name, unsigned char *buf, size_t buf_len, size_t *out_len) __attribute__((tag("3"),noescape,nocallback,slice("buf","buf_len")));
 int EVP_PKEY_eq(const _EVP_PKEY_PTR a, const _EVP_PKEY_PTR b) __attribute__((tag("3"),noescape,nocallback));
 int EVP_PKEY_up_ref(_EVP_PKEY_PTR key);
 int EVP_PKEY_set1_EC_KEY(_EVP_PKEY_PTR pkey, _EC_KEY_PTR key) __attribute__((tag("legacy_1")));
@@ -300,7 +303,7 @@ int EVP_PKEY_CTX_set0_rsa_oaep_label(_EVP_PKEY_CTX_PTR ctx, void *label, int lab
 int EVP_PKEY_get_raw_public_key(const _EVP_PKEY_PTR pkey, unsigned char *pub, size_t *publen) __attribute__((noescape,nocallback,slice("pub","publen")));
 int EVP_PKEY_get_raw_private_key(const _EVP_PKEY_PTR pkey, unsigned char *priv, size_t *privlen) __attribute__((noescape,nocallback,slice("priv","privlen")));
 int EVP_PKEY_fromdata_init(_EVP_PKEY_CTX_PTR ctx) __attribute__((tag("3")));
-int EVP_PKEY_fromdata(_EVP_PKEY_CTX_PTR ctx, _EVP_PKEY_PTR *pkey, int selection, _OSSL_PARAM_PTR params) __attribute__((tag("3")));
+int EVP_PKEY_fromdata(_EVP_PKEY_CTX_PTR ctx, _EVP_PKEY_PTR *pkey, int selection, _OSSL_PARAM_PTR params) __attribute__((tag("3"),noescape,nocallback));
 int EVP_PKEY_paramgen_init(_EVP_PKEY_CTX_PTR ctx);
 int EVP_PKEY_paramgen(_EVP_PKEY_CTX_PTR ctx, _EVP_PKEY_PTR *ppkey);
 int EVP_PKEY_keygen_init(_EVP_PKEY_CTX_PTR ctx);

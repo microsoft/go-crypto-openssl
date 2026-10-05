@@ -39,12 +39,22 @@ type paramBuilder struct {
 // newParamBuilder creates a new paramBuilder.
 // [paramBuilder.finalize] must be called to free the builder.
 func newParamBuilder() *paramBuilder {
+	// Keep this function small so it can inline and the builder can stay on the
+	// caller's stack.
+	return &paramBuilder{bld: newNativeParamBuilder()}
+}
+
+// newNativeParamBuilder keeps native allocation out of the constructor's
+// inline budget so newParamBuilder can inline in both binding modes.
+//
+//go:noinline
+func newNativeParamBuilder() ossl.OSSL_PARAM_BLD_PTR {
 	bld := ossl.OSSL_PARAM_BLD_new()
 	if bld == nil {
 		// If this happens it indicates an issue allocating memory.
 		panic("openssl: failed to create OSSL_PARAM_BLD")
 	}
-	return &paramBuilder{bld: bld}
+	return bld
 }
 
 // finalize frees the builder.
@@ -110,6 +120,7 @@ func (b *paramBuilder) addUTF8String(name cString, value *byte, size int) {
 }
 
 // addOctetString adds an octet string to the builder.
+// The builder only reads value; build copies it into the native parameter array.
 // The value is pinned and will be unpinned when the builder is freed.
 func (b *paramBuilder) addOctetString(name cString, value []byte) {
 	if !b.check() {
