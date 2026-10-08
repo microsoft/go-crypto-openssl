@@ -1269,18 +1269,26 @@ func generateNocgoFnBody(src *mkcgo.Source, fn *mkcgo.Func, errorType int, newR0
 	fmt.Fprintf(w, ")\n")
 }
 
-// generateAssembly generates the assembly trampoline file for nocgo mode.
+// generateAssembly generates an assembly trampoline file for nocgo mode.
 // This function is only called when dynamic imports are used.
-func generateAssembly(src *mkcgo.Source, w io.Writer) {
+func generateAssembly(src *mkcgo.Source, w io.Writer, ppc64le bool) {
 	printHeader(w)
 	tags := "!cgo"
 	if *extratags != "" {
 		tags += " && " + *extratags
 	}
+	if !ppc64le {
+		tags += " && !ppc64le"
+	}
 	fmt.Fprintf(w, "//go:build %s\n\n", tags)
 	fmt.Fprintf(w, "#include \"textflag.h\"\n")
 
-	fmt.Fprintf(w, `
+	if ppc64le {
+		fmt.Fprintf(w, `
+#define _GOPTRSIZE 8
+`)
+	} else {
+		fmt.Fprintf(w, `
 #ifndef GOARCH_amd64
 #ifndef GOARCH_arm64
 #ifndef GOARCH_riscv64
@@ -1307,14 +1315,26 @@ func generateAssembly(src *mkcgo.Source, w io.Writer) {
 #define _GOPTRSIZE 8
 #endif
 `)
+	}
 
 	// Generate trampolines for each function
-	for _, fn := range src.Funcs {
+	for i, fn := range src.Funcs {
 		fnName := fn.Name
 		fmt.Fprintf(w, "TEXT _mkcgo_%s_trampoline<>(SB), NOSPLIT, $0-0\n", fnName)
-		fmt.Fprintf(w, "\tJMP _mkcgo_%s(SB)\n\n", fnName)
+		if ppc64le {
+			fmt.Fprintf(w, "\tCALL _mkcgo_%s(SB)\n", fnName)
+			fmt.Fprintf(w, "\t// The NOP is the TOC restore slot. The linker rewrites it to\n")
+			fmt.Fprintf(w, "\t// MOVD 24(R1), R2 when linking PIC code.\n")
+			fmt.Fprintf(w, "\tWORD $0x60000000\n")
+			fmt.Fprintf(w, "\tRET\n\n")
+		} else {
+			fmt.Fprintf(w, "\tJMP _mkcgo_%s(SB)\n\n", fnName)
+		}
 		fmt.Fprintf(w, "GLOBL ·_mkcgo_%s_trampoline_addr(SB), RODATA, $_GOPTRSIZE\n", fnName)
-		fmt.Fprintf(w, "DATA ·_mkcgo_%s_trampoline_addr(SB)/_GOPTRSIZE, $_mkcgo_%s_trampoline<>(SB)\n\n", fnName, fnName)
+		fmt.Fprintf(w, "DATA ·_mkcgo_%s_trampoline_addr(SB)/_GOPTRSIZE, $_mkcgo_%s_trampoline<>(SB)\n", fnName, fnName)
+		if i < len(src.Funcs)-1 {
+			fmt.Fprintln(w)
+		}
 	}
 }
 

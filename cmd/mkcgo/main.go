@@ -95,13 +95,15 @@ func main() {
 
 	if *nocgo {
 		// Generate nocgo mode files
-		var nocgoGoBuffer, assemblyBuffer bytes.Buffer
+		var nocgoGoBuffer, assemblyBuffer, assemblyPPC64LEBuffer bytes.Buffer
 		generateGoNocgo(&src, &nocgoGoBuffer)
 		outFiles = append(outFiles, outFile{"_nocgo.go", nocgoGoBuffer.Bytes()})
 
 		if dynamic() {
-			generateAssembly(&src, &assemblyBuffer)
+			generateAssembly(&src, &assemblyBuffer, false)
 			outFiles = append(outFiles, outFile{".s", assemblyBuffer.Bytes()})
+			generateAssembly(&src, &assemblyPPC64LEBuffer, true)
+			outFiles = append(outFiles, outFile{"_ppc64le.s", assemblyPPC64LEBuffer.Bytes()})
 		}
 	} else {
 		var gobuf, hbuf, cbuf bytes.Buffer
