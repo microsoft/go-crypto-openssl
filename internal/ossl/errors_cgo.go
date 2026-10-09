@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+//go:build !goexperiment.cgo2
+
 package ossl
 
 /*
