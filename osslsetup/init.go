@@ -168,5 +168,13 @@ func openLibrary(file string) (handle unsafe.Pointer, close func(), err error) {
 	if !supported {
 		return handle, nil, errUnsupportedVersion()
 	}
+	// Reject libraries that claim a supported version but are not OpenSSL,
+	// such as AWS-LC and BoringSSL, which report themselves as 1.1.1.
+	// BN_bn2lebinpad is required by every supported version, and checking
+	// for it here lets callers fail cleanly instead of aborting in the
+	// symbol loader.
+	if !hasSymbol(handle, "BN_bn2lebinpad") {
+		return handle, nil, errors.New("openssl: unsupported libcrypto " + file + " " + utoa(vMajor) + "." + utoa(vMinor) + "." + utoa(vPatch) + ": missing BN_bn2lebinpad, not OpenSSL?")
+	}
 	return handle, closeLib, nil
 }
