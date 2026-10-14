@@ -115,7 +115,7 @@ func openLibrary(file string) (handle unsafe.Pointer, close func(), err error) {
 	// in case the name of the shared library file differs from the OpenSSL
 	// version it contains.
 	ossl.MkcgoLoad_version(handle)
-	close = func() {
+	closeLib := func() {
 		dlclose(handle)
 		if osslHandle == nil {
 			ossl.MkcgoUnload_version()
@@ -124,8 +124,10 @@ func openLibrary(file string) (handle unsafe.Pointer, close func(), err error) {
 		}
 	}
 	defer func() {
+		// Use closeLib rather than the close result: the error returns
+		// below set close to nil before this deferred function runs.
 		if err != nil {
-			close()
+			closeLib()
 		}
 	}()
 
@@ -166,5 +168,5 @@ func openLibrary(file string) (handle unsafe.Pointer, close func(), err error) {
 	if !supported {
 		return handle, nil, errUnsupportedVersion()
 	}
-	return handle, close, nil
+	return handle, closeLib, nil
 }
