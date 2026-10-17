@@ -52,6 +52,9 @@ func realLibcrypto() string {
 }
 
 func TestRejectLibrary(t *testing.T) {
+	// Probe before any rejection so that a rejection leaving broken state
+	// makes the follow-up check fail rather than be skipped.
+	real := realLibcrypto()
 	tests := []struct {
 		name    string
 		cflags  []string
@@ -82,7 +85,6 @@ func TestRejectLibrary(t *testing.T) {
 			}
 
 			// The rejected library must not break loading a real one.
-			real := realLibcrypto()
 			if real == "" {
 				t.Log("no supported libcrypto found, skipping follow-up check")
 				return
