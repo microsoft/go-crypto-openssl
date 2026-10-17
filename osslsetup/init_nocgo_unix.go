@@ -26,6 +26,10 @@ func dlopen(file string) (handle unsafe.Pointer, err error) {
 	return handle, nil
 }
 
+func hasSymbol(handle unsafe.Pointer, symbol string) bool {
+	return ossl.Dlsym(handle, unsafe.StringData(symbol+"\x00")) != nil
+}
+
 func dlclose(handle unsafe.Pointer) error {
 	if ossl.Dlclose(handle) != 0 {
 		errstr := goString(ossl.Dlerror())

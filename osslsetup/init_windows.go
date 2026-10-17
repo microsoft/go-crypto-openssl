@@ -32,6 +32,11 @@ func dlopen(file string) (handle unsafe.Pointer, err error) {
 	return unsafe.Pointer(h), nil
 }
 
+func hasSymbol(handle unsafe.Pointer, symbol string) bool {
+	_, err := syscall.GetProcAddress(syscall.Handle(handle), symbol)
+	return err == nil
+}
+
 func dlclose(handle unsafe.Pointer) error {
 	return syscall.FreeLibrary(syscall.Handle(handle))
 }
