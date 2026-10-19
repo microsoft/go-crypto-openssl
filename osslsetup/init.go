@@ -115,7 +115,7 @@ func openLibrary(file string) (handle unsafe.Pointer, close func(), err error) {
 	// in case the name of the shared library file differs from the OpenSSL
 	// version it contains.
 	ossl.MkcgoLoad_version(handle)
-	close = func() {
+	closeLib := func() {
 		dlclose(handle)
 		if osslHandle == nil {
 			ossl.MkcgoUnload_version()
@@ -124,8 +124,10 @@ func openLibrary(file string) (handle unsafe.Pointer, close func(), err error) {
 		}
 	}
 	defer func() {
+		// Use closeLib rather than the close result: the error returns
+		// below set close to nil before this deferred function runs.
 		if err != nil {
-			close()
+			closeLib()
 		}
 	}()
 
@@ -166,5 +168,13 @@ func openLibrary(file string) (handle unsafe.Pointer, close func(), err error) {
 	if !supported {
 		return handle, nil, errUnsupportedVersion()
 	}
-	return handle, close, nil
+	// Reject libraries that claim a supported version but are not OpenSSL,
+	// such as AWS-LC and BoringSSL, which report themselves as 1.1.1.
+	// BN_bn2lebinpad is required by every supported version, and checking
+	// for it here lets callers fail cleanly instead of aborting in the
+	// symbol loader.
+	if !hasSymbol(handle, "BN_bn2lebinpad") {
+		return handle, nil, errors.New("openssl: unsupported libcrypto " + file + " " + utoa(vMajor) + "." + utoa(vMinor) + "." + utoa(vPatch) + ": missing BN_bn2lebinpad, not OpenSSL?")
+	}
+	return handle, closeLib, nil
 }

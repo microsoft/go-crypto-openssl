@@ -29,6 +29,12 @@ func dlopen(file string) (handle unsafe.Pointer, err error) {
 	return handle, nil
 }
 
+func hasSymbol(handle unsafe.Pointer, symbol string) bool {
+	cv := C.CString(symbol)
+	defer C.free(unsafe.Pointer(cv))
+	return C.dlsym(handle, cv) != nil
+}
+
 func dlclose(handle unsafe.Pointer) error {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
