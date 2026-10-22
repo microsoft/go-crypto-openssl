@@ -6,6 +6,7 @@
 package ossl
 
 import (
+	"runtime"
 	"unsafe"
 )
 
@@ -51,10 +52,9 @@ var syscallNSystemStackABIInternal = uintptr(unsafe.Pointer(&syscallNSystemStack
 
 // syscallN performs a syscall with the given function and arguments.
 //
-// All its parameters and return values must be uintptr in order
-// for the Go compiler to automatically set the //go:uintptrkeepalive
-// directive (which we can't set manually here).
-// See https://github.com/golang/go/blob/9a5a1202f4c4d5a7048b149b65c3e5b82a2de9aa/src/cmd/compile/internal/escape/call.go#L275.
+// Callers must keep pointer arguments alive until this function returns.
+// nosplit prevents stack growth between converting pointers to uintptr and
+// switching to the system stack.
 //
 //go:nosplit
 func syscallN(errType uintptr, fn uintptr, args ...uintptr) (r1, r2 uintptr) {
@@ -67,11 +67,13 @@ func syscallN(errType uintptr, fn uintptr, args ...uintptr) (r1, r2 uintptr) {
 		libcArgs.args = uintptr(noescape(unsafe.Pointer(&args[0])))
 	}
 	runtime_cgocall(syscallNSystemStackABIInternal, unsafe.Pointer(&libcArgs))
+	runtime.KeepAlive(args)
 	return libcArgs.r1, libcArgs.r2
 }
 
 // syscallNRaw performs a syscall with the given function and arguments,
 // without any error checking nor switching to the system stack.
+// Arguments must not contain pointers to Go memory.
 //
 //go:nosplit
 func syscallNRaw(fn uintptr, args ...uintptr) uintptr {
@@ -83,5 +85,6 @@ func syscallNRaw(fn uintptr, args ...uintptr) uintptr {
 		libcArgs.args = uintptr(noescape(unsafe.Pointer(&args[0])))
 	}
 	syscallNAsm(&libcArgs)
+	runtime.KeepAlive(args)
 	return libcArgs.r1
 }

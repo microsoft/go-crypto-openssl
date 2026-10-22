@@ -30,6 +30,32 @@ func TestNewKeyFromSeedEd25519(t *testing.T) {
 	}
 }
 
+func TestEd25519PublicLifetime(t *testing.T) {
+	if !openssl.SupportsEd25519() {
+		t.Skip("Ed25519 not supported")
+	}
+	seed := bytes.Repeat([]byte{1}, ed25519.SeedSize)
+	want := ed25519.NewKeyFromSeed(seed).Public().(ed25519.PublicKey)
+	runGC(t)
+	for range 100 {
+		priv, err := openssl.NewPrivateKeyEd25519FromSeed(seed)
+		if err != nil {
+			t.Fatal(err)
+		}
+		pub, err := priv.Public()
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err := pub.Bytes()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(got, want) {
+			t.Fatalf("public key = %x, want %x", got, want)
+		}
+	}
+}
+
 func TestEd25519SignVerify(t *testing.T) {
 	if !openssl.SupportsEd25519() {
 		t.Skip("Ed25519 not supported")

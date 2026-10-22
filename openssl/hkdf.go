@@ -34,8 +34,8 @@ func SupportsTLS13KDF() bool {
 	}
 }
 
-func newHKDFCtx1(md ossl.EVP_MD_PTR, mode int32, secret, salt, pseudorandomKey, info []byte) (ctx ossl.EVP_PKEY_CTX_PTR, err error) {
-	ctx, err = ossl.EVP_PKEY_CTX_new_id(ossl.EVP_PKEY_HKDF, nil)
+func newHKDFCtx1(md ossl.EVP_MD_PTR, mode int32, secret, salt, pseudorandomKey, info []byte) (_ ossl.EVP_PKEY_CTX_PTR, err error) {
+	ctx, err := ossl.EVP_PKEY_CTX_new_id(ossl.EVP_PKEY_HKDF, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func newHKDFCtx1(md ossl.EVP_MD_PTR, mode int32, secret, salt, pseudorandomKey, 
 	}()
 
 	if _, err := ossl.EVP_PKEY_derive_init(ctx); err != nil {
-		return ctx, err
+		return nil, err
 	}
 
 	ctrlSlice := func(ctrl int32, data []byte) bool {
@@ -61,16 +61,16 @@ func newHKDFCtx1(md ossl.EVP_MD_PTR, mode int32, secret, salt, pseudorandomKey, 
 	}
 
 	if _, err := ossl.EVP_PKEY_CTX_ctrl(ctx, -1, ossl.EVP_PKEY_OP_DERIVE, ossl.EVP_PKEY_CTRL_HKDF_MODE, mode, nil); err != nil {
-		return ctx, err
+		return nil, err
 	}
 	if _, err := ossl.EVP_PKEY_CTX_ctrl(ctx, -1, ossl.EVP_PKEY_OP_DERIVE, ossl.EVP_PKEY_CTRL_HKDF_MD, 0, unsafe.Pointer(md)); err != nil {
-		return ctx, err
+		return nil, err
 	}
-	if ctrlSlice(ossl.EVP_PKEY_CTRL_HKDF_KEY, secret) &&
+	if !(ctrlSlice(ossl.EVP_PKEY_CTRL_HKDF_KEY, secret) &&
 		ctrlSlice(ossl.EVP_PKEY_CTRL_HKDF_SALT, salt) &&
 		ctrlSlice(ossl.EVP_PKEY_CTRL_HKDF_KEY, pseudorandomKey) &&
-		ctrlSlice(ossl.EVP_PKEY_CTRL_HKDF_INFO, info) {
-		return ctx, err
+		ctrlSlice(ossl.EVP_PKEY_CTRL_HKDF_INFO, info)) {
+		return nil, err
 	}
 	return ctx, nil
 }
@@ -142,6 +142,7 @@ func ExtractHKDF[H hash.Hash](h func() H, secret, salt []byte) ([]byte, error) {
 }
 
 // ExpandHKDF derives a key from the given hash, key, and optional context info.
+// OpenSSL 1.1.1 limits info to 1024 bytes; longer values return an error.
 func ExpandHKDF[H hash.Hash](h func() H, pseudorandomKey, info []byte, keyLength int) ([]byte, error) {
 	if !SupportsHKDF() {
 		return nil, errUnsupportedVersion()
