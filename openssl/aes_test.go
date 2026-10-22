@@ -153,7 +153,10 @@ func TestSealWithRandomNonce(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			gcm, err := cipher.NewGCM(block)
+			// Call the backend hook directly; cipher.NewGCM may wrap the AEAD.
+			gcm, err := block.(interface {
+				NewGCM(nonceSize, tagSize int) (cipher.AEAD, error)
+			}).NewGCM(12, 16)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -209,7 +212,9 @@ random = nonexistent-test-rng
 	if err != nil {
 		t.Fatal(err)
 	}
-	gcm, err := cipher.NewGCM(block)
+	gcm, err := block.(interface {
+		NewGCM(nonceSize, tagSize int) (cipher.AEAD, error)
+	}).NewGCM(12, 16)
 	if err != nil {
 		t.Fatal(err)
 	}
