@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	openssl "github.com/microsoft/go-crypto-openssl/openssl"
+	"github.com/microsoft/go-crypto-openssl/osslsetup"
 )
 
 type hkdfTest struct {
@@ -331,6 +332,23 @@ func TestExpandHKDFLimit(t *testing.T) {
 	_, err = openssl.ExpandHKDF(hash, prk, info, limit+1)
 	if err == nil {
 		t.Errorf("expected error for key expansion overflow")
+	}
+}
+
+func TestExpandHKDFInfoLimit(t *testing.T) {
+	if osslsetup.VersionMajor() != 1 {
+		t.Skip("testing the OpenSSL 1.1.1 info limit")
+	}
+	const maxInfo = 1024
+	for _, keyLength := range []int{0, 32} {
+		out, err := openssl.ExpandHKDF(openssl.NewSHA256, make([]byte, 32), make([]byte, maxInfo), keyLength)
+		if err != nil || len(out) != keyLength {
+			t.Fatalf("ExpandHKDF with maximum info and key length %d = (%x, %v)", keyLength, out, err)
+		}
+		out, err = openssl.ExpandHKDF(openssl.NewSHA256, make([]byte, 32), make([]byte, maxInfo+1), keyLength)
+		if err == nil || out != nil {
+			t.Fatalf("ExpandHKDF with oversized info and key length %d = (%x, %v), want (nil, error)", keyLength, out, err)
+		}
 	}
 }
 
