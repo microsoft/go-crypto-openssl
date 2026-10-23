@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -55,7 +56,18 @@ func TestPPC64LEOutput(t *testing.T) {
 					t.Errorf("missing generated file %s: %v", name, err)
 				}
 			}
-			_, err := os.Stat(filepath.Join(dir, "zexample_ppc64le.s"))
+			assembly, err := os.ReadFile(filepath.Join(dir, "zexample.s"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			wantTag := "//go:build !cgo\n"
+			if tt.want {
+				wantTag = "//go:build !cgo && !ppc64le\n"
+			}
+			if !strings.Contains(string(assembly), wantTag) {
+				t.Errorf("common assembly missing build tag %q", wantTag)
+			}
+			_, err = os.Stat(filepath.Join(dir, "zexample_ppc64le.s"))
 			if tt.want && err != nil {
 				t.Fatalf("missing PPC64LE assembly: %v", err)
 			}
