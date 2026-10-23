@@ -7,10 +7,11 @@ import (
 	"fmt"
 	"math/big"
 	"strconv"
+	"strings"
 	"testing"
 
-	"github.com/microsoft/go-crypto-openssl/openssl"
 	"github.com/microsoft/go-crypto-openssl/bbig"
+	"github.com/microsoft/go-crypto-openssl/openssl"
 )
 
 func TestRSAKeyGeneration(t *testing.T) {
@@ -51,6 +52,40 @@ func TestRSAEncryptDecryptPKCS1(t *testing.T) {
 			priv, pub := newRSAKey(t, size)
 			testRSAEncryptDecryptPKCS1(t, priv, pub)
 		})
+	}
+}
+
+func TestRSAEncryptDecryptNoPaddingLifetime(t *testing.T) {
+	n, e, d, p, q, dp, dq, qinv, err := openssl.GenerateKeyRSA(2048)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pub, err := openssl.NewPublicKeyRSA(n, e)
+	if err != nil {
+		t.Fatal(err)
+	}
+	msg := make([]byte, 2048/8)
+	msg[len(msg)-1] = 42
+	enc, err := openssl.EncryptRSANoPadding(pub, msg)
+	if err != nil {
+		if openssl.FIPS() && strings.Contains(err.Error(), "invalid padding mode") {
+			t.Skipf("raw RSA is not supported by the active FIPS provider: %v", err)
+		}
+		t.Fatal(err)
+	}
+	runGC(t)
+	for range 100 {
+		priv, err := openssl.NewPrivateKeyRSA(n, e, d, p, q, dp, dq, qinv)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err := openssl.DecryptRSANoPadding(priv, enc)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(got, msg) {
+			t.Fatalf("decrypted message = %x, want %x", got, msg)
+		}
 	}
 }
 

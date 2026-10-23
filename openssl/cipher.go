@@ -251,6 +251,7 @@ func (x *cipherCBC) CryptBlocks(dst, src []byte) {
 }
 
 func (x *cipherCBC) SetIV(iv []byte) {
+	defer runtime.KeepAlive(x)
 	if len(iv) != x.blockSize {
 		panic("crypto/cipher: incorrect length IV")
 	}
@@ -486,6 +487,8 @@ func (g *cipherGCM) Seal(dst, nonce, plaintext, aad []byte) []byte {
 	return ret
 }
 
+// SealWithRandomNonce fills nonce with random bytes and writes the sealed
+// plaintext to out. It panics if nonce generation or encryption fails.
 func (g *cipherGCM) SealWithRandomNonce(out, nonce, plaintext, aad []byte) {
 	if uint64(len(plaintext)) > uint64((1<<32)-2)*aesBlockSize {
 		panic("crypto/cipher: message too large for GCM")
@@ -507,7 +510,9 @@ func (g *cipherGCM) SealWithRandomNonce(out, nonce, plaintext, aad []byte) {
 		panic("cipher: encryption failed")
 	}
 
-	RandReader.Read(nonce)
+	if _, err := RandReader.Read(nonce); err != nil {
+		panic(err)
+	}
 	ctx, err := newCipherCtx(g.c.kind, cipherModeGCM, cipherOpNone, g.c.key, nil)
 	if err != nil {
 		panic(err)

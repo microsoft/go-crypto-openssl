@@ -1120,6 +1120,14 @@ func generateNocgoFn(typePtrs map[string]bool, src *mkcgo.Source, fn *mkcgo.Func
 		fmt.Fprintf(w, "\t}\n")
 	}
 
+	// uintptr arguments don't keep their Go allocations live during syscallN.
+	for _, param := range fn.Params {
+		goType, _ := cTypeToGo(param.Type, false)
+		if strings.Contains(param.Type, "*") || typePtrs[goType] {
+			fmt.Fprintf(w, "\truntime.KeepAlive(%s)\n", param.Name)
+		}
+	}
+
 	// Generate return statement - only include error for functions that need error wrappers
 	if fn.Ret != "" && fn.Ret != "void" {
 		goRetType, _ := cTypeToGo(fn.Ret, false)

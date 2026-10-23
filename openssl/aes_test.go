@@ -5,11 +5,16 @@ import (
 	"crypto/cipher"
 	"fmt"
 	"math"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 	"testing"
 	"unsafe"
 
-	"github.com/microsoft/go-crypto-openssl/openssl"
 	"github.com/microsoft/go-crypto-openssl/internal/cryptotest"
+	"github.com/microsoft/go-crypto-openssl/openssl"
+	"github.com/microsoft/go-crypto-openssl/osslsetup"
 )
 
 // Test AES against the general cipher.Block interface tester.
@@ -138,6 +143,138 @@ func TestSealAndOpen_Empty(t *testing.T) {
 	}
 	if !bytes.Equal(decrypted, []byte{}) {
 		t.Errorf("unexpected decrypted result\ngot: %#v\nexp: %#v", decrypted, []byte{})
+	}
+}
+
+func TestSealWithRandomNonce(t *testing.T) {
+	for _, tt := range aesGCMTests {
+		t.Run(tt.description, func(t *testing.T) {
+			block, err := openssl.NewAESCipher(tt.key)
+			if err != nil {
+				t.Fatal(err)
+			}
+			// Call the backend hook directly; cipher.NewGCM may wrap the AEAD.
+			gcm, err := block.(interface {
+				NewGCM(nonceSize, tagSize int) (cipher.AEAD, error)
+			}).NewGCM(12, 16)
+			if err != nil {
+				t.Fatal(err)
+			}
+			g := gcm.(interface {
+				SealWithRandomNonce(out, nonce, plaintext, aad []byte)
+			})
+			nonce := make([]byte, gcm.NonceSize())
+			out := make([]byte, len(tt.plaintext)+gcm.Overhead())
+			g.SealWithRandomNonce(out, nonce, tt.plaintext, tt.aad)
+			if want := gcm.Seal(nil, nonce, tt.plaintext, tt.aad); !bytes.Equal(out, want) {
+				t.Fatalf("ciphertext = %x, want %x", out, want)
+			}
+			plaintext, err := gcm.Open(nil, nonce, out, tt.aad)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.Equal(plaintext, tt.plaintext) {
+				t.Fatalf("plaintext = %x, want %x", plaintext, tt.plaintext)
+			}
+		})
+	}
+}
+
+func TestSealWithRandomNonceFailure(t *testing.T) {
+	if osslsetup.VersionMajor() == 1 {
+		t.Skip("random generator configuration requires OpenSSL 3 or later")
+	}
+	const childEnv = "GO_OPENSSL_TEST_RAND_FAILURE"
+	if os.Getenv(childEnv) != "1" {
+		config := filepath.Join(t.TempDir(), "openssl.cnf")
+		if err := os.WriteFile(config, []byte(`
+openssl_conf = openssl_init
+[openssl_init]
+random = random_section
+[random_section]
+random = nonexistent-test-rng
+`), 0600); err != nil {
+			t.Fatal(err)
+		}
+		exe, err := os.Executable()
+		if err != nil {
+			t.Fatal(err)
+		}
+		cmd := exec.Command(exe, "-test.run=^TestSealWithRandomNonceFailure$")
+		cmd.Env = append(os.Environ(), childEnv+"=1", "OPENSSL_CONF="+config)
+		if output, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("RNG failure subprocess: %v\n%s", err, output)
+		}
+		return
+	}
+
+	block, err := openssl.NewAESCipher(make([]byte, 16))
+	if err != nil {
+		t.Fatal(err)
+	}
+	gcm, err := block.(interface {
+		NewGCM(nonceSize, tagSize int) (cipher.AEAD, error)
+	}).NewGCM(12, 16)
+	if err != nil {
+		t.Fatal(err)
+	}
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err := openssl.RandReader.Read(nonce); err == nil {
+		t.Fatal("test configuration did not cause RNG failure")
+	}
+	plaintext := []byte("message")
+	out := bytes.Repeat([]byte{0xa5}, len(plaintext)+gcm.Overhead())
+	want := bytes.Clone(out)
+	defer func() {
+		err, ok := recover().(error)
+		if !ok || !strings.Contains(err.Error(), "RAND_bytes") {
+			t.Errorf("expected RNG error panic, got %v", err)
+		}
+		if !bytes.Equal(out, want) {
+			t.Error("encryption modified output after RNG failure")
+		}
+	}()
+	gcm.(interface {
+		SealWithRandomNonce(out, nonce, plaintext, aad []byte)
+	}).SealWithRandomNonce(out, nonce, plaintext, nil)
+}
+
+func TestCBCSetIVLifetime(t *testing.T) {
+	block, err := openssl.NewAESCipher(make([]byte, 16))
+	if err != nil {
+		t.Fatal(err)
+	}
+	iv := make([]byte, block.BlockSize())
+	nextIV := bytes.Repeat([]byte{1}, block.BlockSize())
+	msg := bytes.Repeat([]byte{2}, 2*block.BlockSize())
+	type cbcMode interface {
+		cipher.BlockMode
+		SetIV([]byte)
+	}
+	runGC(t)
+	for _, newMode := range []struct {
+		name string
+		new  func(cipher.Block, []byte) cipher.BlockMode
+	}{
+		{"encrypt", cipher.NewCBCEncrypter},
+		{"decrypt", cipher.NewCBCDecrypter},
+	} {
+		t.Run(newMode.name, func(t *testing.T) {
+			for range 100 {
+				newMode.new(block, iv).(cbcMode).SetIV(nextIV)
+			}
+			mode := newMode.new(block, iv).(cbcMode)
+			got := make([]byte, len(msg))
+			mode.CryptBlocks(got, msg)
+			mode.SetIV(nextIV)
+			mode.CryptBlocks(got, msg)
+			want := make([]byte, len(msg))
+			newMode.new(block, nextIV).CryptBlocks(want, msg)
+			if !bytes.Equal(got, want) {
+				t.Fatalf("output after resetting IV = %x, want %x", got, want)
+			}
+			assertPanic(t, func() { mode.SetIV(nextIV[:len(nextIV)-1]) })
+		})
 	}
 }
 
