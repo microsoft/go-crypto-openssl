@@ -86,6 +86,7 @@ func (k *PrivateKeyEd25519) Bytes() ([]byte, error) {
 }
 
 func (k *PrivateKeyEd25519) Public() (*PublicKeyEd25519, error) {
+	defer runtime.KeepAlive(k)
 	pub := make([]byte, publicKeySizeEd25519)
 	if err := extractPKEYRawPublic(k._pkey, pub); err != nil {
 		return nil, err

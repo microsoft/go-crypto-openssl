@@ -235,9 +235,8 @@ func DecryptRSANoPadding(priv *PrivateKeyRSA, ciphertext []byte) ([]byte, error)
 	//
 	// The following code tries to replicate the verification implemented in the upstream function decryptAndCheck, found at
 	// https://github.com/golang/go/blob/9de1ac6ac2cad3871760d0aa288f5ca713afd0a6/src/crypto/rsa/rsa.go#L569-L582.
-	pub := &PublicKeyRSA{_pkey: priv._pkey}
 	// A private EVP_PKEY can be used as a public key as it contains the public information.
-	enc, err := EncryptRSANoPadding(pub, ret)
+	enc, err := evpEncrypt(priv.withKey, ossl.RSA_NO_PADDING, nil, nil, nil, ret)
 	if err != nil {
 		return nil, err
 	}
