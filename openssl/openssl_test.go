@@ -4,7 +4,9 @@
 package openssl_test
 
 import (
+	"bytes"
 	"cmp"
+	"crypto/sha256"
 	"fmt"
 	"os"
 	"runtime"
@@ -21,6 +23,41 @@ import (
 
 // sink is used to prevent the compiler from optimizing out the allocations.
 var sink uint8
+
+func runGC(t *testing.T) {
+	t.Helper()
+	ctx := t.Context()
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				runtime.GC()
+			}
+		}
+	}()
+	t.Cleanup(func() { <-done })
+}
+
+func TestNativeBufferLifetimes(t *testing.T) {
+	runGC(t)
+	want := sha256.Sum256(bytes.Repeat([]byte{0x5a}, 64*1024))
+	for range 100 {
+		if got := openssl.SHA256(bytes.Repeat([]byte{0x5a}, 64*1024)); got != want {
+			t.Fatalf("SHA256 with temporary input = %x, want %x", got, want)
+		}
+		h := openssl.NewSHA256()
+		if _, err := h.Write(bytes.Repeat([]byte{0x5a}, 64*1024)); err != nil {
+			t.Fatal(err)
+		}
+		if got := h.Sum(nil); !bytes.Equal(got, want[:]) {
+			t.Fatalf("SHA256 with temporary buffers = %x, want %x", got, want)
+		}
+	}
+}
 
 // getVersion returns the OpenSSL version to use for testing.
 func getVersion() string {
