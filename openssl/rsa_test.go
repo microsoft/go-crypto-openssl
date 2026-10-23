@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/microsoft/go-crypto-openssl/bbig"
@@ -67,6 +68,9 @@ func TestRSAEncryptDecryptNoPaddingLifetime(t *testing.T) {
 	msg[len(msg)-1] = 42
 	enc, err := openssl.EncryptRSANoPadding(pub, msg)
 	if err != nil {
+		if openssl.FIPS() && strings.Contains(err.Error(), "invalid padding mode") {
+			t.Skipf("raw RSA is not supported by the active FIPS provider: %v", err)
+		}
 		t.Fatal(err)
 	}
 	runGC(t)

@@ -102,7 +102,10 @@ func TestMain(m *testing.M) {
 		// or that there is a bug in the Init code.
 		panic(err)
 	}
-	_ = osslsetup.SetFIPS(true) // Skip the error as we still want to run the tests on machines without FIPS support.
+	if os.Getenv("GO_OPENSSL_TEST_RAND_FAILURE") != "1" {
+		// Leave the RNG-failure subprocess configured by its OpenSSL config.
+		_ = osslsetup.SetFIPS(true) // Skip the error as we still want to run the tests on machines without FIPS support.
+	}
 	fmt.Println("OpenSSL version:", osslsetup.VersionText())
 	fmt.Println("FIPS enabled:", osslsetup.FIPS())
 	fmt.Println("FIPS capable:", osslsetup.FIPSCapable())
