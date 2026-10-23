@@ -22,6 +22,7 @@ var (
 	includeHeader = flag.String("include", "", "include header file")
 	packageName   = flag.String("package", "", "package name")
 	nocgo         = flag.Bool("nocgo", false, "don't use cgo")
+	ppc64le       = flag.Bool("ppc64le", true, "generate PPC64LE assembly trampolines in nocgo mode")
 	mode          = flag.String("mode", "dynamic", "symbol load mode: dynamic, dynload")
 	private       = flag.Bool("private", false, "all Go generated symbols are kept unexported")
 	noerrors      = flag.Bool("noerrors", false, "disable error handling")
@@ -102,8 +103,10 @@ func main() {
 		if dynamic() {
 			generateAssembly(&src, &assemblyBuffer, false)
 			outFiles = append(outFiles, outFile{".s", assemblyBuffer.Bytes()})
-			generateAssembly(&src, &assemblyPPC64LEBuffer, true)
-			outFiles = append(outFiles, outFile{"_ppc64le.s", assemblyPPC64LEBuffer.Bytes()})
+			if *ppc64le {
+				generateAssembly(&src, &assemblyPPC64LEBuffer, true)
+				outFiles = append(outFiles, outFile{"_ppc64le.s", assemblyPPC64LEBuffer.Bytes()})
+			}
 		}
 	} else {
 		var gobuf, hbuf, cbuf bytes.Buffer
