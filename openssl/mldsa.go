@@ -58,6 +58,22 @@ func SupportsMLDSA(params MLDSAParameters) bool {
 	}
 }
 
+// SupportsMLDSAExternalMu reports whether the provider supports signing and
+// verifying externally computed message representatives for the parameter set.
+// Providers may support ML-DSA without supporting external-mu operations.
+func SupportsMLDSAExternalMu(params MLDSAParameters) bool {
+	switch params.keyType {
+	case _KeyTypeMLDSA44:
+		return supportsMLDSA44ExternalMu()
+	case _KeyTypeMLDSA65:
+		return supportsMLDSA65ExternalMu()
+	case _KeyTypeMLDSA87:
+		return supportsMLDSA87ExternalMu()
+	default:
+		return false
+	}
+}
+
 // probeMLDSA reports whether the OpenSSL provider exposes the given ML-DSA
 // algorithm via the keymgmt fetch interface. ML-DSA was added in OpenSSL 3.5;
 // older 3.x releases return nil for unknown algorithm names, and 1.x lacks
@@ -78,7 +94,30 @@ var (
 	supportsMLDSA44 = sync.OnceValue(func() bool { return probeMLDSA(_KeyTypeMLDSA44) })
 	supportsMLDSA65 = sync.OnceValue(func() bool { return probeMLDSA(_KeyTypeMLDSA65) })
 	supportsMLDSA87 = sync.OnceValue(func() bool { return probeMLDSA(_KeyTypeMLDSA87) })
+
+	supportsMLDSA44ExternalMu = sync.OnceValue(func() bool { return probeMLDSAExternalMu(MLDSA44()) })
+	supportsMLDSA65ExternalMu = sync.OnceValue(func() bool { return probeMLDSAExternalMu(MLDSA65()) })
+	supportsMLDSA87ExternalMu = sync.OnceValue(func() bool { return probeMLDSAExternalMu(MLDSA87()) })
 )
+
+func probeMLDSAExternalMu(params MLDSAParameters) bool {
+	if !SupportsMLDSA(params) {
+		return false
+	}
+	var seed [privateKeySizeMLDSA]byte
+	pkey, err := newMLDSAPrivatePkey(params.keyType, seed[:])
+	if err != nil {
+		return false
+	}
+	defer ossl.EVP_PKEY_free(pkey)
+
+	var mu [muSizeMLDSA]byte
+	signature, err := mldsaSignWithKey(pkey, params, mu[:], "", true)
+	if err != nil {
+		return false
+	}
+	return mldsaVerifyWithKey(pkey, mu[:], signature, "", true) == nil
+}
 
 // MLDSAParameters represents one of the fixed ML-DSA parameter sets.
 type MLDSAParameters struct {
