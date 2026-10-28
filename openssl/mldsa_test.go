@@ -71,6 +71,41 @@ var mldsaExternalMuTestCases = []mldsaExternalMuTestCase{
 	{"CAST/ML-DSA-65", openssl.MLDSA65(), "F215BA2280D86F142012FC05FFC04F2C7D22FF5DD7D69AA0EFB081E3A53E9318", "35cdb7dddbed44af4641bac659f46598ed769ea9693fd4ed2152b84c45811d2e66eded1eb20cde1c1f4b82642a330d8e86ac432a2aefaa56cd9b2b5f4affd450"},
 }
 
+func TestSupportsMLDSAExternalMu(t *testing.T) {
+	t.Parallel()
+	if openssl.SupportsMLDSAExternalMu(openssl.MLDSAParameters{}) {
+		t.Fatal("invalid parameter set supports external-mu")
+	}
+	for _, test := range mldsaParameterTests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			supported := openssl.SupportsMLDSAExternalMu(test.params)
+			if !openssl.SupportsMLDSA(test.params) {
+				if supported {
+					t.Fatal("external-mu supported without ML-DSA support")
+				}
+				return
+			}
+			key, err := openssl.GenerateKeyMLDSA(test.params)
+			if err != nil {
+				t.Fatal(err)
+			}
+			mu := make([]byte, 64)
+			signature, err := key.SignExternalMu(mu)
+			if err != nil {
+				if supported {
+					t.Fatalf("external-mu reported supported but signing failed: %v", err)
+				}
+				return
+			}
+			err = key.PublicKey().VerifyExternalMu(mu, signature)
+			if supported != (err == nil) {
+				t.Fatalf("external-mu support = %v, verification error = %v", supported, err)
+			}
+		})
+	}
+}
+
 func TestMLDSARoundTrip(t *testing.T) {
 	t.Parallel()
 	for _, test := range mldsaParameterTests {
@@ -153,22 +188,27 @@ func testMLDSARoundTrip(t *testing.T, params openssl.MLDSAParameters) {
 				t.Error("Verify passed with wrong context")
 			}
 
-			mu := append(fromHexBytes(testCase.msg), fromHexBytes(testCase.msg)...)
-			externalSignature, err := privateKey.SignExternalMu(mu)
-			if err != nil {
-				t.Fatalf("SignExternalMu: %v", err)
-			}
-			if len(externalSignature) != params.SignatureSize() {
-				t.Fatalf("external signature length = %d, want %d", len(externalSignature), params.SignatureSize())
-			}
-			if err := reparsedPublicKey.VerifyExternalMu(mu, externalSignature); err != nil {
-				t.Fatalf("VerifyExternalMu: %v", err)
-			}
-			wrongMu := append([]byte(nil), mu...)
-			wrongMu[0] ^= 0x80
-			if err := reparsedPublicKey.VerifyExternalMu(wrongMu, externalSignature); err == nil {
-				t.Error("VerifyExternalMu passed on wrong message")
-			}
+			t.Run("external-mu", func(t *testing.T) {
+				if !openssl.SupportsMLDSAExternalMu(params) {
+					t.Skipf("%s external-mu not supported on this platform", params)
+				}
+				mu := append(fromHexBytes(testCase.msg), fromHexBytes(testCase.msg)...)
+				externalSignature, err := privateKey.SignExternalMu(mu)
+				if err != nil {
+					t.Fatalf("SignExternalMu: %v", err)
+				}
+				if len(externalSignature) != params.SignatureSize() {
+					t.Fatalf("external signature length = %d, want %d", len(externalSignature), params.SignatureSize())
+				}
+				if err := reparsedPublicKey.VerifyExternalMu(mu, externalSignature); err != nil {
+					t.Fatalf("VerifyExternalMu: %v", err)
+				}
+				wrongMu := append([]byte(nil), mu...)
+				wrongMu[0] ^= 0x80
+				if err := reparsedPublicKey.VerifyExternalMu(wrongMu, externalSignature); err == nil {
+					t.Error("VerifyExternalMu passed on wrong message")
+				}
+			})
 		})
 	}
 }
@@ -306,8 +346,8 @@ func TestMLDSAExternalMuCASTVectors(t *testing.T) {
 	t.Parallel()
 	for _, test := range mldsaExternalMuTestCases {
 		t.Run(test.name, func(t *testing.T) {
-			if !openssl.SupportsMLDSA(test.params) {
-				t.Skipf("%s not supported on this platform", test.params)
+			if !openssl.SupportsMLDSAExternalMu(test.params) {
+				t.Skipf("%s external-mu not supported on this platform", test.params)
 			}
 			t.Parallel()
 			privateKey, err := openssl.NewPrivateKeyMLDSA(test.params, fromHexBytes(test.seed))
@@ -486,8 +526,8 @@ func BenchmarkMLDSASign(b *testing.B) {
 func BenchmarkMLDSASignExternalMu(b *testing.B) {
 	for _, test := range mldsaParameterTests {
 		b.Run(test.name, func(b *testing.B) {
-			if !openssl.SupportsMLDSA(test.params) {
-				b.Skipf("%s not supported on this platform", test.params)
+			if !openssl.SupportsMLDSAExternalMu(test.params) {
+				b.Skipf("%s external-mu not supported on this platform", test.params)
 			}
 			privateKey := newBenchmarkMLDSAPrivateKey(b, test.params)
 			mu := make([]byte, 64)
@@ -531,8 +571,8 @@ func BenchmarkMLDSAVerify(b *testing.B) {
 func BenchmarkMLDSAVerifyExternalMu(b *testing.B) {
 	for _, test := range mldsaParameterTests {
 		b.Run(test.name, func(b *testing.B) {
-			if !openssl.SupportsMLDSA(test.params) {
-				b.Skipf("%s not supported on this platform", test.params)
+			if !openssl.SupportsMLDSAExternalMu(test.params) {
+				b.Skipf("%s external-mu not supported on this platform", test.params)
 			}
 			privateKey := newBenchmarkMLDSAPrivateKey(b, test.params)
 			publicKey := privateKey.PublicKey()
