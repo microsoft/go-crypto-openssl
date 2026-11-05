@@ -161,7 +161,8 @@ func updateFile(name, commitHash string) error {
 		content = modifyBuildTags(content)
 	}
 
-	// Assembly copied from runtime/cgo may not have a !cgo constraint.
+	// Assembly imported from purego, originally derived from runtime/cgo,
+	// may not have a !cgo constraint.
 	if strings.HasSuffix(name, ".s") && !bytes.Contains(content, []byte("//go:build")) {
 		content = append([]byte("//go:build !cgo\n\n"), content...)
 	}
