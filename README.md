@@ -46,6 +46,18 @@ This feature does not require any additional configuration, but it only works wi
 
 - Only Unix, Unix-like and Windows platforms are supported.
 
+## Testing vendored imports
+
+Run the import policy checks with the same pinned checker and allowlists as CI:
+
+```sh
+go test -count=1 ./internal/importcheck
+```
+
+Use `-count=1` because the checker reads backend sources in a subprocess, and Go's test cache does not track changes to those sources.
+The checker uses `CGO_ENABLED=1`, matching the existing import policy, even when the parent test run disables CGO.
+The Check Vendored Imports workflow runs the same command on pull requests and pushes to `main`.
+
 ## Acknowledgements
 
 The work done to support FIPS compatibility mode leverages code and ideas from other open-source projects:
