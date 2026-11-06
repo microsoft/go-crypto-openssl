@@ -161,6 +161,12 @@ func updateFile(name, commitHash string) error {
 		content = modifyBuildTags(content)
 	}
 
+	// Assembly imported from purego, originally derived from runtime/cgo,
+	// may not have a !cgo constraint.
+	if strings.HasSuffix(name, ".s") && !bytes.Contains(content, []byte("//go:build")) {
+		content = append([]byte("//go:build !cgo\n\n"), content...)
+	}
+
 	content = prependGeneratedHeader(content)
 
 	// Preserve file permissions if possible, but 0644 is standard for source files.
