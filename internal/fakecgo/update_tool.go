@@ -186,8 +186,9 @@ func modifyBuildTags(content []byte) []byte {
 	lines := bytes.Split(content, []byte("\n"))
 	for i, line := range lines {
 		if bytes.HasPrefix(line, []byte("//go:build")) {
-			// We don't support NetBSD so remove the netbsd constraint
+			// We don't support NetBSD or illumos so remove those constraints
 			lines[i] = bytes.ReplaceAll(line, []byte(" || netbsd"), nil)
+			lines[i] = bytes.ReplaceAll(lines[i], []byte(" || illumos"), nil)
 		}
 	}
 	return bytes.Join(lines, []byte("\n"))

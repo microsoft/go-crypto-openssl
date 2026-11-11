@@ -12,9 +12,35 @@ on:
 permissions:
   contents: write
   issues: write
+  pull-requests: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
 
 jobs:
+  check-pr:
+    runs-on: ubuntu-latest
+    outputs:
+      has_open_pr: ${{ steps.check.outputs.has_open_pr }}
+    steps:
+      - name: Check for an open update PR
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pr_number=$(gh pr list --repo "${GITHUB_REPOSITORY}" --state open \
+            --head update-fakecgo-dependencies --json number --jq '.[0].number // empty')
+          if [ -n "${pr_number}" ]; then
+            echo "PR #${pr_number} is open; leaving the update branch untouched."
+            echo "has_open_pr=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_open_pr=false" >> "$GITHUB_OUTPUT"
+          fi
+
   check-and-update:
+    needs: check-pr
+    if: needs.check-pr.outputs.has_open_pr == 'false'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
