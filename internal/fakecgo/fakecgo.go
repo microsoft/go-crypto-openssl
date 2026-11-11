@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2025 The Ebitengine Authors
 
-//go:build !cgo && (darwin || freebsd || illumos || linux)
+//go:build !cgo && (darwin || freebsd || linux)
 
 package fakecgo
 
