@@ -8,6 +8,7 @@ import (
 	"cmp"
 	"crypto/sha256"
 	"fmt"
+	"go/build"
 	"os"
 	"runtime"
 	"strings"
@@ -40,6 +41,18 @@ func runGC(t *testing.T) {
 		}
 	}()
 	t.Cleanup(func() { <-done })
+}
+
+func TestFakeCgoAssembly(t *testing.T) {
+	ctx := build.Default
+	ctx.CgoEnabled = true
+	pkg, err := ctx.ImportDir("../internal/fakecgo", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pkg.SFiles) != 0 {
+		t.Fatalf("fakecgo assembly files with cgo enabled: %v", pkg.SFiles)
+	}
 }
 
 func TestNativeBufferLifetimes(t *testing.T) {
